@@ -1,0 +1,39 @@
+{
+  "overhead_subprocess_noop_ms": 24.15793997934088,
+  "overhead_subprocess_numpy_ms": 99.95296000270173,
+  "overhead_http_ping_ms": 9.828280001723519,
+  "por_n": {
+    "1": {
+      "subprocess_total_ms": 143.70740000158548,
+      "subprocess_overhead_ms": 138.7934000015855,
+      "http_total_ms": 11.785360018257052,
+      "http_sim_ms": 4.914,
+      "http_overhead_ms": 6.871360018257052,
+      "csharp_total_ms": 503.53421999607235
+    },
+    "5": {
+      "subprocess_total_ms": 153.47319998545572,
+      "subprocess_overhead_ms": 137.74319998545573,
+      "http_total_ms": 27.000819996464998,
+      "http_sim_ms": 15.73,
+      "http_overhead_ms": 11.270819996464997,
+      "csharp_total_ms": 510.88641999522224
+    },
+    "10": {
+      "subprocess_total_ms": 181.24319998314604,
+      "subprocess_overhead_ms": 146.98319998314605,
+      "http_total_ms": 48.922320001292974,
+      "http_sim_ms": 34.260000000000005,
+      "http_overhead_ms": 14.662320001292969,
+      "csharp_total_ms": 527.8979599941522
+    },
+    "20": {
+      "subprocess_total_ms": 212.4667799915187,
+      "subprocess_overhead_ms": 136.9727799915187,
+      "http_total_ms": 86.1997399944812,
+      "http_sim_ms": 75.494,
+      "http_overhead_ms": 10.705739994481206,
+      "csharp_total_ms": 531.7995400051586
+    }
+  }
+}
