@@ -53,4 +53,9 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
-.claude
+.claude/
+.gitkeep
+
+# Documentos privados
+RodriguezdelBusto-ProyectoFinal-PropuestaBorrador.pdf
+Plan-Cronograma-Personalizado.xlsx
