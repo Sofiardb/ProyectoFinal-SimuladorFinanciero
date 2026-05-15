@@ -56,6 +56,10 @@ nunit-*.xml
 .claude/
 .gitkeep
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Documentos privados
 RodriguezdelBusto-ProyectoFinal-PropuestaBorrador.pdf
 Plan-Cronograma-Personalizado.xlsx
