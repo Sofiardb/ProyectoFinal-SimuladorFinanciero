@@ -19,7 +19,7 @@ BEGIN;
 -- -----------------------------------------------------------------------------
 -- 0. LIMPIEZA (opcional, solo desarrollo)
 -- -----------------------------------------------------------------------------
-DROP SCHEMA IF EXISTS simulador CASCADE;
+DROP SCHEMA IF EXISTS simulador_financiero CASCADE;
 CREATE SCHEMA simulador_financiero;
 SET search_path TO simulador_financiero, public;
 
