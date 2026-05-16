@@ -59,7 +59,12 @@ nunit-*.xml
 # Python
 __pycache__/
 *.py[cod]
+.venv/
+
+# Caché de IDEs
+*.lscache
 
 # Documentos privados
 RodriguezdelBusto-ProyectoFinal-PropuestaBorrador.pdf
 Plan-Cronograma-Personalizado.xlsx
+NOTAS_DESARROLLO.md
