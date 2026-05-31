@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
 
+from app.simulacion.orquestador import simular_portfolio
+
 api_bp = Blueprint('api', __name__)
 
 
@@ -10,5 +12,6 @@ def ping():
 
 @api_bp.route('/simular', methods=['POST'])
 def simular():
-    # Se implementa cuando el orquestador Monte Carlo esté completo
-    return jsonify({'error': 'No implementado aún'}), 501
+    parametros = request.get_json()
+    resultado = simular_portfolio(parametros)
+    return jsonify(resultado), 200
