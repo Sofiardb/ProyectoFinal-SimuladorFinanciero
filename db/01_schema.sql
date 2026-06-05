@@ -457,7 +457,37 @@ COMMENT ON TABLE  metrica_simulacion IS 'Métricas adicionales por simulación (
 
 
 -- =============================================================================
--- 7. DATOS DE CATÁLOGO INICIALES
+-- 7. RESULTADOS DE SIMULACIÓN POR INSTRUMENTO
+-- =============================================================================
+
+-- Estadísticas temporales completas por instrumento (o portfolio_ars/portfolio_usd),
+-- escenario y métrica. Elimina la necesidad de re-ejecutar el motor para visualizar.
+CREATE TABLE resultado_simulacion (
+    id_resultado  BIGSERIAL    PRIMARY KEY,
+    id_simulacion BIGINT       NOT NULL REFERENCES simulacion(id_simulacion) ON DELETE CASCADE,
+    -- 'portfolio_ars', 'portfolio_usd', o el id del instrumento (ej: 'accion_1')
+    ambito        VARCHAR(50)  NOT NULL,
+    -- 'global' | 'favorable' | 'moderado' | 'desfavorable'
+    escenario     VARCHAR(20)  NOT NULL,
+    -- 'patrimonio' | 'ganancias_nominales' | 'ganancias_reales'
+    metrica       VARCHAR(30)  NOT NULL,
+    -- { "media":[...], "mediana":[...], "p25":[...], "p75":[...], "minimo":[...], "maximo":[...] }
+    -- Cada array tiene largo horizonte_meses + 1
+    stats         JSONB        NOT NULL,
+    UNIQUE (id_simulacion, ambito, escenario, metrica)
+);
+
+CREATE INDEX idx_resultado_simulacion ON resultado_simulacion(id_simulacion, ambito);
+
+COMMENT ON TABLE  resultado_simulacion IS 'Estadísticas temporales (media, mediana, p25, p75, mín, máx) por instrumento o sub-portfolio, escenario y métrica. Una fila por combinación (simulacion, ambito, escenario, metrica).';
+COMMENT ON COLUMN resultado_simulacion.ambito    IS 'portfolio_ars, portfolio_usd, o id del instrumento tal como llega en el JSON del motor.';
+COMMENT ON COLUMN resultado_simulacion.escenario IS 'global | favorable | moderado | desfavorable';
+COMMENT ON COLUMN resultado_simulacion.metrica   IS 'patrimonio | ganancias_nominales | ganancias_reales';
+COMMENT ON COLUMN resultado_simulacion.stats     IS 'Vector de largo T+1 para cada estadístico. Índice 0 corresponde a t=0 (monto inicial).';
+
+
+-- =============================================================================
+-- 8. DATOS DE CATÁLOGO INICIALES
 -- =============================================================================
 
 INSERT INTO moneda (codigo_iso, nombre, simbolo) VALUES

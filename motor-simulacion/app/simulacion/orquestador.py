@@ -7,18 +7,23 @@ from app.simulacion.plazo_fijo import simular_plazo_fijo_tradicional, simular_pl
 
 
 def calcular_estadisticas(matriz):
+    p25, p50, p75 = np.percentile(matriz, [25, 50, 75], axis=0)
     return {
-        "media":  np.mean(matriz, axis=0).tolist(),
-        "minimo": np.min(matriz, axis=0).tolist(),
-        "maximo": np.max(matriz, axis=0).tolist(),
-        "p5":     np.percentile(matriz, 5, axis=0).tolist(),
-        "p95":    np.percentile(matriz, 95, axis=0).tolist(),
+        "media":   np.mean(matriz, axis=0).tolist(),
+        "mediana": p50.tolist(),
+        "p25":     p25.tolist(),
+        "p75":     p75.tolist(),
+        "minimo":  np.min(matriz, axis=0).tolist(),
+        "maximo":  np.max(matriz, axis=0).tolist(),
     }
+
+
+N_SIMULACIONES = 1000
 
 
 def simular_portfolio(parametros: dict) -> dict:
     T_meses = parametros["T_meses"]
-    N_simulaciones = parametros["N_simulaciones"]
+    N_simulaciones = N_SIMULACIONES
     escenarios = parametros["escenarios"]
     instrumentos = parametros["instrumentos"]
 
@@ -101,9 +106,6 @@ def simular_portfolio(parametros: dict) -> dict:
 
             matrices_trayectorias[inst["id"]][n] = trayectoria
 
-    matriz_portfolio = sum(matrices_trayectorias[inst["id"]] for inst in instrumentos)
-    monto_portfolio  = sum(inst["monto"] for inst in instrumentos)
-
     corte_favorable    = slice(0, n_favorable)
     corte_moderado     = slice(n_favorable, n_favorable + n_moderado)
     corte_desfavorable = slice(n_favorable + n_moderado, N_simulaciones)
@@ -116,28 +118,39 @@ def simular_portfolio(parametros: dict) -> dict:
             "desfavorable": calcular_estadisticas(matriz[corte_desfavorable]),
         }
 
-    estadisticas_instrumentos = {}
-    for inst in instrumentos:
-        monto_i   = inst["monto"]
-        matriz_i  = matrices_trayectorias[inst["id"]]
-        gan_nominal_i = matriz_i - monto_i
-        gan_real_i    = matriz_i / factor_acum_matrix - monto_i
-
-        estadisticas_instrumentos[inst["id"]] = {
-            "patrimonio":          estadisticas_por_escenario(matriz_i),
-            "ganancias_nominales": estadisticas_por_escenario(gan_nominal_i),
-            "ganancias_reales":    estadisticas_por_escenario(gan_real_i),
+    def metricas_completas(matriz, monto):
+        return {
+            "patrimonio":          estadisticas_por_escenario(matriz),
+            "ganancias_nominales": estadisticas_por_escenario(matriz - monto),
+            "ganancias_reales":    estadisticas_por_escenario(matriz / factor_acum_matrix - monto),
         }
 
-    gan_nominal_portfolio = matriz_portfolio - monto_portfolio
-    gan_real_portfolio    = matriz_portfolio / factor_acum_matrix - monto_portfolio
+    estadisticas_instrumentos = {}
+    for inst in instrumentos:
+        estadisticas_instrumentos[inst["id"]] = metricas_completas(
+            matrices_trayectorias[inst["id"]], inst["monto"]
+        )
+
+    def _es_usd(inst):
+        return inst["tipo"] == "accion" and inst.get("mercado", "ars") == "usd"
+
+    def _agregar_portfolio(lista):
+        if not lista:
+            return np.zeros((N_simulaciones, T_meses + 1)), 0.0
+        return (
+            sum(matrices_trayectorias[i["id"]] for i in lista),
+            sum(i["monto"] for i in lista),
+        )
+
+    insts_ars = [i for i in instrumentos if not _es_usd(i)]
+    insts_usd = [i for i in instrumentos if     _es_usd(i)]
+
+    matriz_ars, monto_ars = _agregar_portfolio(insts_ars)
+    matriz_usd, monto_usd = _agregar_portfolio(insts_usd)
 
     return {
-        "semilla": semilla,
-        "instrumentos": estadisticas_instrumentos,
-        "portfolio": {
-            "patrimonio":          estadisticas_por_escenario(matriz_portfolio),
-            "ganancias_nominales": estadisticas_por_escenario(gan_nominal_portfolio),
-            "ganancias_reales":    estadisticas_por_escenario(gan_real_portfolio),
-        },
+        "semilla":       semilla,
+        "instrumentos":  estadisticas_instrumentos,
+        "portfolio_ars": metricas_completas(matriz_ars, monto_ars),
+        "portfolio_usd": metricas_completas(matriz_usd, monto_usd),
     }

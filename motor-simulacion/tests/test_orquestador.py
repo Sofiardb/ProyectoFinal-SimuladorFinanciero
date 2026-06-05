@@ -18,7 +18,6 @@ _FLUJO_BASE_BONO_IDX = _MONTO_BONO_IDX * (1 + _TIR_REAL_BONO_IDX) ** (3 / 12)
 
 PARAMS_BASE = {
     "T_meses": 3,
-    "N_simulaciones": 30,
     "escenarios": {
         "favorable":    {"inflacion_mensual_min": 0.02, "inflacion_mensual_max": 0.03},
         "moderado":     {"inflacion_mensual_min": 0.04, "inflacion_mensual_max": 0.06},
@@ -91,24 +90,29 @@ def params():
 # Tests de estructura y longitud
 # ---------------------------------------------------------------------------
 
+METRICAS_STATS = ("media", "mediana", "p25", "p75", "minimo", "maximo")
+
+
 def test_longitud_output(params):
     resultado = simular_portfolio(params)
     T = params["T_meses"]
 
-    assert "instrumentos" in resultado
-    assert "portfolio" in resultado
+    assert "instrumentos"  in resultado
+    assert "portfolio_ars" in resultado
+    assert "portfolio_usd" in resultado
 
-    for capa in ("patrimonio", "ganancias_nominales", "ganancias_reales"):
-        for escenario in ("global", "favorable", "moderado", "desfavorable"):
-            for metrica in ("media", "minimo", "maximo", "p5", "p95"):
-                serie = resultado["portfolio"][capa][escenario][metrica]
-                assert len(serie) == T + 1
+    for sub_portfolio in ("portfolio_ars", "portfolio_usd"):
+        for capa in ("patrimonio", "ganancias_nominales", "ganancias_reales"):
+            for escenario in ("global", "favorable", "moderado", "desfavorable"):
+                for metrica in METRICAS_STATS:
+                    serie = resultado[sub_portfolio][capa][escenario][metrica]
+                    assert len(serie) == T + 1
 
     for inst in params["instrumentos"]:
         stats_inst = resultado["instrumentos"][inst["id"]]
         for capa in ("patrimonio", "ganancias_nominales", "ganancias_reales"):
             for escenario in ("global", "favorable", "moderado", "desfavorable"):
-                for metrica in ("media", "minimo", "maximo", "p5", "p95"):
+                for metrica in METRICAS_STATS:
                     serie = stats_inst[capa][escenario][metrica]
                     assert len(serie) == T + 1
 
@@ -130,16 +134,21 @@ def test_semilla_reproducibilidad(params):
     params["semilla"] = resultado_1["semilla"]
     resultado_2 = simular_portfolio(params)
 
-    media_1 = resultado_1["portfolio"]["patrimonio"]["global"]["media"]
-    media_2 = resultado_2["portfolio"]["patrimonio"]["global"]["media"]
+    media_1 = resultado_1["portfolio_ars"]["patrimonio"]["global"]["media"]
+    media_2 = resultado_2["portfolio_ars"]["patrimonio"]["global"]["media"]
     assert media_1 == pytest.approx(media_2)
 
 
 def test_v0_portfolio_es_suma_montos(params):
-    suma_montos = sum(inst["monto"] for inst in params["instrumentos"])
+    def _es_usd(inst):
+        return inst["tipo"] == "accion" and inst.get("mercado", "ars") == "usd"
+
+    monto_ars = sum(i["monto"] for i in params["instrumentos"] if not _es_usd(i))
+    monto_usd = sum(i["monto"] for i in params["instrumentos"] if     _es_usd(i))
+
     resultado = simular_portfolio(params)
-    v0 = resultado["portfolio"]["patrimonio"]["global"]["media"][0]
-    assert v0 == pytest.approx(suma_montos)
+    assert resultado["portfolio_ars"]["patrimonio"]["global"]["media"][0] == pytest.approx(monto_ars)
+    assert resultado["portfolio_usd"]["patrimonio"]["global"]["media"][0] == pytest.approx(monto_usd)
 
 
 def test_instrumento_deterministico_sin_dispersion(params):
@@ -179,8 +188,9 @@ def test_ganancias_nominales_v0_es_cero(params):
         media_0 = resultado["instrumentos"][inst["id"]]["ganancias_nominales"]["global"]["media"][0]
         assert media_0 == pytest.approx(0.0)
 
-    media_portfolio_0 = resultado["portfolio"]["ganancias_nominales"]["global"]["media"][0]
-    assert media_portfolio_0 == pytest.approx(0.0)
+    for sub_portfolio in ("portfolio_ars", "portfolio_usd"):
+        media_0 = resultado[sub_portfolio]["ganancias_nominales"]["global"]["media"][0]
+        assert media_0 == pytest.approx(0.0)
 
 
 def test_ganancias_reales_v0_es_cero(params):
@@ -191,8 +201,9 @@ def test_ganancias_reales_v0_es_cero(params):
         media_0 = resultado["instrumentos"][inst["id"]]["ganancias_reales"]["global"]["media"][0]
         assert media_0 == pytest.approx(0.0)
 
-    media_portfolio_0 = resultado["portfolio"]["ganancias_reales"]["global"]["media"][0]
-    assert media_portfolio_0 == pytest.approx(0.0)
+    for sub_portfolio in ("portfolio_ars", "portfolio_usd"):
+        media_0 = resultado[sub_portfolio]["ganancias_reales"]["global"]["media"][0]
+        assert media_0 == pytest.approx(0.0)
 
 
 def test_ganancias_reales_menores_que_nominales_inflacion_positiva(params):
@@ -206,6 +217,6 @@ def test_ganancias_reales_menores_que_nominales_inflacion_positiva(params):
             assert gan_real < gan_nom
 
     for escenario in ("favorable", "moderado", "desfavorable"):
-        gan_nom_p  = resultado["portfolio"]["ganancias_nominales"][escenario]["media"][-1]
-        gan_real_p = resultado["portfolio"]["ganancias_reales"][escenario]["media"][-1]
+        gan_nom_p  = resultado["portfolio_ars"]["ganancias_nominales"][escenario]["media"][-1]
+        gan_real_p = resultado["portfolio_ars"]["ganancias_reales"][escenario]["media"][-1]
         assert gan_real_p < gan_nom_p
