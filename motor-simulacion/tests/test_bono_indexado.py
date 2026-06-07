@@ -1,57 +1,55 @@
-import pytest
 import numpy as np
-from app.simulacion.bonos import simular_bono_indexado, simular_bono_tasa_fija
+import pytest
+from app.simulacion.bonos import simular_bono_indexado_vectorizado, simular_bono_tasa_fija
+
+N = 5
 
 
-def test_longitud_trayectoria():
+def _factor_acum(pi, t_venc):
+    t = np.arange(t_venc + 1)
+    return np.tile((1 + pi) ** t, (N, 1))
+
+
+def test_forma_output():
     flujos_base = [{"mes": 12, "capital_adj": 1000.0, "interest_adj": 100.0}]
-    tray = simular_bono_indexado(1000.0, flujos_base, 0.10, [0.05] * 12)
-    assert len(tray) == 13
+    resultado = simular_bono_indexado_vectorizado(1000.0, flujos_base, 0.10, _factor_acum(0.05, 12))
+    assert resultado.shape == (N, 13)
 
 
 def test_v0_es_monto():
-    # bases=1100, tir_real=0.10 → monto = 1100/(1.10)^1 = 1000.0
-    # factor_acum[0]=1 siempre, por lo que V(0) = monto sin importar la inflación futura
+    # bases=1100, tir_real=0.10 → V(0) = 1100/(1.10)^1 = 1000.0
     flujos_base = [{"mes": 12, "capital_adj": 1000.0, "interest_adj": 100.0}]
-    tray = simular_bono_indexado(1000.0, flujos_base, 0.10, [0.05] * 12)
-    assert tray[0] == pytest.approx(1000.0)
+    resultado = simular_bono_indexado_vectorizado(1000.0, flujos_base, 0.10, _factor_acum(0.05, 12))
+    assert resultado[:, 0] == pytest.approx(np.full(N, 1000.0))
 
 
 def test_ultimo_valor_incluye_inflacion():
-    # V(t_venc) = base * factor_acum[t_venc]
     flujos_base = [{"mes": 6, "capital_adj": 900.0, "interest_adj": 100.0}]
-    pi = 0.04
-    factor_acum_6 = (1 + pi) ** 6
-    esperado = 1000.0 * factor_acum_6
-
-    tir_real = 0.20
+    pi, tir_real = 0.04, 0.20
     monto = 1000.0 / (1 + tir_real) ** (6 / 12)
-    tray = simular_bono_indexado(monto, flujos_base, tir_real, [pi] * 6)
-    assert tray[-1] == pytest.approx(esperado)
+    resultado = simular_bono_indexado_vectorizado(monto, flujos_base, tir_real, _factor_acum(pi, 6))
+    esperado = 1000.0 * (1 + pi) ** 6
+    assert resultado[:, -1] == pytest.approx(np.full(N, esperado))
 
 
-def test_inflacion_cero_igual_a_fija_real():
-    # Con inflación cero, factor_acum[t]=1 siempre → idéntico al bono tasa fija
+def test_inflacion_cero_igual_a_bono_fijo():
     flujos_base = [{"mes": 12, "capital_adj": 1000.0, "interest_adj": 100.0}]
     tir = 0.10
     monto = 1100.0 / (1 + tir)
-
-    tray_idx = simular_bono_indexado(monto, flujos_base, tir, [0.0] * 12)
+    resultado = simular_bono_indexado_vectorizado(monto, flujos_base, tir, _factor_acum(0.0, 12))
     tray_fija = simular_bono_tasa_fija(monto, [{"mes": 12, "monto": 1100.0}], tir)
-
-    for v_idx, v_fija in zip(tray_idx, tray_fija):
-        assert v_idx == pytest.approx(v_fija)
+    assert resultado == pytest.approx(np.tile(tray_fija, (N, 1)))
 
 
 def test_mayor_inflacion_mayor_valor_final():
     flujos_base = [{"mes": 6, "capital_adj": 900.0, "interest_adj": 100.0}]
     tir_real = 0.10
     monto = 1000.0 / (1 + tir_real) ** (6 / 12)
-
-    tray_baja = simular_bono_indexado(monto, flujos_base, tir_real, [0.02] * 6)
-    tray_alta = simular_bono_indexado(monto, flujos_base, tir_real, [0.10] * 6)
-
-    assert tray_alta[-1] > tray_baja[-1]
+    pis = [0.02, 0.04, 0.06, 0.08, 0.10]
+    t = np.arange(7)
+    fac = np.array([(1 + pi) ** t for pi in pis])
+    resultado = simular_bono_indexado_vectorizado(monto, flujos_base, tir_real, fac)
+    assert np.all(np.diff(resultado[:, -1]) > 0)
 
 
 def test_v0_es_monto_multiples_flujos():
@@ -64,5 +62,5 @@ def test_v0_es_monto_multiples_flujos():
         (f["capital_adj"] + f["interest_adj"]) / (1 + tir_real) ** (f["mes"] / 12)
         for f in flujos_base
     )
-    tray = simular_bono_indexado(monto, flujos_base, tir_real, [0.03] * 12)
-    assert tray[0] == pytest.approx(monto)
+    resultado = simular_bono_indexado_vectorizado(monto, flujos_base, tir_real, _factor_acum(0.03, 12))
+    assert resultado[:, 0] == pytest.approx(np.full(N, monto))

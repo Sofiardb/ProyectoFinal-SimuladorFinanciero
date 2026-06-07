@@ -1,9 +1,9 @@
 import numpy as np
 
-from app.simulacion.acciones import simular_accion
-from app.simulacion.bonos import simular_bono_indexado, simular_bono_tasa_fija
-from app.simulacion.letras import simular_letra_lecap, simular_letra_lecer
-from app.simulacion.plazo_fijo import simular_plazo_fijo_tradicional, simular_plazo_fijo_uva
+from app.simulacion.acciones import simular_accion_vectorizado
+from app.simulacion.bonos import simular_bono_indexado_vectorizado, simular_bono_tasa_fija
+from app.simulacion.letras import simular_letra_lecap, simular_letra_lecer_vectorizado
+from app.simulacion.plazo_fijo import simular_plazo_fijo_tradicional, simular_plazo_fijo_uva_vectorizado
 
 
 def calcular_estadisticas(matriz):
@@ -15,6 +15,13 @@ def calcular_estadisticas(matriz):
         "p75":     p75.tolist(),
         "minimo":  np.min(matriz, axis=0).tolist(),
         "maximo":  np.max(matriz, axis=0).tolist(),
+    }
+
+
+def calcular_prob_perdida(matriz, monto, factor_acum):
+    return {
+        "nominal": (matriz < monto).mean(axis=0).tolist(),
+        "real":    (matriz / factor_acum < monto).mean(axis=0).tolist(),
     }
 
 
@@ -61,50 +68,64 @@ def simular_portfolio(parametros: dict) -> dict:
         if inst["tipo"] == "accion"
     }
 
-    matrices_trayectorias = {inst["id"]: np.empty((N_simulaciones, T_meses + 1)) for inst in instrumentos}
+    matrices_trayectorias = {}
 
-    for n in range(N_simulaciones):
-        inflacion_n = inflacion[n]
+    for inst in instrumentos:
+        tipo  = inst["tipo"]
+        id_inst = inst["id"]
 
-        for inst in instrumentos:
-            tipo = inst["tipo"]
+        if tipo == "accion":
+            rho = inst["rho"]
+            z_accion = rho * z_indice + np.sqrt(1 - rho**2) * z_propios_accion[id_inst]
+            matrices_trayectorias[id_inst] = simular_accion_vectorizado(
+                inst["monto"], inst["mu"], inst["sigma"], T_meses, z_accion
+            )
 
-            if tipo == "accion":
-                rho = inst["rho"]
-                z_accion_n = rho * z_indice[n] + np.sqrt(1 - rho**2) * z_propios_accion[inst["id"]][n]
-                trayectoria = simular_accion(inst["monto"], inst["mu"], inst["sigma"], T_meses, z_accion_n.tolist())
+        elif tipo == "lecap":
+            tray_1d = simular_letra_lecap(inst["monto"], inst["tna"], inst["t_venc_meses"])
+            if len(tray_1d) < T_meses + 1:
+                tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
+            matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
 
-            elif tipo == "lecap":
-                trayectoria = simular_letra_lecap(inst["monto"], inst["tna"], inst["t_venc_meses"])
+        elif tipo == "lecer":
+            meses_venc = inst["t_venc_meses"]
+            tray_2d = simular_letra_lecer_vectorizado(
+                inst["monto"], inst["tna"], meses_venc,
+                factor_acum_matrix[:, :meses_venc + 1]
+            )
+            if meses_venc < T_meses:
+                padding = np.repeat(tray_2d[:, -1:], T_meses - meses_venc, axis=1)
+                tray_2d = np.hstack([tray_2d, padding])
+            matrices_trayectorias[id_inst] = tray_2d
 
-            elif tipo == "lecer":
-                meses_venc = inst["t_venc_meses"]
-                trayectoria = simular_letra_lecer(inst["monto"], inst["tna"], meses_venc, inflacion_n[:meses_venc].tolist())
+        elif tipo == "bono_tasa_fija":
+            tray_1d = simular_bono_tasa_fija(inst["monto"], inst["flujos"], inst["tir"])
+            if len(tray_1d) < T_meses + 1:
+                tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
+            matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
 
-            elif tipo == "bono_tasa_fija":
-                trayectoria = simular_bono_tasa_fija(inst["monto"], inst["flujos"], inst["tir"])
+        elif tipo == "bono_indexado":
+            meses_venc = max(f["mes"] for f in inst["flujos_base"])
+            tray_2d = simular_bono_indexado_vectorizado(
+                inst["monto"], inst["flujos_base"], inst["tir_real"],
+                factor_acum_matrix[:, :meses_venc + 1]
+            )
+            if meses_venc < T_meses:
+                padding = np.repeat(tray_2d[:, -1:], T_meses - meses_venc, axis=1)
+                tray_2d = np.hstack([tray_2d, padding])
+            matrices_trayectorias[id_inst] = tray_2d
 
-            elif tipo == "bono_indexado":
-                meses_venc = max(f["mes"] for f in inst["flujos_base"])
-                trayectoria = simular_bono_indexado(
-                    inst["monto"], inst["flujos_base"], inst["tir_real"], inflacion_n[:meses_venc].tolist()
-                )
+        elif tipo == "plazo_fijo_tradicional":
+            tray_1d = simular_plazo_fijo_tradicional(
+                inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
+            )
+            matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
 
-            elif tipo == "plazo_fijo_tradicional":
-                trayectoria = simular_plazo_fijo_tradicional(
-                    inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
-                )
-
-            elif tipo == "plazo_fijo_uva":
-                trayectoria = simular_plazo_fijo_uva(
-                    inst["monto"], inst["tasa_real_anual"], inst["t_venc_meses"],
-                    inst["reinvertir"], T_meses, inflacion_n.tolist()
-                )
-
-            if len(trayectoria) < T_meses + 1:
-                trayectoria = trayectoria + [trayectoria[-1]] * (T_meses + 1 - len(trayectoria))
-
-            matrices_trayectorias[inst["id"]][n] = trayectoria
+        elif tipo == "plazo_fijo_uva":
+            matrices_trayectorias[id_inst] = simular_plazo_fijo_uva_vectorizado(
+                inst["monto"], inst["tasa_real_anual"], inst["t_venc_meses"],
+                inst["reinvertir"], T_meses, factor_acum_matrix
+            )
 
     corte_favorable    = slice(0, n_favorable)
     corte_moderado     = slice(n_favorable, n_favorable + n_moderado)
@@ -118,11 +139,20 @@ def simular_portfolio(parametros: dict) -> dict:
             "desfavorable": calcular_estadisticas(matriz[corte_desfavorable]),
         }
 
+    def prob_perdida_por_escenario(matriz, monto):
+        return {
+            "global":       calcular_prob_perdida(matriz,                     monto, factor_acum_matrix),
+            "favorable":    calcular_prob_perdida(matriz[corte_favorable],    monto, factor_acum_matrix[corte_favorable]),
+            "moderado":     calcular_prob_perdida(matriz[corte_moderado],     monto, factor_acum_matrix[corte_moderado]),
+            "desfavorable": calcular_prob_perdida(matriz[corte_desfavorable], monto, factor_acum_matrix[corte_desfavorable]),
+        }
+
     def metricas_completas(matriz, monto):
         return {
             "patrimonio":          estadisticas_por_escenario(matriz),
             "ganancias_nominales": estadisticas_por_escenario(matriz - monto),
             "ganancias_reales":    estadisticas_por_escenario(matriz / factor_acum_matrix - monto),
+            "prob_perdida":        prob_perdida_por_escenario(matriz, monto),
         }
 
     estadisticas_instrumentos = {}
@@ -149,8 +179,9 @@ def simular_portfolio(parametros: dict) -> dict:
     matriz_usd, monto_usd = _agregar_portfolio(insts_usd)
 
     return {
-        "semilla":       semilla,
-        "instrumentos":  estadisticas_instrumentos,
-        "portfolio_ars": metricas_completas(matriz_ars, monto_ars),
-        "portfolio_usd": metricas_completas(matriz_usd, monto_usd),
+        "semilla":             semilla,
+        "inflacion_acumulada": estadisticas_por_escenario(factor_acum_matrix),
+        "instrumentos":        estadisticas_instrumentos,
+        "portfolio_ars":       metricas_completas(matriz_ars, monto_ars),
+        "portfolio_usd":       metricas_completas(matriz_usd, monto_usd),
     }

@@ -85,10 +85,7 @@ PARAMS_BASE = {
 def params():
     return copy.deepcopy(PARAMS_BASE)
 
-
-# ---------------------------------------------------------------------------
 # Tests de estructura y longitud
-# ---------------------------------------------------------------------------
 
 METRICAS_STATS = ("media", "mediana", "p25", "p75", "minimo", "maximo")
 
@@ -125,9 +122,7 @@ def test_estructura_output(params):
     assert ids_input == ids_output
 
 
-# ---------------------------------------------------------------------------
 # Tests de correctitud — patrimonio
-# ---------------------------------------------------------------------------
 
 def test_semilla_reproducibilidad(params):
     resultado_1 = simular_portfolio(params)
@@ -176,10 +171,7 @@ def test_padding_letras(params):
     media = resultado["instrumentos"]["lecap_1"]["patrimonio"]["global"]["media"]
     assert media[3] == pytest.approx(media[2])
 
-
-# ---------------------------------------------------------------------------
 # Tests de correctitud — ganancias
-# ---------------------------------------------------------------------------
 
 def test_ganancias_nominales_v0_es_cero(params):
     resultado = simular_portfolio(params)
@@ -220,3 +212,45 @@ def test_ganancias_reales_menores_que_nominales_inflacion_positiva(params):
         gan_nom_p  = resultado["portfolio_ars"]["ganancias_nominales"][escenario]["media"][-1]
         gan_real_p = resultado["portfolio_ars"]["ganancias_reales"][escenario]["media"][-1]
         assert gan_real_p < gan_nom_p
+
+# Tests de prob_perdida 
+
+def test_prob_perdida_v0_es_cero(params):
+    resultado = simular_portfolio(params)
+    for inst in params["instrumentos"]:
+        pp = resultado["instrumentos"][inst["id"]]["prob_perdida"]["global"]
+        assert pp["nominal"][0] == pytest.approx(0.0)
+        assert pp["real"][0]    == pytest.approx(0.0)
+
+
+def test_prob_perdida_entre_0_y_1(params):
+    resultado = simular_portfolio(params)
+    for inst in params["instrumentos"]:
+        for escenario in ("global", "favorable", "moderado", "desfavorable"):
+            pp = resultado["instrumentos"][inst["id"]]["prob_perdida"][escenario]
+            assert all(0.0 <= v <= 1.0 for v in pp["nominal"])
+            assert all(0.0 <= v <= 1.0 for v in pp["real"])
+
+
+def test_prob_perdida_real_mayor_que_nominal(params):
+    # con inflación > 0, más simulaciones pierden en términos reales que nominales
+    resultado = simular_portfolio(params)
+    for id_inst in ("lecap_1", "pf_trad_1"):
+        for escenario in ("moderado", "desfavorable"):
+            pp = resultado["instrumentos"][id_inst]["prob_perdida"][escenario]
+            assert pp["real"][-1] >= pp["nominal"][-1]
+
+# Tests de inflacion_acumulada 
+
+def test_inflacion_acumulada_t0_es_uno(params):
+    resultado = simular_portfolio(params)
+    for escenario in ("global", "favorable", "moderado", "desfavorable"):
+        serie = resultado["inflacion_acumulada"][escenario]["media"]
+        assert serie[0] == pytest.approx(1.0)
+
+
+def test_inflacion_acumulada_crece_con_escenario(params):
+    resultado = simular_portfolio(params)
+    media_fav  = resultado["inflacion_acumulada"]["favorable"]["media"][-1]
+    media_desf = resultado["inflacion_acumulada"]["desfavorable"]["media"][-1]
+    assert media_desf > media_fav
