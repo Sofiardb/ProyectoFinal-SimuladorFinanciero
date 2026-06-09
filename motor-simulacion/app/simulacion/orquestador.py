@@ -58,6 +58,12 @@ def simular_portfolio(parametros: dict) -> dict:
     factor_acum_matrix = np.ones((N_simulaciones, T_meses + 1))
     factor_acum_matrix[:, 1:] = np.cumprod(1 + inflacion, axis=1)
 
+    # CER/UVA incorpora inflación con ~2 meses de rezago (T-2):
+    # factor_cer[t] = factor_acum[t-2] para t>=2; = 1 para t<2
+    # (la inflación anterior a t=0 ya está incorporada en el precio de compra)
+    factor_cer_matrix = np.ones((N_simulaciones, T_meses + 1))
+    factor_cer_matrix[:, 2:] = factor_acum_matrix[:, :-2]
+
     # índice de mercado único (SP500/USD) compartido entre todas las acciones
     z_indice = rng.standard_normal((N_simulaciones, T_meses))
 
@@ -91,7 +97,7 @@ def simular_portfolio(parametros: dict) -> dict:
             meses_venc = inst["t_venc_meses"]
             tray_2d = simular_letra_lecer_vectorizado(
                 inst["monto"], inst["tna"], meses_venc,
-                factor_acum_matrix[:, :meses_venc + 1]
+                factor_cer_matrix[:, :meses_venc + 1]
             )
             if meses_venc < T_meses:
                 padding = np.repeat(tray_2d[:, -1:], T_meses - meses_venc, axis=1)
@@ -108,7 +114,7 @@ def simular_portfolio(parametros: dict) -> dict:
             meses_venc = max(f["mes"] for f in inst["flujos_base"])
             tray_2d = simular_bono_indexado_vectorizado(
                 inst["monto"], inst["flujos_base"], inst["tir_real"],
-                factor_acum_matrix[:, :meses_venc + 1]
+                factor_cer_matrix[:, :meses_venc + 1]
             )
             if meses_venc < T_meses:
                 padding = np.repeat(tray_2d[:, -1:], T_meses - meses_venc, axis=1)
@@ -124,7 +130,7 @@ def simular_portfolio(parametros: dict) -> dict:
         elif tipo == "plazo_fijo_uva":
             matrices_trayectorias[id_inst] = simular_plazo_fijo_uva_vectorizado(
                 inst["monto"], inst["tasa_real_anual"], inst["t_venc_meses"],
-                inst["reinvertir"], T_meses, factor_acum_matrix
+                inst["reinvertir"], T_meses, factor_cer_matrix
             )
 
     corte_favorable    = slice(0, n_favorable)
@@ -181,6 +187,7 @@ def simular_portfolio(parametros: dict) -> dict:
     return {
         "semilla":             semilla,
         "inflacion_acumulada": estadisticas_por_escenario(factor_acum_matrix),
+        "cer_acumulado":       estadisticas_por_escenario(factor_cer_matrix),
         "instrumentos":        estadisticas_instrumentos,
         "portfolio_ars":       metricas_completas(matriz_ars, monto_ars),
         "portfolio_usd":       metricas_completas(matriz_usd, monto_usd),

@@ -434,28 +434,6 @@ CREATE INDEX idx_trayectoria_simulacion ON trayectoria(id_simulacion);
 COMMENT ON TABLE trayectoria IS 'Resultado final de cada trayectoria Monte Carlo. Almacena el valor final y los rendimientos para cálculo de métricas (VaR, percentiles). La evolución mes a mes se regenera desde la semilla cuando se solicita visualización.';
 
 
--- Métricas adicionales extensibles por simulación o desagregadas por escenario.
-CREATE TABLE metrica_simulacion (
-    id_metrica_simulacion BIGSERIAL PRIMARY KEY,
-    id_simulacion         BIGINT        NOT NULL REFERENCES simulacion(id_simulacion) ON DELETE CASCADE,
-    id_tipo_escenario     SMALLINT      REFERENCES tipo_escenario(id_tipo_escenario),
-    nombre_metrica        VARCHAR(50)   NOT NULL,
-    valor                 NUMERIC(20,8) NOT NULL
-);
-
--- Unicidad para métricas asociadas a un escenario específico (id_tipo_escenario NOT NULL).
-CREATE UNIQUE INDEX uq_metrica_por_escenario
-    ON metrica_simulacion(id_simulacion, id_tipo_escenario, nombre_metrica)
-    WHERE id_tipo_escenario IS NOT NULL;
-
--- Unicidad para métricas agregadas sobre todas las trayectorias (id_tipo_escenario NULL).
-CREATE UNIQUE INDEX uq_metrica_agregada
-    ON metrica_simulacion(id_simulacion, nombre_metrica)
-    WHERE id_tipo_escenario IS NULL;
-
-COMMENT ON TABLE  metrica_simulacion IS 'Métricas adicionales por simulación (VaR, Sharpe, Sortino, percentiles). id_tipo_escenario NULL indica métrica global; con valor indica métrica desagregada por escenario.';
-
-
 -- =============================================================================
 -- 7. RESULTADOS DE SIMULACIÓN POR INSTRUMENTO
 -- =============================================================================
