@@ -14,7 +14,8 @@ Aplicación web que permite simular y comparar carteras de inversión bajo múlt
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Stack tecnológico](#3-stack-tecnológico)
 4. [Estado de implementación](#4-estado-de-implementación)
-5. [Documentación de decisiones de diseño](#5-documentación-de-decisiones-de-diseño)
+5. [Configuración del entorno de desarrollo](#5-configuración-del-entorno-de-desarrollo)
+6. [Documentación de decisiones de diseño](#6-documentación-de-decisiones-de-diseño)
 
 ---
 
@@ -96,7 +97,60 @@ El motor corre como microservicio HTTP independiente (`localhost:5050`). Esta se
 
 ---
 
-## 5. Documentación de decisiones de diseño
+## 5. Configuración del entorno de desarrollo
+
+### Requisitos previos
+
+- .NET 8 SDK
+- Python 3.11+
+- PostgreSQL 15
+- Node.js 20+ (para el frontend, cuando corresponda)
+
+### Base de datos
+
+Ejecutar el schema contra la base de datos local:
+
+```powershell
+psql -U postgres -f db/01_schema.sql
+```
+
+### Motor de simulación (Python)
+
+```powershell
+cd motor-simulacion
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+python run.py          # corre en http://localhost:5050
+```
+
+### Backend API (.NET)
+
+El backend usa **User Secrets** para las credenciales locales. Nunca se commitean al repositorio.
+
+```powershell
+cd backend/SimuladorFinanciero.Api
+
+# Configurar credenciales locales (ejecutar una sola vez)
+dotnet user-secrets set "ConnectionStrings:Postgres" "Host=localhost;Port=5432;Database=simulador_financiero;Username=postgres;Password=TU_CONTRASEÑA;Search Path=simulador_financiero"
+dotnet user-secrets set "Jwt:Key" "una-clave-secreta-de-al-menos-32-caracteres"
+
+# Levantar la API
+dotnet run             # corre en http://localhost:5000
+```
+
+Swagger queda disponible en `http://localhost:5000` al iniciar la API.
+
+Para verificar que la API y la base de datos responden:
+
+```
+GET http://localhost:5000/health
+→ { "estado": "ok", "db": "ok" }
+```
+
+---
+
+## 6. Documentación de decisiones de diseño
 
 Las decisiones técnicas, matemáticas y de arquitectura tomadas durante el desarrollo se encuentran en la carpeta [`docs/`](docs/):
 
