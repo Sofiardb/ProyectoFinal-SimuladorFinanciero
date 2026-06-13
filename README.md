@@ -49,7 +49,7 @@ graph TD
 
     FE -->|"HTTP/S REST (JSON)"| API
     API -->|"HTTP REST (JSON)\nlocalhost:5050"| MOTOR
-    API -->|"EF Core + Npgsql"| DB
+    API -->|"Dapper + Npgsql"| DB
 ```
 
 | Componente | Responsabilidad |
@@ -67,7 +67,7 @@ El motor corre como microservicio HTTP independiente (`localhost:5050`). Esta se
 | Componente | Tecnología | Justificación |
 |---|---|---|
 | Frontend | React 18 + TypeScript + Vite | Componentes reutilizables para gráficos; tipado estático para datos financieros; Vite reemplaza CRA discontinuado. |
-| Backend API | C# / .NET 8 + ASP.NET Core + EF Core | Plataforma madura para APIs REST; tipado fuerte; ORM con soporte PostgreSQL vía Npgsql. |
+| Backend API | C# / .NET 8 + ASP.NET Core + Dapper | Plataforma madura para APIs REST; tipado fuerte; Dapper como micro-ORM sobre Npgsql, manteniendo `01_schema.sql` como única fuente de verdad del schema. |
 | Motor de simulación | Python 3 + Flask + NumPy | Vectorización BLAS/LAPACK; 2,4×–3,4× más rápido que C# medido experimentalmente; Flask agrega overhead mínimo para dos endpoints. |
 | Base de datos | PostgreSQL 15 | ACID, soporte JSONB para persistir arrays de estadísticas de largo variable, schema dedicado `simulador_financiero`. |
 
