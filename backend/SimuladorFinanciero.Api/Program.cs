@@ -1,13 +1,23 @@
 using System.Text;
+using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SimuladorFinanciero.Api.Infrastructure.Database;
+using SimuladorFinanciero.Api.Repositories;
+using SimuladorFinanciero.Api.Services;
+
+// snake_case PostgreSQL columns → PascalCase C# properties (e.g. id_usuario → IdUsuario)
+DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Dapper + Npgsql
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+
+// Auth
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
 

@@ -30,8 +30,8 @@ SET search_path TO simulador_financiero, public;
 
 CREATE TABLE usuario (
     id_usuario         BIGSERIAL PRIMARY KEY,
-    username           VARCHAR(50)  UNIQUE,
-    email              VARCHAR(150) UNIQUE,
+    username           VARCHAR(50)  UNIQUE NOT NULL,
+    email              VARCHAR(150) UNIQUE NOT NULL,
     password_hash      VARCHAR(255) NOT NULL,
     nombre             VARCHAR(100),
     apellido           VARCHAR(100),
