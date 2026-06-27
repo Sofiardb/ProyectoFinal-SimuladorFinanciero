@@ -129,6 +129,7 @@ CREATE TABLE accion (
     precio_actual           NUMERIC(20,6),
     fecha_precio_actual     TIMESTAMPTZ,
     fecha_estimacion_params TIMESTAMPTZ,
+    meses_de_datos          INTEGER,
     activo                  BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -136,6 +137,7 @@ COMMENT ON TABLE  accion IS 'Acciones disponibles para conformar portfolios. Lim
 COMMENT ON COLUMN accion.mu_retorno_esperado    IS 'Drift del GBM (μ): retorno logarítmico esperado mensual.';
 COMMENT ON COLUMN accion.sigma_volatilidad      IS 'Volatilidad del GBM (σ): desvío estándar de los retornos logarítmicos mensuales.';
 COMMENT ON COLUMN accion.rho_correlacion_indice IS 'Correlación (ρ) entre los retornos de la acción y su índice de referencia.';
+COMMENT ON COLUMN accion.meses_de_datos         IS 'Meses de historia real usados para estimar μ, σ, ρ. Menor a 120 en empresas con historial corto (RIVN, COIN, etc.).';
 
 
 CREATE TABLE precio_historico_accion (
@@ -473,8 +475,8 @@ INSERT INTO moneda (codigo_iso, nombre, simbolo) VALUES
     ('USD', 'Dólar estadounidense', 'US$');
 
 INSERT INTO perfil_riesgo (nombre, descripcion, sigma_max_accion) VALUES
-    ('Conservador', 'Prioriza preservación de capital y baja volatilidad.',  0.08),
-    ('Moderado',    'Equilibrio entre estabilidad y crecimiento.',            0.15),
+    ('Conservador', 'Prioriza preservación de capital y baja volatilidad.',  0.00),
+    ('Moderado',    'Equilibrio entre estabilidad y crecimiento.',            0.10),
     ('Agresivo',    'Alta exposición a renta variable y mayor volatilidad.', 0.30);
 
 INSERT INTO tipo_bono (codigo, nombre, descripcion) VALUES
@@ -497,6 +499,80 @@ INSERT INTO tipo_escenario (codigo, nombre, descripcion) VALUES
 INSERT INTO indice_mercado (codigo, nombre, pais, id_moneda) VALUES
     ('MERVAL', 'S&P Merval', 'Argentina',      (SELECT id_moneda FROM moneda WHERE codigo_iso = 'ARS')),
     ('SP500',  'S&P 500',    'Estados Unidos', (SELECT id_moneda FROM moneda WHERE codigo_iso = 'USD'));
+
+-- Catálogo fijo de acciones disponibles (S&P 500 y otras relevantes).
+-- μ, σ, ρ y precio_actual se populan con el endpoint admin POST /admin/catalogo/refresh/acciones.
+-- ON CONFLICT actualiza nombre y sector sin tocar los parámetros GBM ya calculados.
+INSERT INTO accion (ticker, nombre, sector, id_indice_mercado, id_moneda, activo)
+SELECT t.ticker, t.nombre, t.sector,
+       (SELECT id_indice_mercado FROM indice_mercado WHERE codigo = 'SP500'),
+       (SELECT id_moneda          FROM moneda          WHERE codigo_iso = 'USD'),
+       TRUE
+FROM (VALUES
+    -- Tecnología
+    ('AAPL',  'Apple Inc.',                          'Tecnología'),
+    ('MSFT',  'Microsoft Corporation',               'Tecnología / Cloud'),
+    -- Semiconductores
+    ('NVDA',  'NVIDIA Corporation',                  'Semiconductores'),
+    ('AMD',   'Advanced Micro Devices, Inc.',        'Semiconductores'),
+    ('AVGO',  'Broadcom Inc.',                       'Semiconductores'),
+    ('QCOM',  'Qualcomm Incorporated',               'Semiconductores'),
+    ('INTC',  'Intel Corporation',                   'Semiconductores'),
+    ('MU',    'Micron Technology, Inc.',             'Memorias'),
+    -- Internet / Plataformas
+    ('AMZN',  'Amazon.com, Inc.',                    'E-commerce / Cloud'),
+    ('GOOGL', 'Alphabet Inc. (Class A)',              'Internet'),
+    ('META',  'Meta Platforms, Inc.',                'Redes sociales'),
+    ('NFLX',  'Netflix, Inc.',                       'Streaming'),
+    ('SPOT',  'Spotify Technology S.A.',             'Streaming de música'),
+    ('UBER',  'Uber Technologies, Inc.',             'Transporte'),
+    ('ABNB',  'Airbnb, Inc.',                        'Turismo'),
+    -- Automotriz / Vehículos eléctricos
+    ('TSLA',  'Tesla, Inc.',                         'Automotriz'),
+    ('RIVN',  'Rivian Automotive, Inc.',             'Vehículos eléctricos'),
+    ('F',     'Ford Motor Company',                  'Automotriz'),
+    ('GM',    'General Motors Company',              'Automotriz'),
+    -- Banca y servicios financieros
+    ('JPM',   'JPMorgan Chase & Co.',                'Banca'),
+    ('GS',    'Goldman Sachs Group, Inc.',           'Banca de inversión'),
+    ('BAC',   'Bank of America Corporation',         'Banca'),
+    ('C',     'Citigroup Inc.',                      'Banca'),
+    -- Medios de pago / Fintech
+    ('V',     'Visa Inc.',                           'Medios de pago'),
+    ('MA',    'Mastercard Incorporated',             'Medios de pago'),
+    ('PYPL',  'PayPal Holdings, Inc.',               'Fintech'),
+    ('COIN',  'Coinbase Global, Inc.',               'Cripto'),
+    ('BRK.B', 'Berkshire Hathaway Inc. (Class B)',   'Holding'),
+    -- Salud y farmacéutica
+    ('JNJ',   'Johnson & Johnson',                   'Salud'),
+    ('PFE',   'Pfizer Inc.',                         'Farmacéutica'),
+    ('MRK',   'Merck & Co., Inc.',                   'Farmacéutica'),
+    ('LLY',   'Eli Lilly and Company',               'Farmacéutica'),
+    ('ABBV',  'AbbVie Inc.',                         'Biotecnología'),
+    ('UNH',   'UnitedHealth Group Incorporated',     'Salud'),
+    -- Energía
+    ('XOM',   'Exxon Mobil Corporation',             'Energía'),
+    ('CVX',   'Chevron Corporation',                 'Energía'),
+    ('SLB',   'SLB (Schlumberger Limited)',          'Servicios petroleros'),
+    ('COP',   'ConocoPhillips',                      'Energía'),
+    -- Industria y defensa
+    ('CAT',   'Caterpillar Inc.',                    'Maquinaria'),
+    ('BA',    'Boeing Company',                      'Aeroespacial'),
+    ('GE',    'GE Aerospace',                        'Aeroespacial'),
+    ('DE',    'Deere & Company',                     'Maquinaria agrícola'),
+    ('LMT',   'Lockheed Martin Corporation',         'Defensa'),
+    ('RTX',   'RTX Corporation',                     'Defensa'),
+    -- Consumo
+    ('NKE',   'NIKE, Inc.',                          'Consumo'),
+    ('WMT',   'Walmart Inc.',                        'Retail'),
+    ('COST',  'Costco Wholesale Corporation',        'Retail'),
+    ('KO',    'Coca-Cola Company',                   'Bebidas'),
+    ('PEP',   'PepsiCo, Inc.',                       'Alimentos y bebidas'),
+    ('DIS',   'The Walt Disney Company',             'Entretenimiento')
+) AS t(ticker, nombre, sector)
+ON CONFLICT (ticker) DO UPDATE SET
+    nombre = EXCLUDED.nombre,
+    sector = EXCLUDED.sector;
 
 
 COMMIT;

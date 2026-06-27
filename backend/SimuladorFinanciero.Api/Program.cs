@@ -4,11 +4,18 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SimuladorFinanciero.Api.Infrastructure.Database;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.AlphaVantage;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
 using SimuladorFinanciero.Api.Repositories;
 using SimuladorFinanciero.Api.Services;
+using SimuladorFinanciero.Api.Services.BackgroundJobs;
+using SimuladorFinanciero.Api.Services.Catalogo;
 
 // snake_case PostgreSQL columns → PascalCase C# properties (e.g. id_usuario → IdUsuario)
 DefaultTypeMap.MatchNamesWithUnderscores = true;
+// DateOnly ↔ PostgreSQL DATE
+SqlMapper.AddTypeHandler(DateOnlyTypeHandler.Instance);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +25,24 @@ builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 // Auth
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Clientes de APIs externas (Singleton: mantienen cookies y tokens entre llamadas)
+builder.Services.AddSingleton<IBymaApiClient, BymaApiClient>();
+builder.Services.AddSingleton<IDoctaApiClient, DoctaApiClient>();
+builder.Services.AddSingleton<IAlphaVantageApiClient, AlphaVantageApiClient>();
+
+// Repositorios de catálogo
+builder.Services.AddSingleton<ILetraRepository, LetraRepository>();
+builder.Services.AddSingleton<IBonoRepository, BonoRepository>();
+builder.Services.AddSingleton<IAccionRepository, AccionRepository>();
+
+// Servicios de catálogo
+builder.Services.AddSingleton<ILetraCatalogoService, LetraCatalogoService>();
+builder.Services.AddSingleton<IBonoCatalogoService, BonoCatalogoService>();
+builder.Services.AddSingleton<IAccionCatalogoService, AccionCatalogoService>();
+
+// Job de refresco automático (cada 15 min en horario bursátil)
+builder.Services.AddHostedService<CatalogoRefreshJob>();
 
 builder.Services.AddControllers();
 

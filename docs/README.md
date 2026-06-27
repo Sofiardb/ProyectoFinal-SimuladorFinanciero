@@ -21,6 +21,7 @@ Los instrumentos soportados son: acciones (mercado estadounidense), bonos sobera
 | [01-modelos-financieros.md](01-modelos-financieros.md) | Modelo matemático de cada instrumento: GBM para acciones, DCF para bonos, interés simple para letras, capitalización compuesta para plazos fijos. Justificación de cada fórmula, suposiciones adoptadas y coherencia con la propuesta. |
 | [02-orquestador-montecarlo.md](02-orquestador-montecarlo.md) | Diseño del motor de simulación Monte Carlo: semilla y reproducibilidad, escenarios económicos, pre-generación de aleatoriedad, modelo de correlaciones, vectorización, métricas estadísticas, separación de portfolios ARS/USD. |
 | [03-base-datos.md](03-base-datos.md) | Decisiones del esquema PostgreSQL: estructura de tablas de portfolio, persistencia de resultados, reproducibilidad por semilla, manejo de métricas desagregadas por escenario. |
+| [04-apis-datos-mercado.md](04-apis-datos-mercado.md) | APIs externas de datos de mercado: BYMA Open Data (letras), Docta Capital (bonos soberanos), Alpha Vantage (acciones USA y S&P 500). Endpoints, campos relevantes, filtros y derivación de parámetros del motor. |
 
 La arquitectura general del sistema y las decisiones de stack tecnológico se encuentran en el [README.md raíz](../README.md).
 
