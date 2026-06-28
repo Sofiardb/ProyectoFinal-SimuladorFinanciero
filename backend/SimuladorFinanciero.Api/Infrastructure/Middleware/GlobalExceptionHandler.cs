@@ -11,13 +11,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) 
         Exception   exception,
         CancellationToken cancellationToken)
     {
-        var (status, title) = exception switch
-        {
-            NotFoundException    => (StatusCodes.Status404NotFound,           "No encontrado"),
-            ConflictException    => (StatusCodes.Status409Conflict,           "Conflicto"),
-            ExternalApiException => (StatusCodes.Status502BadGateway,         "Error de API externa"),
-            _                    => (StatusCodes.Status500InternalServerError, "Error interno del servidor")
-        };
+        var (status, title) = MapException(exception);
 
         if (status == StatusCodes.Status500InternalServerError)
             log.LogError(exception, "Excepción no controlada.");
@@ -33,4 +27,12 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) 
         await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
         return true;
     }
+
+    internal static (int Status, string Title) MapException(Exception exception) => exception switch
+    {
+        NotFoundException    => (StatusCodes.Status404NotFound,           "No encontrado"),
+        ConflictException    => (StatusCodes.Status409Conflict,           "Conflicto"),
+        ExternalApiException => (StatusCodes.Status502BadGateway,         "Error de API externa"),
+        _                    => (StatusCodes.Status500InternalServerError, "Error interno del servidor")
+    };
 }

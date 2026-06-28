@@ -68,29 +68,28 @@ public sealed class CatalogoRefreshJob : BackgroundService
         }
     }
 
-    /// <summary>
-    /// Calcula el tiempo hasta la próxima ejecución. Si la hora ya pasó hoy,
-    /// programa para el próximo día hábil (lunes a viernes).
-    /// </summary>
     private TimeSpan TiempoHastaProximaEjecucion()
     {
         var horaStr = _config.GetValue("CatalogoRefresh:HoraEjecucionArt", "11:30") ?? "11:30";
-        var hora    = TimeOnly.Parse(horaStr);
+        return CalcularDemora(DateTime.UtcNow, TimeOnly.Parse(horaStr), Tz);
+    }
 
-        var ahoraArt    = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Tz);
-        var candidata   = ahoraArt.Date.Add(hora.ToTimeSpan());
+    /// <summary>
+    /// Calcula el tiempo hasta la próxima ejecución dado un instante UTC.
+    /// Si la hora ya pasó hoy, programa para el próximo día hábil (lunes a viernes).
+    /// </summary>
+    internal static TimeSpan CalcularDemora(DateTime ahoraUtc, TimeOnly hora, TimeZoneInfo tz)
+    {
+        var ahoraLocal  = TimeZoneInfo.ConvertTimeFromUtc(ahoraUtc, tz);
+        var candidata   = ahoraLocal.Date.Add(hora.ToTimeSpan());
 
-        // Si la hora de hoy ya pasó, empezar desde mañana
-        if (ahoraArt >= candidata)
+        if (ahoraLocal >= candidata)
             candidata = candidata.AddDays(1);
 
-        // Avanzar hasta el próximo día hábil (saltar fines de semana)
         while (candidata.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             candidata = candidata.AddDays(1);
 
-        // Convertir de vuelta a UTC para calcular la diferencia
-        var candidataUtc = TimeZoneInfo.ConvertTimeToUtc(candidata, Tz);
-        return candidataUtc - DateTime.UtcNow;
+        return TimeZoneInfo.ConvertTimeToUtc(candidata, tz) - ahoraUtc;
     }
 
     private async Task EjecutarSeguroAsync(Func<Task> tarea, string nombre, CancellationToken ct)

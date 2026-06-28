@@ -30,18 +30,17 @@ jobs:
         working-directory: motor-simulacion
         run: pytest tests/ -v --tb=short
 
-  # Eliminar comentario cuando el backend tenga tests:
-  # dotnet-tests:
-  #   name: C# - Backend API
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-dotnet@v4
-  #       with:
-  #         dotnet-version: '8.x'
-  #     - name: Run tests
-  #       working-directory: backend
-  #       run: dotnet test --verbosity normal
+  dotnet-tests:
+    name: C# - Backend API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      - name: Run tests
+        working-directory: backend
+        run: dotnet test --verbosity normal
 
   # Eliminar comentario cuando el frontend tenga tests:
   # frontend-tests:

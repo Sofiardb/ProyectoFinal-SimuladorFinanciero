@@ -78,10 +78,10 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
         var serie    = preciosTicker.Where(p => p.Fecha >= corte).ToList();
         var spySerie = preciosSpy.Where(p => p.Fecha >= corte).ToList();
 
-        var retornosTicker = LogReturns(serie);
-        var retornosSpy    = LogReturns(spySerie);
+        var retornosTicker = GbmMath.LogReturns(serie);
+        var retornosSpy    = GbmMath.LogReturns(spySerie);
 
-        var (aligned, alignedSpy) = AlinearPorFecha(serie, spySerie, retornosTicker, retornosSpy);
+        var (aligned, alignedSpy) = GbmMath.AlinearPorFecha(serie, spySerie, retornosTicker, retornosSpy);
 
         if (aligned.Count < 50)
         {
@@ -98,9 +98,7 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
         double rho          = Correlacion(aligned, alignedSpy);
 
         var precioActual = serie[^1].PrecioAjustado;
-        var mesesDeDatos = (int)Math.Round(
-            (serie[^1].Fecha.ToDateTime(TimeOnly.MinValue) - serie[0].Fecha.ToDateTime(TimeOnly.MinValue))
-            .TotalDays / 30.44);
+        var mesesDeDatos = GbmMath.CalcularMesesDeDatos(serie[0].Fecha, serie[^1].Fecha);
 
         await _repo.UpsertGbmParamsAsync(new AccionUpsertData
         {
@@ -131,8 +129,6 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
 
     public Task<AccionResponse?> ObtenerPorIdAsync(long id, CancellationToken ct = default) =>
         _repo.ObtenerPorIdAsync(id, ct);
-
-    // ── Helpers numéricos ─────────────────────────────────────────────────────
 
     private async Task<IReadOnlyList<(DateOnly Fecha, decimal PrecioAjustado)>> ObtenerSpxAsync(
         CancellationToken ct)
