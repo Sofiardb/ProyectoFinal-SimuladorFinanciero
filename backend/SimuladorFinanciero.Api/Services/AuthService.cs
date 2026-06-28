@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using SimuladorFinanciero.Api.DTOs.Auth;
+using SimuladorFinanciero.Api.Infrastructure.Exceptions;
 using SimuladorFinanciero.Api.Models;
 using SimuladorFinanciero.Api.Repositories;
 
@@ -28,10 +29,10 @@ public class AuthService : IAuthService
     public async Task<AuthResponse> RegistrarAsync(RegisterRequest request)
     {
         if (await _usuarios.BuscarPorEmailAsync(request.Email) is not null)
-            throw new InvalidOperationException("El email ya está registrado.");
+            throw new ConflictException("El email ya está registrado.");
 
         if (await _usuarios.BuscarPorUsernameAsync(request.Username) is not null)
-            throw new InvalidOperationException("El nombre de usuario ya está en uso.");
+            throw new ConflictException("El nombre de usuario ya está en uso.");
 
         var usuario = new Usuario
         {

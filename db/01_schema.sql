@@ -576,6 +576,16 @@ ON CONFLICT (ticker) DO UPDATE SET
     sector = EXCLUDED.sector;
 
 
+INSERT INTO escenario_economico (id_tipo_escenario, inflacion_mensual_min, inflacion_mensual_max, vigente_desde)
+SELECT te.id_tipo_escenario, v.min, v.max, CURRENT_DATE
+FROM (VALUES
+    ('FAVORABLE',    0.01,  0.025),
+    ('MODERADO',     0.025, 0.05 ),
+    ('DESFAVORABLE', 0.05,  0.10 )
+) AS v(codigo, min, max)
+JOIN tipo_escenario te ON te.codigo = v.codigo;
+
+
 -- Para crear el primer usuario administrador:
 --   1. Registrarse normalmente vía POST /auth/register
 --   2. Ejecutar: UPDATE usuario SET es_admin = TRUE WHERE username = '<tu_username>';

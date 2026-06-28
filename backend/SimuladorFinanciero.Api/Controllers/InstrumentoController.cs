@@ -1,26 +1,32 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SimuladorFinanciero.Api.DTOs.Instrumentos;
+using SimuladorFinanciero.Api.Repositories;
 using SimuladorFinanciero.Api.Services.Catalogo;
 
 namespace SimuladorFinanciero.Api.Controllers;
 
 [ApiController]
 [Route("instrumentos")]
+[Authorize]
 [Produces("application/json")]
 public sealed class InstrumentoController : ControllerBase
 {
     private readonly ILetraCatalogoService  _letras;
     private readonly IBonoCatalogoService   _bonos;
     private readonly IAccionCatalogoService _acciones;
+    private readonly IReferenciaRepository  _referencia;
 
     public InstrumentoController(
         ILetraCatalogoService  letras,
         IBonoCatalogoService   bonos,
-        IAccionCatalogoService acciones)
+        IAccionCatalogoService acciones,
+        IReferenciaRepository  referencia)
     {
-        _letras   = letras;
-        _bonos    = bonos;
-        _acciones = acciones;
+        _letras     = letras;
+        _bonos      = bonos;
+        _acciones   = acciones;
+        _referencia = referencia;
     }
 
     // ── LETRAS ────────────────────────────────────────────────────────────────
@@ -76,4 +82,12 @@ public sealed class InstrumentoController : ControllerBase
         var accion = await _acciones.ObtenerPorIdAsync(id, ct);
         return accion is null ? NotFound() : Ok(accion);
     }
+
+    // ── TIPOS DE PLAZO FIJO ───────────────────────────────────────────────────
+
+    /// <summary>Lista los tipos de plazo fijo disponibles (TRADICIONAL, UVA).</summary>
+    [HttpGet("tipos-plazo-fijo")]
+    [ProducesResponseType<IReadOnlyList<TipoPlazoFijoResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTiposPlazoFijo(CancellationToken ct) =>
+        Ok(await _referencia.ObtenerTiposPlazoFijoAsync(ct));
 }

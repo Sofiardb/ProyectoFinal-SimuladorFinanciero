@@ -8,6 +8,8 @@ using SimuladorFinanciero.Api.Infrastructure.Database;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.AlphaVantage;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
+using SimuladorFinanciero.Api.Infrastructure.Middleware;
+using SimuladorFinanciero.Api.Infrastructure.Swagger;
 using SimuladorFinanciero.Api.Repositories;
 using SimuladorFinanciero.Api.Services;
 using SimuladorFinanciero.Api.Services.BackgroundJobs;
@@ -19,6 +21,9 @@ DefaultTypeMap.MatchNamesWithUnderscores = true;
 SqlMapper.AddTypeHandler(DateOnlyTypeHandler.Instance);
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Dapper + Npgsql
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
@@ -33,6 +38,7 @@ builder.Services.AddSingleton<IDoctaApiClient, DoctaApiClient>();
 builder.Services.AddSingleton<IAlphaVantageApiClient, AlphaVantageApiClient>();
 
 // Repositorios de catálogo
+builder.Services.AddSingleton<IReferenciaRepository, ReferenciaRepository>();
 builder.Services.AddSingleton<ILetraRepository, LetraRepository>();
 builder.Services.AddSingleton<IBonoRepository, BonoRepository>();
 builder.Services.AddSingleton<IAccionRepository, AccionRepository>();
@@ -50,6 +56,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    c.OperationFilter<SecurityResponsesFilter>();
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Simulador Financiero API",
@@ -136,6 +143,7 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // Swagger en la raíz: http://localhost:5000/
 });
 
+app.UseExceptionHandler();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();

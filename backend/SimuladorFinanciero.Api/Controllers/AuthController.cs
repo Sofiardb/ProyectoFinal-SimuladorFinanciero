@@ -15,31 +15,29 @@ public class AuthController : ControllerBase
     /// <summary>Registra un nuevo usuario y devuelve un token JWT.</summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        try
-        {
-            var response = await _auth.RegistrarAsync(request);
-            return StatusCode(StatusCodes.Status201Created, response);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        var response = await _auth.RegistrarAsync(request);
+        return StatusCode(StatusCodes.Status201Created, response);
     }
 
     /// <summary>Valida credenciales y devuelve un token JWT.</summary>
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(LoginRequest request)
     {
         var response = await _auth.LoginAsync(request);
         if (response is null)
-            return Unauthorized(new { error = "Credenciales incorrectas." });
+            return Unauthorized(new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title  = "No autorizado",
+                Detail = "Credenciales incorrectas."
+            });
 
         return Ok(response);
     }
