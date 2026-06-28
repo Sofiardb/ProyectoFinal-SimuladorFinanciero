@@ -37,7 +37,8 @@ CREATE TABLE usuario (
     apellido           VARCHAR(100),
     fecha_registro     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     fecha_ultimo_login TIMESTAMPTZ,
-    activo             BOOLEAN      NOT NULL DEFAULT TRUE
+    activo             BOOLEAN      NOT NULL DEFAULT TRUE,
+    es_admin           BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
 COMMENT ON TABLE  usuario IS 'Usuarios registrados en el simulador.';
@@ -122,7 +123,7 @@ CREATE TABLE accion (
     sector                  VARCHAR(100),
     id_indice_mercado       SMALLINT     NOT NULL REFERENCES indice_mercado(id_indice_mercado),
     id_moneda               SMALLINT     NOT NULL REFERENCES moneda(id_moneda),
-    -- Parámetros del modelo GBM (escala mensual)
+    -- Parámetros del modelo GBM (escala diaria)
     mu_retorno_esperado     NUMERIC(14,10),
     sigma_volatilidad       NUMERIC(14,10),
     rho_correlacion_indice  NUMERIC(8,6) CHECK (rho_correlacion_indice BETWEEN -1 AND 1),
@@ -573,6 +574,11 @@ FROM (VALUES
 ON CONFLICT (ticker) DO UPDATE SET
     nombre = EXCLUDED.nombre,
     sector = EXCLUDED.sector;
+
+
+-- Para crear el primer usuario administrador:
+--   1. Registrarse normalmente vía POST /auth/register
+--   2. Ejecutar: UPDATE usuario SET es_admin = TRUE WHERE username = '<tu_username>';
 
 
 COMMIT;

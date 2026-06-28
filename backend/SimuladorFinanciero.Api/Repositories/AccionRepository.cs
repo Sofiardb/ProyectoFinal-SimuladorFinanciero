@@ -13,7 +13,6 @@ public sealed class AccionUpsertData
     public required decimal SigmaVolatilidad      { get; init; }
     public required decimal RhoCorrelacionIndice  { get; init; }
     public required decimal PrecioActual          { get; init; }
-    public required int     MesesDeDatos          { get; init; }
 }
 
 public interface IAccionRepository
@@ -42,7 +41,7 @@ public sealed class AccionRepository : IAccionRepository
                    im.id_indice_mercado,
                    m.id_moneda,
                    @MuRetornoEsperado, @SigmaVolatilidad, @RhoCorrelacionIndice,
-                   @PrecioActual, NOW(), NOW(), @MesesDeDatos, TRUE
+                   @PrecioActual, NOW(), NOW(), TRUE
             FROM indice_mercado im
             CROSS JOIN moneda m
             WHERE im.codigo = 'SP500'
@@ -54,7 +53,6 @@ public sealed class AccionRepository : IAccionRepository
                 precio_actual           = EXCLUDED.precio_actual,
                 fecha_precio_actual     = EXCLUDED.fecha_precio_actual,
                 fecha_estimacion_params = EXCLUDED.fecha_estimacion_params,
-                meses_de_datos          = EXCLUDED.meses_de_datos,
                 activo                  = TRUE
             """;
         await conn.ExecuteAsync(new CommandDefinition(sql, data, cancellationToken: ct));
@@ -75,7 +73,7 @@ public sealed class AccionRepository : IAccionRepository
         const string sql = """
             SELECT id_accion, ticker, nombre, sector,
                    mu_retorno_esperado, sigma_volatilidad, rho_correlacion_indice,
-                   precio_actual, fecha_precio_actual, fecha_estimacion_params, meses_de_datos
+                   precio_actual, fecha_precio_actual, fecha_estimacion_params
             FROM accion
             WHERE activo = TRUE
             ORDER BY ticker
@@ -90,7 +88,7 @@ public sealed class AccionRepository : IAccionRepository
         const string sql = """
             SELECT id_accion, ticker, nombre, sector,
                    mu_retorno_esperado, sigma_volatilidad, rho_correlacion_indice,
-                   precio_actual, fecha_precio_actual, fecha_estimacion_params, meses_de_datos
+                   precio_actual, fecha_precio_actual, fecha_estimacion_params
             FROM accion
             WHERE id_accion = @id
             """;
@@ -121,7 +119,7 @@ public sealed class AccionRepository : IAccionRepository
     private static AccionResponse ToResponse(AccionRow r) => new(
         r.IdAccion, r.Ticker, r.Nombre, r.Sector,
         r.MuRetornoEsperado, r.SigmaVolatilidad, r.RhoCorrelacionIndice,
-        r.PrecioActual, r.FechaPrecioActual, r.FechaEstimacionParams, r.MesesDeDatos);
+        r.PrecioActual, r.FechaPrecioActual, r.FechaEstimacionParams);
 
     private sealed class AccionRow
     {
@@ -135,6 +133,5 @@ public sealed class AccionRepository : IAccionRepository
         public decimal? PrecioActual           { get; set; }
         public DateTimeOffset? FechaPrecioActual     { get; set; }
         public DateTimeOffset? FechaEstimacionParams { get; set; }
-        public int?            MesesDeDatos          { get; set; }
     }
 }

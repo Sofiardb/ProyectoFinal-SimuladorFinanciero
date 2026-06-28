@@ -63,6 +63,12 @@ public interface IDoctaApiClient
     Task<IReadOnlyList<DoctaInstrumentoDto>> ObtenerInstrumentosAsync(string subAssetClass, CancellationToken ct = default);
     Task<DoctaYieldDto?>                     ObtenerYieldAsync(string ticker, CancellationToken ct = default);
     Task<IReadOnlyList<DoctaFlujoCajaDto>>   ObtenerFlujosCajaAsync(string ticker, CancellationToken ct = default);
+
+    /// <summary>
+    /// Verifica credenciales obteniendo un token y haciendo una llamada mínima al catálogo.
+    /// Útil para diagnosticar conectividad sin consumir requests del plan.
+    /// </summary>
+    Task<(bool Ok, string Detalle)> VerificarConexionAsync(CancellationToken ct = default);
 }
 
 // ── Implementación ────────────────────────────────────────────────────────────
@@ -120,6 +126,32 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<DoctaFlujoCajaResponseDto>(cancellationToken: ct);
         return result?.Data ?? [];
+    }
+
+    public async Task<(bool Ok, string Detalle)> VerificarConexionAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await AsegurarTokenAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Error al obtener token: {ex.Message}");
+        }
+
+        try
+        {
+            var url      = "/api/v1/bonds/instruments?sub_asset_class=FIXED_RATE&limit=1";
+            var response = await _http.GetAsync(url, ct);
+            if (!response.IsSuccessStatusCode)
+                return (false, $"Token OK, pero el catálogo devolvió {(int)response.StatusCode}.");
+
+            return (true, "Token y acceso al catálogo verificados correctamente.");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Token OK, pero error al consultar el catálogo: {ex.Message}");
+        }
     }
 
     private async Task AsegurarTokenAsync(CancellationToken ct)

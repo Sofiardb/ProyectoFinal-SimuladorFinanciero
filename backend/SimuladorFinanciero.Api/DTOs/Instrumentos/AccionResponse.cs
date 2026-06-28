@@ -10,6 +10,5 @@ public record AccionResponse(
     decimal?        RhoCorrelacionIndice,
     decimal?        PrecioActual,
     DateTimeOffset? FechaPrecioActual,
-    DateTimeOffset? FechaEstimacionParams,
-    int?            MesesDeDatos
+    DateTimeOffset? FechaEstimacionParams
 );

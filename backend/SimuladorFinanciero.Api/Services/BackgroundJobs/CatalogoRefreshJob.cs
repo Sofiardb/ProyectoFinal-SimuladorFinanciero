@@ -2,23 +2,21 @@ using SimuladorFinanciero.Api.Services.Catalogo;
 
 namespace SimuladorFinanciero.Api.Services.BackgroundJobs;
 
+/// <summary>
+/// Job diario que actualiza el catálogo de instrumentos una vez por día hábil,
+/// 30 minutos después de la apertura bursátil (configurable vía CatalogoRefresh:HoraEjecucionArt).
+/// Orden: letras → bonos yields → bonos flujos → acciones GBM.
+/// </summary>
 public sealed class CatalogoRefreshJob : BackgroundService
 {
-    // Zona horaria de Argentina (UTC-3, sin cambio de horario)
     private static readonly TimeZoneInfo Tz =
         TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
-
-    private static readonly TimeOnly AperturaArt = new(11, 0);
-    private static readonly TimeOnly CierreArt   = new(17, 0);
 
     private readonly ILetraCatalogoService  _letras;
     private readonly IBonoCatalogoService   _bonos;
     private readonly IAccionCatalogoService _acciones;
     private readonly IConfiguration         _config;
     private readonly ILogger<CatalogoRefreshJob> _log;
-
-    private DateTime _ultimaActFlujos = DateTime.MinValue;
-    private DateTime _ultimaActGbm    = DateTime.MinValue;
 
     public CatalogoRefreshJob(
         ILetraCatalogoService  letras,
@@ -34,41 +32,65 @@ public sealed class CatalogoRefreshJob : BackgroundService
         _log      = log;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var intervalMin = _config.GetValue("CatalogoRefresh:IntervalMinutos", 15);
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(intervalMin));
-
-        _log.LogInformation("CatalogoRefreshJob iniciado. Intervalo: {Min} min.", intervalMin);
-
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        if (!_config.GetValue("CatalogoRefresh:Habilitado", true))
         {
-            if (!EsDentroHorarioBursatil())
-            {
-                _log.LogDebug("CatalogoRefreshJob: fuera de horario bursátil, se omite el ciclo.");
-                continue;
-            }
-
-            _log.LogInformation("CatalogoRefreshJob: iniciando ciclo de actualización.");
-
-            // Precios y yields — cada 15 min en horario bursátil
-            await EjecutarSeguroAsync(() => _letras.RefrescarPreciosAsync(stoppingToken), "letras", stoppingToken);
-            await EjecutarSeguroAsync(() => _bonos.RefrescarYieldsAsync(stoppingToken),  "bonos yields", stoppingToken);
-
-            // Flujos de caja — una vez cada 24 hs
-            if ((DateTime.UtcNow - _ultimaActFlujos).TotalHours >= 24)
-            {
-                await EjecutarSeguroAsync(() => _bonos.RefrescarFlujosCajaAsync(stoppingToken), "bonos flujos", stoppingToken);
-                _ultimaActFlujos = DateTime.UtcNow;
-            }
-
-            // Parámetros GBM de acciones — una vez por semana
-            if ((DateTime.UtcNow - _ultimaActGbm).TotalDays >= 7)
-            {
-                await EjecutarSeguroAsync(() => _acciones.RecalcularGbmTodosAsync(stoppingToken), "acciones GBM", stoppingToken);
-                _ultimaActGbm = DateTime.UtcNow;
-            }
+            _log.LogInformation("CatalogoRefreshJob deshabilitado por configuración (CatalogoRefresh:Habilitado=false).");
+            return Task.CompletedTask;
         }
+
+        return EjecutarLoopAsync(stoppingToken);
+    }
+
+    private async Task EjecutarLoopAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var demora = TiempoHastaProximaEjecucion();
+            _log.LogInformation(
+                "CatalogoRefreshJob: próxima actualización en {Horas:F1} horas ({Hora} ART).",
+                demora.TotalHours,
+                (TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Tz) + demora).ToString("dd/MM HH:mm"));
+
+            await Task.Delay(demora, stoppingToken);
+
+            if (stoppingToken.IsCancellationRequested) break;
+
+            _log.LogInformation("CatalogoRefreshJob: iniciando actualización diaria del catálogo.");
+
+            await EjecutarSeguroAsync(() => _letras.RefrescarPreciosAsync(stoppingToken),        "letras precios",  stoppingToken);
+            await EjecutarSeguroAsync(() => _bonos.RefrescarYieldsAsync(stoppingToken),          "bonos yields",    stoppingToken);
+            await EjecutarSeguroAsync(() => _bonos.RefrescarFlujosCajaAsync(stoppingToken),      "bonos flujos",    stoppingToken);
+            await EjecutarSeguroAsync(() => _acciones.RecalcularGbmTodosAsync(stoppingToken),    "acciones GBM",    stoppingToken);
+
+            _log.LogInformation("CatalogoRefreshJob: actualización diaria completada.");
+        }
+    }
+
+    /// <summary>
+    /// Calcula el tiempo hasta la próxima ejecución. Si la hora ya pasó hoy,
+    /// programa para el próximo día hábil (lunes a viernes).
+    /// </summary>
+    private TimeSpan TiempoHastaProximaEjecucion()
+    {
+        var horaStr = _config.GetValue("CatalogoRefresh:HoraEjecucionArt", "11:30") ?? "11:30";
+        var hora    = TimeOnly.Parse(horaStr);
+
+        var ahoraArt    = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Tz);
+        var candidata   = ahoraArt.Date.Add(hora.ToTimeSpan());
+
+        // Si la hora de hoy ya pasó, empezar desde mañana
+        if (ahoraArt >= candidata)
+            candidata = candidata.AddDays(1);
+
+        // Avanzar hasta el próximo día hábil (saltar fines de semana)
+        while (candidata.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            candidata = candidata.AddDays(1);
+
+        // Convertir de vuelta a UTC para calcular la diferencia
+        var candidataUtc = TimeZoneInfo.ConvertTimeToUtc(candidata, Tz);
+        return candidataUtc - DateTime.UtcNow;
     }
 
     private async Task EjecutarSeguroAsync(Func<Task> tarea, string nombre, CancellationToken ct)
@@ -85,14 +107,5 @@ public sealed class CatalogoRefreshJob : BackgroundService
         {
             _log.LogError(ex, "CatalogoRefreshJob: error en '{Nombre}'.", nombre);
         }
-    }
-
-    private static bool EsDentroHorarioBursatil()
-    {
-        var ahoraArt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Tz);
-        var ahora    = TimeOnly.FromDateTime(ahoraArt);
-        return ahoraArt.DayOfWeek is >= DayOfWeek.Monday and <= DayOfWeek.Friday
-            && ahora >= AperturaArt
-            && ahora <= CierreArt;
     }
 }

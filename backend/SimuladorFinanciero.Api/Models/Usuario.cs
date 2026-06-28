@@ -10,5 +10,6 @@ public class Usuario
     public string? Apellido { get; set; }
     public DateTimeOffset FechaRegistro { get; set; }
     public DateTimeOffset? FechaUltimoLogin { get; set; }
-    public bool Activo { get; set; }
+    public bool Activo  { get; set; }
+    public bool EsAdmin { get; set; }
 }

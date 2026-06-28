@@ -70,12 +70,15 @@ public class AuthService : IAuthService
         var expMinutes = int.TryParse(_config["Jwt:ExpiresInMinutes"], out var m) ? m : 60;
         var expiresAt  = DateTimeOffset.UtcNow.AddMinutes(expMinutes);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   usuario.IdUsuario.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, usuario.Email ?? ""),
-            new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub,   usuario.IdUsuario.ToString()),
+            new(JwtRegisteredClaimNames.Email, usuario.Email ?? ""),
+            new(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString())
         };
+
+        if (usuario.EsAdmin)
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
 
         var token = new JwtSecurityToken(
             issuer:             _config["Jwt:Issuer"],
@@ -90,7 +93,8 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             Email     = usuario.Email,
             Username  = usuario.Username,
-            Nombre    = usuario.Nombre
+            Nombre    = usuario.Nombre,
+            EsAdmin   = usuario.EsAdmin
         };
     }
 }
