@@ -29,14 +29,14 @@ public class PortfolioServiceTests
 
     // ── Datos de prueba ───────────────────────────────────────────────────────
 
-    private static Portfolio PortfolioActivo(int idPerfil = 2) => new()
+    private static Portfolio PortfolioActivo(int idPerfil = 2, decimal? capitalInicial = null) => new()
     {
         IdPortfolio       = IdPortfolio,
         IdUsuario         = IdUsuario,
         IdPerfilRiesgo    = idPerfil,
         IdMonedaBase      = 1,
         Nombre            = "Mi Portfolio",
-        CapitalInicial    = 100_000m,
+        CapitalInicial    = capitalInicial,
         HorizonteMeses    = 12,
         FechaCreacion     = DateTimeOffset.UtcNow,
         FechaModificacion = DateTimeOffset.UtcNow,
@@ -50,7 +50,7 @@ public class PortfolioServiceTests
         IdPerfilRiesgo    = 2,
         IdMonedaBase      = 1,
         Nombre            = "Mi Portfolio",
-        CapitalInicial    = 100_000m,
+        CapitalInicial    = null,
         HorizonteMeses    = 12,
         FechaCreacion     = DateTimeOffset.UtcNow,
         FechaModificacion = DateTimeOffset.UtcNow,
@@ -180,7 +180,7 @@ public class PortfolioServiceTests
              .Returns(false);
         _repo.ActualizarAsync(IdPortfolio, IdUsuario,
              Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<int>(), Arg.Any<int>(),
-             Arg.Any<decimal>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+             Arg.Any<decimal?>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
              .Returns(resumen);
 
         var result = await _svc.ActualizarAsync(IdPortfolio, IdUsuario, req);
@@ -780,6 +780,93 @@ public class PortfolioServiceTests
         var act = () => _svc.EliminarPlazoFijoAsync(IdPortfolio, IdUsuario, IdPlazoFijo);
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage($"*Plazo fijo {IdPlazoFijo}*");
+    }
+
+    // ── Presupuesto ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task AgregarAccion_SinPresupuesto_OmiteValidacion()
+    {
+        // CapitalInicial = null → budget check skipped, no call to ObtenerTotalInvertidoAsync
+        var req    = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10m, PrecioCompra = 180m };
+        var accion = AccionEjemplo();
+        ConfigurarAccionValida(sigmaAccion: 0.04m, sigmaMax: 0.10m);
+        _repo.ExisteAccionEnPortfolioAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>()).Returns(false);
+        _repo.AgregarAccionAsync(IdPortfolio, IdAccion, 10m, 180m, Arg.Any<CancellationToken>()).Returns(accion);
+
+        await _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
+
+        await _repo.DidNotReceive().ObtenerTotalInvertidoAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AgregarAccion_ExcedePresupuesto_LanzaValidationException()
+    {
+        var req = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10m, PrecioCompra = 180m };
+        // Portfolio con presupuesto de 1000, ya invertido 900 → añadir 1800 lo excede
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo(idPerfil: 2, capitalInicial: 1_000m));
+        (bool Activa, decimal? Sigma)? info = (true, 0.04m);
+        _repo.ObtenerInfoAccionAsync(IdAccion, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(info));
+        _repo.ObtenerSigmaMaxAsync(2, Arg.Any<CancellationToken>()).Returns(0.10m);
+        _repo.ExisteAccionEnPortfolioAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(900m);
+
+        var act = () => _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*presupuesto*");
+    }
+
+    [Fact]
+    public async Task AgregarBono_ExcedePresupuesto_LanzaValidationException()
+    {
+        var req = new AgregarBonoRequest { IdBono = IdBono, Cantidad = 100m, PrecioCompra = 92m };
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo(capitalInicial: 5_000m));
+        _repo.ExisteBonoActivoAsync(IdBono, Arg.Any<CancellationToken>()).Returns(true);
+        _repo.ExisteBonoEnPortfolioAsync(IdPortfolio, IdBono, Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(0m);
+        // 0 + 100 * 92 = 9200 > 5000
+
+        var act = () => _svc.AgregarBonoAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*presupuesto*");
+    }
+
+    [Fact]
+    public async Task AgregarPlazoFijo_ExcedePresupuesto_LanzaValidationException()
+    {
+        var req = new AgregarPlazoFijoRequest
+        {
+            IdTipoPlazoFijo   = 1, IdMoneda = 1, EntidadFinanciera = "Banco",
+            MontoInvertido    = 500_000m, TnaPactada = 0.40m,
+            FechaInicio       = new DateOnly(2024, 1, 15), DuracionMeses = 3
+        };
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo(capitalInicial: 100_000m));
+        _repo.ExisteTipoPlazoFijoAsync(1, Arg.Any<CancellationToken>()).Returns(true);
+        _repo.ExisteMonedaAsync(1, Arg.Any<CancellationToken>()).Returns(true);
+        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(0m);
+        // 0 + 500_000 > 100_000
+
+        var act = () => _svc.AgregarPlazoFijoAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*presupuesto*");
+    }
+
+    [Fact]
+    public async Task ActualizarPortfolio_ReducirPresupuestoBajoTotalInvertido_LanzaValidationException()
+    {
+        var req = new ActualizarPortfolioRequest { CapitalInicial = 500m };
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo(capitalInicial: 100_000m));
+        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(10_000m);
+        // Nuevo presupuesto 500 < 10_000 ya invertido
+
+        var act = () => _svc.ActualizarAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*presupuesto*");
     }
 
     // ── Setup helpers ─────────────────────────────────────────────────────────

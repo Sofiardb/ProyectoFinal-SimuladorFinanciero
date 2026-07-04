@@ -1,0 +1,226 @@
+using System.Data;
+using System.Text.Json;
+using FluentAssertions;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+using NSubstitute.ReturnsExtensions;
+using SimuladorFinanciero.Api.DTOs.Simulacion;
+using SimuladorFinanciero.Api.Infrastructure.Exceptions;
+using SimuladorFinanciero.Api.Models;
+using SimuladorFinanciero.Api.Repositories;
+using SimuladorFinanciero.Api.Services;
+
+namespace SimuladorFinanciero.Tests.Simulacion;
+
+public class SimulacionServiceTests
+{
+    private readonly IPortfolioRepository  _portfolioRepo;
+    private readonly ISimulacionRepository _simRepo;
+    private readonly IMotorClientService   _motor;
+    private readonly SimulacionService     _svc;
+
+    private const long IdUsuario   = 42;
+    private const long IdPortfolio = 1;
+
+    public SimulacionServiceTests()
+    {
+        _portfolioRepo = Substitute.For<IPortfolioRepository>();
+        _simRepo       = Substitute.For<ISimulacionRepository>();
+        _motor         = Substitute.For<IMotorClientService>();
+        _svc           = new SimulacionService(_portfolioRepo, _simRepo, _motor);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static Portfolio PortfolioActivo() => new()
+    {
+        IdPortfolio       = IdPortfolio,
+        IdUsuario         = IdUsuario,
+        HorizonteMeses    = 12,
+        FechaCreacion     = DateTimeOffset.UtcNow,
+        FechaModificacion = DateTimeOffset.UtcNow,
+        Estado            = "ACTIVO"
+    };
+
+    private static EscenarioSimulacion[] EscenariosVigentes() =>
+    [
+        new(1, "FAVORABLE",    0.01m, 0.025m),
+        new(2, "MODERADO",     0.025m, 0.05m),
+        new(3, "DESFAVORABLE", 0.05m, 0.10m)
+    ];
+
+    private static AccionTenenciaSimulacion AccionConGbm(long id = 5) => new(
+        id, "AAPL", 10m, 180m, 0.15m, 0.30m, 0.60m);
+
+    private static TenenciasSimulacionData TenenciasConUnaAccion(AccionTenenciaSimulacion? accion = null) =>
+        new([accion ?? AccionConGbm()], [], [], []);
+
+    private static TenenciasSimulacionData TenenciasVacias() =>
+        new([], [], [], []);
+
+    private static JsonElement MotorResponseValido()
+    {
+        const string json = """
+            {
+              "semilla": 4242,
+              "portfolio_ars": {
+                "patrimonio":          { "global": { "media": [0,0], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
+                "ganancias_nominales": { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} },
+                "ganancias_reales":    { "global": { "media": [0,50], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
+                "prob_perdida":        { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} }
+              },
+              "portfolio_usd": {
+                "patrimonio":          { "global": { "media": [0,1800], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,1500], "maximo": [0,2200] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
+                "ganancias_nominales": { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} },
+                "ganancias_reales":    { "global": { "media": [0,200], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
+                "prob_perdida":        { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} }
+              },
+              "instrumentos": {}
+            }
+            """;
+        return JsonSerializer.Deserialize<JsonElement>(json);
+    }
+
+    private void ConfigurarTransaccionMock()
+    {
+        _simRepo.ExecuteInTransaccionAsync(
+                Arg.Any<Func<IDbConnection, IDbTransaction, CancellationToken, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                var func = (Func<IDbConnection, IDbTransaction, CancellationToken, Task>)ci[0];
+                var token = (CancellationToken)ci[1];
+                return func(Substitute.For<IDbConnection>(), Substitute.For<IDbTransaction>(), token);
+            });
+
+        _simRepo.InsertSimulacionAsync(
+                Arg.Any<InsertSimulacionData>(),
+                Arg.Any<IDbConnection>(),
+                Arg.Any<IDbTransaction>(),
+                Arg.Any<CancellationToken>())
+            .Returns(99L);
+    }
+
+    // ── Tests ─────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Simular_PortfolioNoExiste_LanzaNotFoundException()
+    {
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .ReturnsNull();
+
+        var act = () => _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage($"*{IdPortfolio}*");
+    }
+
+    [Fact]
+    public async Task Simular_PortfolioVacio_LanzaValidationException()
+    {
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .Returns(PortfolioActivo());
+        _simRepo.ObtenerTenenciasParaSimulacionAsync(IdPortfolio, default)
+            .Returns(TenenciasVacias());
+        _simRepo.ObtenerEscenariosVigentesAsync(default)
+            .Returns(EscenariosVigentes());
+
+        var act = () => _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*no tiene instrumentos*");
+    }
+
+    [Fact]
+    public async Task Simular_AccionSinParametrosGBM_LanzaValidationException()
+    {
+        var accionSinGbm = new AccionTenenciaSimulacion(5, "AAPL", 10m, 180m, null, null, null);
+
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .Returns(PortfolioActivo());
+        _simRepo.ObtenerTenenciasParaSimulacionAsync(IdPortfolio, default)
+            .Returns(TenenciasConUnaAccion(accionSinGbm));
+        _simRepo.ObtenerEscenariosVigentesAsync(default)
+            .Returns(EscenariosVigentes());
+
+        var act = () => _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*GBM*AAPL*");
+    }
+
+    [Fact]
+    public async Task Simular_InstrumentoVencido_LanzaValidationException()
+    {
+        var letraVencida = new LetraTenenciaSimulacion(
+            7, "lecap", 100m, 98m, 0.50m,
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-10)));
+
+        var tenencias = new TenenciasSimulacionData([], [], [letraVencida], []);
+
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .Returns(PortfolioActivo());
+        _simRepo.ObtenerTenenciasParaSimulacionAsync(IdPortfolio, default)
+            .Returns(tenencias);
+        _simRepo.ObtenerEscenariosVigentesAsync(default)
+            .Returns(EscenariosVigentes());
+
+        var act = () => _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("*vencido*letra_7*");
+    }
+
+    [Fact]
+    public async Task Simular_MotorFalla_LanzaExternalApiException()
+    {
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .Returns(PortfolioActivo());
+        _simRepo.ObtenerTenenciasParaSimulacionAsync(IdPortfolio, default)
+            .Returns(TenenciasConUnaAccion());
+        _simRepo.ObtenerEscenariosVigentesAsync(default)
+            .Returns(EscenariosVigentes());
+        _motor.SimularAsync(Arg.Any<object>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new ExternalApiException("Motor de simulación no disponible o devolvió error. Status: 500."));
+
+        var act = () => _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+
+        await act.Should().ThrowAsync<ExternalApiException>();
+    }
+
+    [Fact]
+    public async Task Simular_HappyPath_RetornaSimulacionResumen()
+    {
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .Returns(PortfolioActivo());
+        _simRepo.ObtenerTenenciasParaSimulacionAsync(IdPortfolio, default)
+            .Returns(TenenciasConUnaAccion());
+        _simRepo.ObtenerEscenariosVigentesAsync(default)
+            .Returns(EscenariosVigentes());
+        _motor.SimularAsync(Arg.Any<object>(), Arg.Any<CancellationToken>())
+            .Returns(MotorResponseValido());
+        ConfigurarTransaccionMock();
+
+        var result = await _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+
+        result.Should().NotBeNull();
+        result.IdSimulacion.Should().Be(99L);
+        result.IdPortfolio.Should().Be(IdPortfolio);
+        result.HorizonteMeses.Should().Be(12);
+        result.NumTrayectorias.Should().Be(1000);
+
+        await _simRepo.Received(1).InsertSimulacionAsync(
+            Arg.Any<InsertSimulacionData>(),
+            Arg.Any<IDbConnection>(),
+            Arg.Any<IDbTransaction>(),
+            Arg.Any<CancellationToken>());
+
+        await _simRepo.Received(1).InsertResultadosAsync(
+            99L,
+            12,
+            Arg.Any<JsonElement>(),
+            Arg.Any<IDbConnection>(),
+            Arg.Any<IDbTransaction>(),
+            Arg.Any<CancellationToken>());
+    }
+}

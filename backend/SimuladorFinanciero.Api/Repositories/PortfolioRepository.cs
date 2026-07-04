@@ -25,7 +25,8 @@ public interface IPortfolioRepository
     Task<PortfolioDetalleResponse?> ObtenerDetalleAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
     Task<Portfolio?> ObtenerCabeceraAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
     Task<PortfolioResumenResponse> CrearAsync(long idUsuario, CrearPortfolioRequest req, CancellationToken ct = default);
-    Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default);
+    Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default);
+    Task<decimal> ObtenerTotalInvertidoAsync(long idPortfolio, CancellationToken ct = default);
     Task<bool> EliminarAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
 
     // Validaciones de catálogo
@@ -157,18 +158,18 @@ public sealed class PortfolioRepository : IPortfolioRepository
 
     private sealed class PortfolioHeaderRow
     {
-        public long    IdPortfolio        { get; set; }
-        public string  Nombre             { get; set; } = "";
-        public string? Descripcion        { get; set; }
-        public int     IdPerfilRiesgo     { get; set; }
-        public string  NombrePerfilRiesgo { get; set; } = "";
-        public int     IdMonedaBase       { get; set; }
-        public string  CodigoMonedaBase   { get; set; } = "";
-        public decimal CapitalInicial     { get; set; }
-        public int     HorizonteMeses     { get; set; }
+        public long     IdPortfolio        { get; set; }
+        public string   Nombre             { get; set; } = "";
+        public string?  Descripcion        { get; set; }
+        public int      IdPerfilRiesgo     { get; set; }
+        public string   NombrePerfilRiesgo { get; set; } = "";
+        public int      IdMonedaBase       { get; set; }
+        public string   CodigoMonedaBase   { get; set; } = "";
+        public decimal? CapitalInicial     { get; set; }
+        public int      HorizonteMeses     { get; set; }
         public DateTimeOffset FechaCreacion     { get; set; }
         public DateTimeOffset FechaModificacion { get; set; }
-        public string  Estado             { get; set; } = "ACTIVO";
+        public string   Estado             { get; set; } = "ACTIVO";
     }
 
     private sealed class AccionTenenciaRow
@@ -309,7 +310,8 @@ public sealed class PortfolioRepository : IPortfolioRepository
         const string sql = """
             SELECT id_portfolio, id_usuario,
                    id_perfil_riesgo::int, id_moneda_base::int,
-                   nombre, descripcion, capital_inicial, horizonte_meses::int,
+                   nombre, descripcion, capital_inicial,
+                   horizonte_meses::int,
                    fecha_creacion, fecha_modificacion, estado
             FROM portfolio
             WHERE id_portfolio = @idPortfolio AND id_usuario = @idUsuario
@@ -350,7 +352,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
         return ToResumen(row);
     }
 
-    public async Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default)
+    public async Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default)
     {
         using var conn = _db.Crear();
         const string sql = """
@@ -912,6 +914,22 @@ public sealed class PortfolioRepository : IPortfolioRepository
         await TouchPortfolioAsync(conn, idPortfolio, tx, ct);
         tx.Commit();
         return true;
+    }
+
+    // ── Presupuesto ───────────────────────────────────────────────────────────
+
+    public async Task<decimal> ObtenerTotalInvertidoAsync(long idPortfolio, CancellationToken ct = default)
+    {
+        using var conn = _db.Crear();
+        const string sql = """
+            SELECT
+                COALESCE((SELECT SUM(pa.cantidad * pa.precio_compra)  FROM portfolio_accion    pa  WHERE pa.id_portfolio  = @idPortfolio), 0) +
+                COALESCE((SELECT SUM(pb.cantidad * pb.precio_compra)  FROM portfolio_bono      pb  WHERE pb.id_portfolio  = @idPortfolio), 0) +
+                COALESCE((SELECT SUM(pl.cantidad * pl.precio_compra)  FROM portfolio_letra     pl  WHERE pl.id_portfolio  = @idPortfolio), 0) +
+                COALESCE((SELECT SUM(ppf.monto_invertido)             FROM portfolio_plazo_fijo ppf WHERE ppf.id_portfolio = @idPortfolio), 0)
+            """;
+        return await conn.ExecuteScalarAsync<decimal>(
+            new CommandDefinition(sql, new { idPortfolio }, cancellationToken: ct));
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

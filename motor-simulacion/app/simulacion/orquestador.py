@@ -34,9 +34,7 @@ def simular_portfolio(parametros: dict) -> dict:
     escenarios = parametros["escenarios"]
     instrumentos = parametros["instrumentos"]
 
-    semilla = parametros.get("semilla")
-    if semilla is None:
-        semilla = int(np.random.default_rng().integers(0, 2**31))
+    semilla = int(np.random.default_rng().integers(0, 2**31))
     rng = np.random.default_rng(semilla)
 
     n_favorable    = N_simulaciones // 3

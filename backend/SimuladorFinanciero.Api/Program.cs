@@ -54,6 +54,11 @@ builder.Services.AddHostedService<CatalogoRefreshJob>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
 builder.Services.AddScoped<IPortfolioService, PortfolioService>();
 
+// Simulaciones
+builder.Services.AddScoped<ISimulacionRepository, SimulacionRepository>();
+builder.Services.AddScoped<ISimulacionService, SimulacionService>();
+builder.Services.AddScoped<IMotorClientService, MotorClientService>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();

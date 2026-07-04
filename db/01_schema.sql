@@ -258,7 +258,7 @@ CREATE TABLE portfolio (
     id_moneda_base     SMALLINT     NOT NULL REFERENCES moneda(id_moneda),
     nombre             VARCHAR(100) NOT NULL,
     descripcion        TEXT,
-    capital_inicial    NUMERIC(20,6) NOT NULL CHECK (capital_inicial > 0),
+    capital_inicial    NUMERIC(20,6) CHECK (capital_inicial IS NULL OR capital_inicial > 0),
     horizonte_meses    SMALLINT      NOT NULL CHECK (horizonte_meses BETWEEN 1 AND 360),
     fecha_creacion     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     fecha_modificacion TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
@@ -405,6 +405,27 @@ CREATE INDEX idx_simulacion_portfolio_fecha ON simulacion(id_portfolio, fecha_ej
 
 COMMENT ON TABLE  simulacion IS 'Cabecera de una corrida Monte Carlo. Las trayectorias mensuales no se persisten; se regeneran bajo demanda a partir de seed_aleatoria y simulacion_parametro_escenario (RF-16).';
 COMMENT ON COLUMN simulacion.seed_aleatoria IS 'Semilla pseudoaleatoria que permite reproducir exactamente las trayectorias de la simulación (RF-16).';
+
+
+-- Snapshot de los instrumentos usados en cada simulación.
+-- Permite reproducir el input exacto y filtrar resultados por instrumento en la UI.
+CREATE TABLE simulacion_instrumento (
+    id_simulacion_instrumento BIGSERIAL    PRIMARY KEY,
+    id_simulacion             BIGINT       NOT NULL REFERENCES simulacion(id_simulacion) ON DELETE CASCADE,
+    ambito                    VARCHAR(50)  NOT NULL,   -- 'accion_42', 'bono_3', 'plazo_fijo_101', etc.
+    tipo                      VARCHAR(30)  NOT NULL,   -- 'accion' | 'lecap' | 'lecer' | 'bono_tasa_fija' | ...
+    id_accion                 BIGINT       REFERENCES accion(id_accion),
+    id_bono                   BIGINT       REFERENCES bono(id_bono),
+    id_letra                  BIGINT       REFERENCES letra(id_letra),
+    id_portfolio_plazo_fijo   BIGINT       REFERENCES portfolio_plazo_fijo(id_portfolio_plazo_fijo),
+    monto                     NUMERIC(20,6) NOT NULL,
+    parametros                JSONB         NOT NULL,  -- snapshot completo del instrumento enviado al motor
+    UNIQUE (id_simulacion, ambito)
+);
+
+CREATE INDEX idx_sim_instrumento ON simulacion_instrumento(id_simulacion);
+
+COMMENT ON TABLE simulacion_instrumento IS 'Snapshot por instrumento de cada simulación. Permite reproducibilidad total y filtrado por instrumento en la UI.';
 
 
 -- Parámetros de inflación vigentes al momento de ejecutar cada simulación.

@@ -17,7 +17,7 @@ public sealed class CrearPortfolioRequest
     public int IdMonedaBase { get; init; }
 
     [Range(0.000001, double.MaxValue, ErrorMessage = "El capital inicial debe ser un valor positivo.")]
-    public decimal CapitalInicial { get; init; }
+    public decimal? CapitalInicial { get; init; }
 
     [Range(1, 360, ErrorMessage = "El horizonte debe estar entre 1 y 360 meses.")]
     public int HorizonteMeses { get; init; }
