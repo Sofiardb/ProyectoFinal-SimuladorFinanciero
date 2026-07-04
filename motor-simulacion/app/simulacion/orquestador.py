@@ -133,6 +133,12 @@ def simular_portfolio(parametros: dict) -> dict:
                 inst["reinvertir"], T_meses, factor_cer_matrix
             )
 
+        elif tipo == "plazo_fijo_usd":
+            tray_1d = simular_plazo_fijo_tradicional(
+                inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
+            )
+            matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
+
     corte_favorable    = slice(0, n_favorable)
     corte_moderado     = slice(n_favorable, n_favorable + n_moderado)
     corte_desfavorable = slice(n_favorable + n_moderado, N_simulaciones)
@@ -168,7 +174,7 @@ def simular_portfolio(parametros: dict) -> dict:
         )
 
     def _es_usd(inst):
-        return inst["tipo"] == "accion" and inst.get("mercado", "ars") == "usd"
+        return inst["tipo"] in ("accion", "plazo_fijo_usd")
 
     def _agregar_portfolio(lista):
         if not lista:
