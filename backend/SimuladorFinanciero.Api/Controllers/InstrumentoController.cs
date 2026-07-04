@@ -10,6 +10,8 @@ namespace SimuladorFinanciero.Api.Controllers;
 [Route("instrumentos")]
 [Authorize]
 [Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public sealed class InstrumentoController : ControllerBase
 {
     private readonly ILetraCatalogoService  _letras;

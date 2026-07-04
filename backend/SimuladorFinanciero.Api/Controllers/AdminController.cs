@@ -14,6 +14,9 @@ namespace SimuladorFinanciero.Api.Controllers;
 [Route("admin/catalogo")]
 [Authorize(Roles = "Admin")]
 [Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public sealed class AdminController : ControllerBase
 {
     private readonly ILetraCatalogoService  _letras;

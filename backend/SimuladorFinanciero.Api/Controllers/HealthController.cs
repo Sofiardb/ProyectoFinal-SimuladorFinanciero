@@ -14,6 +14,9 @@ public class HealthController : ControllerBase
 
     /// <summary>Verifica que la API y la base de datos responden correctamente.</summary>
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get()
     {
         try

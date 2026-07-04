@@ -9,6 +9,8 @@ namespace SimuladorFinanciero.Api.Controllers;
 [Route("referencia")]
 [Authorize]
 [Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public sealed class ReferenciaController : ControllerBase
 {
     private readonly IReferenciaRepository _repo;

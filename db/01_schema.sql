@@ -264,7 +264,7 @@ CREATE TABLE portfolio (
     fecha_modificacion TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     estado             VARCHAR(20)   NOT NULL DEFAULT 'ACTIVO'
                        CHECK (estado IN ('ACTIVO', 'ARCHIVADO')),
-    UNIQUE (id_usuario, nombre)
+    UNIQUE (id_usuario, nombre, id_perfil_riesgo)
 );
 
 CREATE INDEX idx_portfolio_usuario ON portfolio(id_usuario);

@@ -6,6 +6,7 @@ namespace SimuladorFinanciero.Api.Controllers;
 
 [ApiController]
 [Route("auth")]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _auth;

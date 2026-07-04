@@ -30,9 +30,10 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) 
 
     internal static (int Status, string Title) MapException(Exception exception) => exception switch
     {
-        NotFoundException    => (StatusCodes.Status404NotFound,           "No encontrado"),
-        ConflictException    => (StatusCodes.Status409Conflict,           "Conflicto"),
-        ExternalApiException => (StatusCodes.Status502BadGateway,         "Error de API externa"),
-        _                    => (StatusCodes.Status500InternalServerError, "Error interno del servidor")
+        NotFoundException    => (StatusCodes.Status404NotFound,            "No encontrado"),
+        ConflictException    => (StatusCodes.Status409Conflict,            "Conflicto"),
+        ExternalApiException => (StatusCodes.Status502BadGateway,          "Error de API externa"),
+        ValidationException  => (StatusCodes.Status422UnprocessableEntity, "Error de validación"),
+        _                    => (StatusCodes.Status500InternalServerError,  "Error interno del servidor")
     };
 }

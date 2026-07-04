@@ -40,6 +40,14 @@ public class GlobalExceptionHandlerTests
     }
 
     [Fact]
+    public void MapException_ValidationException_Devuelve422()
+    {
+        var (status, title) = GlobalExceptionHandler.MapException(new ValidationException("perfil inválido"));
+        status.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        title.Should().Be("Error de validación");
+    }
+
+    [Fact]
     public void MapException_ExceptionBase_Devuelve500()
     {
         var (status, _) = GlobalExceptionHandler.MapException(new Exception("genérica"));

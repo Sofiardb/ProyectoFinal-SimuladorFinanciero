@@ -9,7 +9,6 @@ using SimuladorFinanciero.Api.Infrastructure.ExternalApis.AlphaVantage;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
 using SimuladorFinanciero.Api.Infrastructure.Middleware;
-using SimuladorFinanciero.Api.Infrastructure.Swagger;
 using SimuladorFinanciero.Api.Repositories;
 using SimuladorFinanciero.Api.Services;
 using SimuladorFinanciero.Api.Services.BackgroundJobs;
@@ -51,12 +50,15 @@ builder.Services.AddSingleton<IAccionCatalogoService, AccionCatalogoService>();
 // Job de refresco automático (cada 15 min en horario bursátil)
 builder.Services.AddHostedService<CatalogoRefreshJob>();
 
+// Portfolio CRUD
+builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+builder.Services.AddScoped<IPortfolioService, PortfolioService>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.OperationFilter<SecurityResponsesFilter>();
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Simulador Financiero API",
