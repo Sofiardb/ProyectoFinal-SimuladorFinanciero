@@ -94,7 +94,48 @@ CREATE TABLE resultado_simulacion (
 
 ---
 
-## Decisión 8: Parámetros GBM persistidos en la tabla `accion`
+## Decisión 8: Snapshot de instrumentos en `simulacion_instrumento`
+
+**Decisión:** se creó la tabla `simulacion_instrumento` que almacena el JSON exacto enviado al motor para cada instrumento en una simulación.
+
+```sql
+CREATE TABLE simulacion_instrumento (
+    id                BIGSERIAL    PRIMARY KEY,
+    id_simulacion     BIGINT       NOT NULL REFERENCES simulacion(id_simulacion),
+    ambito            VARCHAR(50)  NOT NULL,   -- 'accion_1', 'bono_2', 'plazo_fijo_7', etc.
+    tipo              VARCHAR(30)  NOT NULL,
+    id_accion         BIGINT,
+    id_bono           BIGINT,
+    id_letra          BIGINT,
+    id_portfolio_plazo_fijo BIGINT,
+    monto             NUMERIC(20,6) NOT NULL,
+    parametros_json   JSONB        NOT NULL    -- el objeto instrumento enviado al motor
+);
+```
+
+**Justificación:** almacena una copia exacta del objeto que fue enviado al motor, incluyendo `mu`, `sigma`, `rho` para acciones, flujos para bonos y TNA para letras, tal como existían en el momento de la simulación. Esto es necesario porque los parámetros del catálogo cambian con el tiempo (el job de refresco actualiza μ, σ, ρ diariamente). Sin este snapshot, no sería posible saber con qué parámetros exactos se corrió una simulación histórica.
+
+Complementa a `simulacion_parametro_escenario`: ese snapshot captura las condiciones macroeconómicas; este captura las condiciones de cada instrumento.
+
+---
+
+## Decisión 9: Escenarios económicos — valores de referencia en el seed
+
+**Decisión:** los rangos de inflación mensual se definen en el seed de `01_schema.sql` y quedan activos indefinidamente hasta que se inserte una nueva fila con `vigente_hasta` seteado en la fila anterior.
+
+| Escenario | Inflación mensual min | Inflación mensual max | Aprox. anual |
+|---|---|---|---|
+| `favorable` | 0.01 (1%) | 0.025 (2.5%) | 12%–30% |
+| `moderado` | 0.025 (2.5%) | 0.05 (5%) | 30%–60% |
+| `desfavorable` | 0.05 (5%) | 0.10 (10%) | 60%–120% |
+
+**Justificación de los rangos:** reflejan el contexto económico argentino al momento del desarrollo del sistema, distinguiendo entre períodos de inflación baja-moderada, media y alta. Los valores se almacenan como `NUMERIC(10,8)` en decimal (no como porcentaje) para ser usados directamente por el motor Python sin transformación.
+
+La tabla `escenario_economico` tiene un diseño de tipo SCD (Slowly Changing Dimension): los rangos históricos se preservan con `vigente_hasta` no null, y la consulta al backend filtra `vigente_hasta IS NULL` para obtener los vigentes. Esto garantiza que el snapshot de cada simulación refleje los rangos de inflación que estaban activos en ese momento.
+
+---
+
+## Decisión 10: Parámetros GBM persistidos en la tabla `accion`
 
 **Decisión:** las columnas `mu_retorno_esperado`, `sigma_volatilidad` y `rho_correlacion_indice` se almacenan directamente en la tabla `accion`.
 

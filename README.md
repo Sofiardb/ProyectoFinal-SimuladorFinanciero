@@ -80,7 +80,7 @@ El motor corre como microservicio HTTP independiente (`localhost:5050`). Esta se
 |---|---|---|
 | Motor de simulación | Completo | Todos los instrumentos implementados y testeados (64 tests en verde). Endpoint `POST /simular` activo. |
 | Esquema de base de datos | Completo | Schema PostgreSQL diseñado y revisado (`db/01_schema.sql`). |
-| Backend API | Pendiente | — |
+| Backend API | Completo | Autenticación JWT, catálogos de referencia e instrumentos, job de refresco automático, CRUD de portfolios y tenencias, integración con el motor, persistencia y lectura de resultados. Tests unitarios en verde. |
 | Frontend | Pendiente | — |
 
 ### Instrumentos implementados en el motor
@@ -158,4 +158,9 @@ Las decisiones técnicas, matemáticas y de arquitectura tomadas durante el desa
 |---|---|
 | [docs/01-modelos-financieros.md](docs/01-modelos-financieros.md) | Modelo matemático de cada instrumento, corrección de Itô, rezago T-2 del CER/UVA, suposiciones sobre licitación primaria y flujos del backend. |
 | [docs/02-orquestador-montecarlo.md](docs/02-orquestador-montecarlo.md) | Diseño del motor: escenarios, pre-generación de aleatoriedad, modelo de correlaciones, vectorización (5× speedup), separación ARS/USD, estadísticas p25/mediana/p75. |
-| [docs/03-base-datos.md](docs/03-base-datos.md) | Decisiones del schema PostgreSQL: tipos de datos, persistencia de estadísticas en JSONB, snapshot de escenarios, restricción de perfiles de riesgo. |
+| [docs/03-base-datos.md](docs/03-base-datos.md) | Decisiones del schema PostgreSQL: tipos de datos, persistencia de estadísticas en JSONB, snapshot de escenarios e instrumentos, restricción de perfiles de riesgo, valores seed de escenarios económicos. |
+| [docs/04-apis-datos-mercado.md](docs/04-apis-datos-mercado.md) | APIs externas: BYMA Open Data (letras), Docta Capital (bonos soberanos), Alpha Vantage (acciones USA y S&P 500). Endpoints, campos y derivación de parámetros del motor. |
+| [docs/05-backend-arquitectura.md](docs/05-backend-arquitectura.md) | Arquitectura del backend .NET: selección de Dapper sobre EF Core, estructura de carpetas, lifetimes de DI, convenciones, manejo de errores, autenticación JWT y roles, Swagger, CORS. |
+| [docs/06-endpoints-api.md](docs/06-endpoints-api.md) | Referencia completa de todos los endpoints REST: auth, referencia, instrumentos, administración, portfolios, simulaciones. Request/response y errores por endpoint. |
+| [docs/07-portfolio-reglas-negocio.md](docs/07-portfolio-reglas-negocio.md) | Modelo de dominio del portfolio: composición vs corridas, unicidad de instrumentos, restricciones del perfil de riesgo, ownership, reglas de re-simulación, ciclo de vida. |
+| [docs/08-integracion-motor.md](docs/08-integracion-motor.md) | Flujo completo de POST /simular: construcción del payload por tipo de instrumento, semilla, validaciones, métricas agregadas y persistencia transaccional. |
