@@ -12,4 +12,6 @@ public class Usuario
     public DateTimeOffset? FechaUltimoLogin { get; set; }
     public bool Activo  { get; set; }
     public bool EsAdmin { get; set; }
+    public string? ResetTokenHash { get; set; }
+    public DateTimeOffset? ResetTokenExpira { get; set; }
 }

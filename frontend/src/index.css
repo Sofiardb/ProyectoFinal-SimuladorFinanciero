@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* ─── Tokens principales ───────────────────────────────── */
+@theme {
+
+  --color-background:         oklch(100% 0 0);
+  --color-foreground:         oklch(14% 0.01 260);
+  --color-card:               oklch(100% 0 0);
+  --color-card-foreground:    oklch(14% 0.01 260);
+  --color-popover:            oklch(100% 0 0);
+  --color-popover-foreground: oklch(14% 0.01 260);
+  --color-primary:            oklch(20% 0.01 260);
+  --color-primary-foreground: oklch(98% 0 0);
+  --color-secondary:          oklch(96% 0 0);
+  --color-secondary-foreground: oklch(20% 0.01 260);
+  --color-muted:              oklch(96% 0 0);
+  --color-muted-foreground:   oklch(50% 0.01 260);
+  --color-accent:             oklch(96% 0 0);
+  --color-accent-foreground:  oklch(20% 0.01 260);
+  --color-destructive:        oklch(58% 0.22 27);
+  --color-destructive-foreground: oklch(98% 0 0);
+  --color-border:             oklch(90% 0.01 260);
+  --color-input:              oklch(90% 0.01 260);
+  --color-ring:               oklch(14% 0.01 260);
+
+  /* ´Paleta de la marca — InvestLab */
+  --color-navy-950: #0f2740;
+  --color-navy-900: #1a3a5c;
+  --color-navy-800: #1e4976;
+
+  --color-sand-50:  #f4f2ed;
+  --color-sand-100: #ede9e1;
+  --color-sand-200: #ddd9cf;
+
+  --color-green-brand: #8fe2b0;
+  --color-blue-brand:  #5b9bf2;
+
+  /* Colores de escenarios */
+  --color-favorable:    #4cce84;
+  --color-moderado:     #f59e0b;
+  --color-desfavorable: #ef4444;
+
+  /* Border radius */
+  --radius: 0.5rem;
+
+  /* Tipografía */
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+}
+
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+}

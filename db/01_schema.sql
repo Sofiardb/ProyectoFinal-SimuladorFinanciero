@@ -29,20 +29,24 @@ SET search_path TO simulador_financiero, public;
 -- =============================================================================
 
 CREATE TABLE usuario (
-    id_usuario         BIGSERIAL PRIMARY KEY,
-    username           VARCHAR(50)  UNIQUE NOT NULL,
-    email              VARCHAR(150) UNIQUE NOT NULL,
-    password_hash      VARCHAR(255) NOT NULL,
-    nombre             VARCHAR(100),
-    apellido           VARCHAR(100),
-    fecha_registro     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    fecha_ultimo_login TIMESTAMPTZ,
-    activo             BOOLEAN      NOT NULL DEFAULT TRUE,
-    es_admin           BOOLEAN      NOT NULL DEFAULT FALSE
+    id_usuario          BIGSERIAL PRIMARY KEY,
+    username            VARCHAR(50)  UNIQUE NOT NULL,
+    email               VARCHAR(150) UNIQUE NOT NULL,
+    password_hash       VARCHAR(255) NOT NULL,
+    nombre              VARCHAR(100),
+    apellido            VARCHAR(100),
+    fecha_registro      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    fecha_ultimo_login  TIMESTAMPTZ,
+    activo              BOOLEAN      NOT NULL DEFAULT TRUE,
+    es_admin            BOOLEAN      NOT NULL DEFAULT FALSE,
+    reset_token_hash    VARCHAR(64),
+    reset_token_expira  TIMESTAMPTZ
 );
 
 COMMENT ON TABLE  usuario IS 'Usuarios registrados en el simulador.';
-COMMENT ON COLUMN usuario.password_hash IS 'Hash de la contraseña (bcrypt/argon2). Nunca se almacena la clave en claro.';
+COMMENT ON COLUMN usuario.password_hash      IS 'Hash de la contraseña (bcrypt/argon2). Nunca se almacena la clave en claro.';
+COMMENT ON COLUMN usuario.reset_token_hash   IS 'SHA-256 (hex) del token vigente de "olvidé mi contraseña". Una solicitud nueva sobreescribe la anterior; se limpia (NULL) al usarse o al hacer login.';
+COMMENT ON COLUMN usuario.reset_token_expira IS 'Vencimiento del reset_token_hash vigente.';
 
 
 -- Perfil de riesgo: conservador, moderado, agresivo.

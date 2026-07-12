@@ -30,6 +30,7 @@ builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 // Auth
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 // Clientes de APIs externas (Singleton: mantienen cookies y tokens entre llamadas)
 builder.Services.AddSingleton<IBymaApiClient, BymaApiClient>();
