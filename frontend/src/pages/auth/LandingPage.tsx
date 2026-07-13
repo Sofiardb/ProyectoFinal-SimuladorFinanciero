@@ -7,7 +7,7 @@ export default function LandingPage() {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
-  if (isAuthenticated) return <Navigate to="/portfolios" replace />
+  if (isAuthenticated) return <Navigate to="/bienvenida" replace />
 
   return (
     <AuthSplitLayout

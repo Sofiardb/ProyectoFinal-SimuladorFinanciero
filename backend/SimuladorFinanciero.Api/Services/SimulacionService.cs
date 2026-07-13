@@ -68,7 +68,7 @@ public sealed class SimulacionService : ISimulacionService
                 instrumentosVencidos.Add($"bono_{b.IdBono}");
         foreach (var pf in tenencias.PlazosFijos)
         {
-            var fv = pf.FechaInicio.AddMonths(pf.DuracionMeses);
+            var fv = pf.FechaInicio.AddDays(pf.DuracionDias);
             if (fv <= today && !pf.ReinvertirAlVencimiento)
                 instrumentosVencidos.Add($"plazo_fijo_{pf.IdPortfolioPlazoFijo}");
         }
@@ -297,7 +297,7 @@ internal static class MotorPayloadBuilder
         foreach (var pf in tenencias.PlazosFijos)
         {
             var ambito  = $"plazo_fijo_{pf.IdPortfolioPlazoFijo}";
-            var fv      = pf.FechaInicio.AddMonths(pf.DuracionMeses);
+            var fv      = pf.FechaInicio.AddDays(pf.DuracionDias);
             var tVenc   = MesesEntre(today, fv);
             var tipo    = ResolveTipoPlazoFijo(pf);
 

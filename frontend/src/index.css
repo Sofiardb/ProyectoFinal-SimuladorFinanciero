@@ -23,7 +23,7 @@
   --color-input:              oklch(90% 0.01 260);
   --color-ring:               oklch(14% 0.01 260);
 
-  /* ´Paleta de la marca — InvestLab */
+  /* Paleta de la marca — InvestLab */
   --color-navy-950: #0f2740;
   --color-navy-900: #1a3a5c;
   --color-navy-800: #1e4976;
@@ -39,6 +39,50 @@
   --color-favorable:    #4cce84;
   --color-moderado:     #f59e0b;
   --color-desfavorable: #ef4444;
+
+  /* Colores por perfil de riesgo (fiel a prototipos-UI/Portfolios) */
+  --color-riesgo-conservador:    #4caf7d;
+  --color-riesgo-conservador-bg: #eaf7f0;
+  --color-riesgo-moderado:       #5b9bf2;
+  --color-riesgo-moderado-bg:    #eaf1fb;
+  --color-riesgo-agresivo:       #e3a45c;
+  --color-riesgo-agresivo-bg:    #fdf1e8;
+
+  /* Grises y acentos */
+  --color-ink-muted:    #6b7684;
+  --color-ink-soft:     #9aa4b0;
+  --color-line:         #e7e3db;
+  --color-line-soft:    #f0eee9;
+  --color-line-dashed:  #d8d2c4;
+  --color-chip:         #f7f6f2;
+  --color-currency-ars: #8fc98f;
+
+  /* Texto de la píldora de perfil en el header de Detalle de Portfolio */
+  --color-riesgo-conservador-badge: #2f8f5f;
+  --color-riesgo-moderado-badge:    #3a6fc4;
+  --color-riesgo-agresivo-badge:    #b97730;
+
+  /* Banner de actualizaciones de mercado  */
+  --color-warning-bg:     #fdf1e8;
+  --color-warning-border: #f0d3ab;
+  --color-warning-title:  #7a4a1e;
+  --color-warning-text:   #8a6a45;
+  --color-warning-accent: #e3b57a;
+
+  /* Comparación de precios (columna "mercado") */
+  --color-compare-border: #bcd8f5;
+  --color-compare-bg:     #f5f9fe;
+  --color-accent-blue-strong: #3a6fc4;
+
+  /* Estados negativos */
+  --color-danger:        #d1503f;
+  --color-danger-border: #ecd3cd;
+  --color-field-border:  #dfe3e8;
+
+  /* Tooltip informativo (InfoTooltip) */
+  --color-tooltip-chip:      #e7edf5;
+  --color-tooltip-chip-text: #5b7ea3;
+  --color-tooltip-text:      #d7e3ee;
 
   /* Border radius */
   --radius: 0.5rem;

@@ -157,7 +157,7 @@ Los escenarios se obtienen de la tabla `escenario_economico` (solo los vigentes:
 - `id`: `"plazo_fijo_{idPortfolioPlazoFijo}"`
 - `monto`: `monto_invertido` de la tenencia
 - `tna`: `tna_pactada` de la tenencia
-- `t_venc_meses`: calculado como `MesesEntre(fecha_inicio, fecha_inicio.AddMonths(duracion_meses))`
+- `t_venc_meses`: calculado como `MesesEntre(fecha_inicio, fecha_inicio.AddDays(duracion_dias))` (la duración se persiste en días; se convierte a meses únicamente para el payload del motor)
 - `reinvertir`: `reinvertir_al_vencimiento` de la tenencia
 
 ---

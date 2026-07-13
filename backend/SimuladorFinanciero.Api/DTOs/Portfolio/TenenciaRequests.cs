@@ -93,8 +93,8 @@ public sealed class AgregarPlazoFijoRequest
     [Required]
     public DateOnly? FechaInicio { get; init; }
 
-    [Range(1, 32767, ErrorMessage = "La duración debe ser al menos 1 mes.")]
-    public int DuracionMeses { get; init; }
+    [Range(1, 32767, ErrorMessage = "La duración debe ser al menos 1 día.")]
+    public int DuracionDias { get; init; }
 
     public bool ReinvertirAlVencimiento { get; init; }
 }
@@ -119,7 +119,7 @@ public sealed class ActualizarPlazoFijoRequest
     public DateOnly? FechaInicio { get; init; }
 
     [Range(1, 32767)]
-    public int? DuracionMeses { get; init; }
+    public int? DuracionDias { get; init; }
 
     public bool? ReinvertirAlVencimiento { get; init; }
 }

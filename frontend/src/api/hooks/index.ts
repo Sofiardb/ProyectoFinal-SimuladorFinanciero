@@ -1,1 +1,6 @@
 export * from './useAuthMutations'
+export * from './useReferencia'
+export * from './useCatalogo'
+export * from './usePortfolios'
+export * from './useTenencias'
+export * from './useSimulacionPreview'

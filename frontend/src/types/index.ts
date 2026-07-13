@@ -58,19 +58,187 @@ export type TipoInstrumento =
   | 'plazo_fijo_tradicional'
   | 'plazo_fijo_uva'
 
-export interface Instrumento {
-  id:    string
-  tipo:  TipoInstrumento
-  monto: number
-  [key: string]: unknown
+// ─── Referencia (catálogos de lookup) ─────────────────────────────────────────
+export interface Moneda {
+  idMoneda:  number
+  codigoIso: string
+  nombre:    string
+  simbolo:   string
 }
 
-export interface Portfolio {
-  id:           string
-  nombre:       string
-  descripcion?: string
-  instrumentos: Instrumento[]
-  creadoEn:     string
+export interface PerfilRiesgo {
+  idPerfilRiesgo: number
+  nombre:         string
+  descripcion?:   string
+  sigmaMaxAccion: number
+}
+
+// ─── Catálogo de instrumentos disponibles para agregar a un portfolio ────────
+export interface AccionCatalogo {
+  idAccion:               number
+  ticker:                 string
+  nombre:                 string
+  sector?:                string
+  muRetornoEsperado?:     number
+  sigmaVolatilidad?:      number
+  rhoCorrelacionIndice?:  number
+  precioActual?:          number
+  fechaPrecioActual?:     string
+  fechaEstimacionParams?: string
+}
+
+export interface FlujoCaja {
+  numeroCupon: number
+  fechaPago:   string
+  montoCupon:  number
+  montoCapital: number
+  montoTotal:  number
+}
+
+export interface BonoCatalogo {
+  idBono:            number
+  ticker:            string
+  nombre:            string
+  tipoBono:          'TASA_FIJA' | 'INDEXADO_INFLACION'
+  tasaDescuento:     number
+  fechaVencimiento:  string
+  diasAlVencimiento: number
+  precioActual?:     number
+  fechaPrecioActual?: string
+  flujos:            FlujoCaja[]
+}
+
+export interface LetraCatalogo {
+  idLetra:           number
+  ticker:            string
+  nombre:            string
+  tipoLetra:         'LECAP' | 'LECER'
+  tasa:              number
+  fechaVencimiento:  string
+  diasAlVencimiento: number
+  precioActual?:     number
+  fechaPrecioActual?: string
+}
+
+export interface TipoPlazoFijo {
+  idTipoPlazoFijo: number
+  codigo:          string
+  nombre:          string
+  descripcion?:    string
+}
+
+// ─── Tenencias (instrumentos ya agregados a un portfolio) ────────────────────
+export interface PortfolioAccion {
+  idPortfolioAccion: number
+  idAccion:          number
+  ticker:            string
+  nombre:            string
+  sector?:           string
+  muRetornoEsperado?: number
+  sigmaVolatilidad?: number
+  precioActual?:     number
+  cantidad:          number
+  precioCompra:      number
+}
+
+export interface PortfolioBono {
+  idPortfolioBono: number
+  idBono:          number
+  ticker:          string
+  nombre:          string
+  emisor?:         string
+  precioActual?:   number
+  cantidad:        number
+  precioCompra:    number
+}
+
+export interface PortfolioLetra {
+  idPortfolioLetra: number
+  idLetra:          number
+  ticker:           string
+  nombre:           string
+  tasa:             number
+  fechaVencimiento: string
+  precioActual?:    number
+  cantidad:         number
+  precioCompra:     number
+}
+
+export interface PortfolioPlazoFijo {
+  idPortfolioPlazoFijo:     number
+  idTipoPlazoFijo:          number
+  nombreTipoPlazoFijo:      string
+  idMoneda:                 number
+  codigoMoneda:             string
+  entidadFinanciera:        string
+  montoInvertido:           number
+  tnaPactada:                number
+  fechaInicio:              string
+  duracionDias:             number
+  reinvertirAlVencimiento:  boolean
+}
+
+// ─── Portfolio ─────────────────────────────────────────────────────────────────
+export type EstadoPortfolio = 'ACTIVO' | 'ARCHIVADO'
+
+export interface PortfolioResumen {
+  idPortfolio:        number
+  nombre:             string
+  descripcion?:       string
+  idPerfilRiesgo:     number
+  nombrePerfilRiesgo: string
+  idMonedaBase:       number
+  codigoMonedaBase:   string
+  capitalInicial?:    number
+  horizonteMeses:     number
+  fechaCreacion:      string
+  fechaModificacion:  string
+  estado:             EstadoPortfolio
+}
+
+export interface PortfolioDetalle extends PortfolioResumen {
+  acciones:    PortfolioAccion[]
+  bonos:       PortfolioBono[]
+  letras:      PortfolioLetra[]
+  plazosFijos: PortfolioPlazoFijo[]
+}
+
+// ─── Preview de simulación (comparación original vs. mercado) ────────────────
+export type EstadoPreviewInstrumento =
+  | 'IGUAL'
+  | 'ACTUALIZADO'
+  | 'SIN_PRECIO'
+  | 'VENCIDO'
+  | 'PARCIALMENTE_VENCIDO'
+  | 'ACTIVO'
+
+export interface InstrumentoPreviewItem {
+  id:                 string
+  tipo:               string
+  ticker?:            string
+  nombre?:            string
+  entidadFinanciera?: string
+  codigoMoneda?:      string
+  cantidad:           number
+  precioOriginal:     number
+  precioMercado?:     number
+  montoOriginal:      number
+  montoMercado?:      number
+  estado:             EstadoPreviewInstrumento
+  esValidoParaSimular: boolean
+  flujosTotales?:     number
+  flujosVigentes?:    number
+  flujosVencidos?:    number
+  fechaVencimiento?:  string
+  mesesRestantes?:    number
+}
+
+export interface SimulacionPreview {
+  capitalInicial?:         number
+  totalInvertidoOriginal:  number
+  totalInvertidoMercado?:  number
+  puedeSimular:            boolean
+  instrumentos:            InstrumentoPreviewItem[]
 }
 
 // ─── Simulation ───────────────────────────────────────────────────────────────

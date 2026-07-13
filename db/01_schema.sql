@@ -331,7 +331,7 @@ CREATE TABLE portfolio_plazo_fijo (
     monto_invertido           NUMERIC(20,6) NOT NULL CHECK (monto_invertido > 0),
     tna_pactada               NUMERIC(10,8) NOT NULL CHECK (tna_pactada >= 0),
     fecha_inicio              DATE          NOT NULL,
-    duracion_meses            SMALLINT      NOT NULL CHECK (duracion_meses > 0),
+    duracion_dias            SMALLINT      NOT NULL CHECK (duracion_dias > 0),
     reinvertir_al_vencimiento BOOLEAN       NOT NULL DEFAULT FALSE
 );
 

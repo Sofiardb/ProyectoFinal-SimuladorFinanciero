@@ -10,6 +10,6 @@ public class PortfolioPlazoFijo
     public decimal  MontoInvertido          { get; set; }
     public decimal  TnaPactada             { get; set; }
     public DateOnly FechaInicio             { get; set; }
-    public int      DuracionMeses           { get; set; }
+    public int      DuracionDias           { get; set; }
     public bool     ReinvertirAlVencimiento { get; set; }
 }

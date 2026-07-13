@@ -13,21 +13,31 @@ export function setToken(token: string | null): void {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken()
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
-    ...init,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...init?.headers,
+      },
+      ...init,
+    })
+  } catch {
+    throw new Error('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.')
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     const firstValidationError = body?.errors
       ? (Object.values(body.errors)[0] as string[] | undefined)?.[0]
       : undefined
-    throw new Error(firstValidationError ?? body?.detail ?? body?.title ?? `Error ${res.status}`)
+    throw new Error(
+      firstValidationError ??
+        body?.detail ??
+        body?.title ??
+        'Ocurrió un error inesperado. Intentá de nuevo en unos segundos.',
+    )
   }
 
   if (res.status === 204) return undefined as T

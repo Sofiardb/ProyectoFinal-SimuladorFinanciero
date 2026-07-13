@@ -25,7 +25,7 @@ export default function LoginPage() {
   const initialMode: Mode = searchParams.get('tab') === 'register' ? 'register' : 'login'
   const [mode, setMode] = useState<Mode>(initialMode)
 
-  if (isAuthenticated) return <Navigate to="/portfolios" replace />
+  if (isAuthenticated) return <Navigate to="/bienvenida" replace />
 
   return (
     <AuthSplitLayout headline={COPY[mode].headline} body={COPY[mode].body}>

@@ -14,7 +14,7 @@ public sealed class ActualizarPlazoFijoData
     public required decimal  MontoInvertido           { get; init; }
     public required decimal  TnaPactada              { get; init; }
     public required DateOnly FechaInicio              { get; init; }
-    public required int      DuracionMeses            { get; init; }
+    public required int      DuracionDias            { get; init; }
     public required bool     ReinvertirAlVencimiento  { get; init; }
 }
 
@@ -147,7 +147,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
                ppf.monto_invertido,
                ppf.tna_pactada,
                ppf.fecha_inicio,
-               ppf.duracion_meses::int,
+               ppf.duracion_dias::int,
                ppf.reinvertir_al_vencimiento
         FROM portfolio_plazo_fijo ppf
         JOIN tipo_plazo_fijo tpf ON tpf.id_tipo_plazo_fijo = ppf.id_tipo_plazo_fijo
@@ -222,7 +222,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
         public decimal MontoInvertido           { get; set; }
         public decimal TnaPactada              { get; set; }
         public DateOnly FechaInicio             { get; set; }
-        public int     DuracionMeses            { get; set; }
+        public int     DuracionDias            { get; set; }
         public bool    ReinvertirAlVencimiento  { get; set; }
     }
 
@@ -252,7 +252,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
         r.IdPortfolioPlazoFijo, r.IdTipoPlazoFijo, r.NombreTipoPlazoFijo,
         r.IdMoneda, r.CodigoMoneda, r.EntidadFinanciera,
         r.MontoInvertido, r.TnaPactada, r.FechaInicio,
-        r.DuracionMeses, r.ReinvertirAlVencimiento);
+        r.DuracionDias, r.ReinvertirAlVencimiento);
 
     // ── Portfolio CRUD ────────────────────────────────────────────────────────
 
@@ -811,13 +811,13 @@ public sealed class PortfolioRepository : IPortfolioRepository
             WITH ins AS (
                 INSERT INTO portfolio_plazo_fijo
                     (id_portfolio, id_tipo_plazo_fijo, id_moneda, entidad_financiera,
-                     monto_invertido, tna_pactada, fecha_inicio, duracion_meses, reinvertir_al_vencimiento)
+                     monto_invertido, tna_pactada, fecha_inicio, duracion_dias, reinvertir_al_vencimiento)
                 VALUES
                     (@idPortfolio, @IdTipoPlazoFijo::smallint, @IdMoneda::smallint, @EntidadFinanciera,
-                     @MontoInvertido, @TnaPactada, @FechaInicio, @DuracionMeses::smallint, @ReinvertirAlVencimiento)
+                     @MontoInvertido, @TnaPactada, @FechaInicio, @DuracionDias::smallint, @ReinvertirAlVencimiento)
                 RETURNING id_portfolio_plazo_fijo, id_tipo_plazo_fijo, id_moneda,
                           entidad_financiera, monto_invertido, tna_pactada,
-                          fecha_inicio, duracion_meses, reinvertir_al_vencimiento
+                          fecha_inicio, duracion_dias, reinvertir_al_vencimiento
             )
             SELECT ins.id_portfolio_plazo_fijo,
                    ins.id_tipo_plazo_fijo::int,
@@ -825,7 +825,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
                    ins.id_moneda::int,
                    m.codigo_iso AS codigo_moneda,
                    ins.entidad_financiera, ins.monto_invertido, ins.tna_pactada,
-                   ins.fecha_inicio, ins.duracion_meses::int, ins.reinvertir_al_vencimiento
+                   ins.fecha_inicio, ins.duracion_dias::int, ins.reinvertir_al_vencimiento
             FROM ins
             JOIN tipo_plazo_fijo tpf ON tpf.id_tipo_plazo_fijo = ins.id_tipo_plazo_fijo
             JOIN moneda          m   ON m.id_moneda             = ins.id_moneda
@@ -838,7 +838,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
                     req.IdTipoPlazoFijo, req.IdMoneda, req.EntidadFinanciera,
                     req.MontoInvertido, req.TnaPactada,
                     FechaInicio = req.FechaInicio!.Value,
-                    req.DuracionMeses, req.ReinvertirAlVencimiento
+                    req.DuracionDias, req.ReinvertirAlVencimiento
                 },
                 transaction: tx, cancellationToken: ct));
 
@@ -862,12 +862,12 @@ public sealed class PortfolioRepository : IPortfolioRepository
                     monto_invertido           = @MontoInvertido,
                     tna_pactada              = @TnaPactada,
                     fecha_inicio              = @FechaInicio,
-                    duracion_meses            = @DuracionMeses::smallint,
+                    duracion_dias            = @DuracionDias::smallint,
                     reinvertir_al_vencimiento = @ReinvertirAlVencimiento
                 WHERE id_portfolio_plazo_fijo = @idPortfolioPlazoFijo AND id_portfolio = @idPortfolio
                 RETURNING id_portfolio_plazo_fijo, id_tipo_plazo_fijo, id_moneda,
                           entidad_financiera, monto_invertido, tna_pactada,
-                          fecha_inicio, duracion_meses, reinvertir_al_vencimiento
+                          fecha_inicio, duracion_dias, reinvertir_al_vencimiento
             )
             SELECT upd.id_portfolio_plazo_fijo,
                    upd.id_tipo_plazo_fijo::int,
@@ -875,7 +875,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
                    upd.id_moneda::int,
                    m.codigo_iso AS codigo_moneda,
                    upd.entidad_financiera, upd.monto_invertido, upd.tna_pactada,
-                   upd.fecha_inicio, upd.duracion_meses::int, upd.reinvertir_al_vencimiento
+                   upd.fecha_inicio, upd.duracion_dias::int, upd.reinvertir_al_vencimiento
             FROM upd
             JOIN tipo_plazo_fijo tpf ON tpf.id_tipo_plazo_fijo = upd.id_tipo_plazo_fijo
             JOIN moneda          m   ON m.id_moneda             = upd.id_moneda
@@ -887,7 +887,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
                     idPortfolioPlazoFijo, idPortfolio,
                     data.IdTipoPlazoFijo, data.IdMoneda, data.EntidadFinanciera,
                     data.MontoInvertido, data.TnaPactada, data.FechaInicio,
-                    data.DuracionMeses, data.ReinvertirAlVencimiento
+                    data.DuracionDias, data.ReinvertirAlVencimiento
                 },
                 transaction: tx, cancellationToken: ct));
 

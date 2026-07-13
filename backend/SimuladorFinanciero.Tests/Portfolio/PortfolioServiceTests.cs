@@ -648,7 +648,7 @@ public class PortfolioServiceTests
             MontoInvertido         = 500_000m,
             TnaPactada             = 0.40m,
             FechaInicio            = new DateOnly(2024, 1, 15),
-            DuracionMeses          = 3,
+            DuracionDias          = 3,
             ReinvertirAlVencimiento = false
         };
         var pf = PlazoFijoEjemplo();
@@ -674,7 +674,7 @@ public class PortfolioServiceTests
         {
             IdTipoPlazoFijo   = 99, IdMoneda = 1, EntidadFinanciera = "Banco",
             MontoInvertido    = 1_000m, TnaPactada = 0.40m,
-            FechaInicio       = new DateOnly(2024, 1, 15), DuracionMeses = 3
+            FechaInicio       = new DateOnly(2024, 1, 15), DuracionDias = 3
         };
 
         var act = () => _svc.AgregarPlazoFijoAsync(IdPortfolio, IdUsuario, req);
@@ -693,7 +693,7 @@ public class PortfolioServiceTests
         {
             IdTipoPlazoFijo   = 1, IdMoneda = 99, EntidadFinanciera = "Banco",
             MontoInvertido    = 1_000m, TnaPactada = 0.40m,
-            FechaInicio       = new DateOnly(2024, 1, 15), DuracionMeses = 3
+            FechaInicio       = new DateOnly(2024, 1, 15), DuracionDias = 3
         };
 
         var act = () => _svc.AgregarPlazoFijoAsync(IdPortfolio, IdUsuario, req);
@@ -710,7 +710,7 @@ public class PortfolioServiceTests
         {
             IdTipoPlazoFijo   = 1, IdMoneda = 1, EntidadFinanciera = "Banco",
             MontoInvertido    = 1_000m, TnaPactada = 0.40m,
-            FechaInicio       = new DateOnly(2024, 1, 15), DuracionMeses = 3
+            FechaInicio       = new DateOnly(2024, 1, 15), DuracionDias = 3
         };
 
         var act = () => _svc.AgregarPlazoFijoAsync(IdPortfolio, IdUsuario, req);
@@ -841,7 +841,7 @@ public class PortfolioServiceTests
         {
             IdTipoPlazoFijo   = 1, IdMoneda = 1, EntidadFinanciera = "Banco",
             MontoInvertido    = 500_000m, TnaPactada = 0.40m,
-            FechaInicio       = new DateOnly(2024, 1, 15), DuracionMeses = 3
+            FechaInicio       = new DateOnly(2024, 1, 15), DuracionDias = 3
         };
         _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
              .Returns(PortfolioActivo(capitalInicial: 100_000m));

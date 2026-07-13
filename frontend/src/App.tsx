@@ -6,6 +6,7 @@ import LandingPage from '@/pages/auth/LandingPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
+import BienvenidaPage from '@/pages/dashboard/BienvenidaPage'
 import PortfoliosPage from '@/pages/portfolios/PortfoliosPage'
 import PortfolioDetallePage from '@/pages/portfolios/PortfolioDetallePage'
 import NuevaSimulacionPage from '@/pages/simulaciones/NuevaSimulacionPage'
@@ -29,6 +30,7 @@ export default function App() {
         {/* Authenticated app routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
+            <Route path="/bienvenida" element={<BienvenidaPage />} />
             <Route path="/portfolios" element={<PortfoliosPage />} />
             <Route path="/portfolios/:id" element={<PortfolioDetallePage />} />
             <Route

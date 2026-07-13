@@ -37,7 +37,7 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
     loginMutation.mutate(values, {
       onSuccess: (auth) => {
         login(auth)
-        navigate('/portfolios')
+        navigate('/bienvenida')
       },
     })
   }

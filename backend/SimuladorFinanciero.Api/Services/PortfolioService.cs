@@ -346,7 +346,7 @@ public sealed class PortfolioService : IPortfolioService
             MontoInvertido          = req.MontoInvertido          ?? actual.MontoInvertido,
             TnaPactada              = req.TnaPactada              ?? actual.TnaPactada,
             FechaInicio             = req.FechaInicio             ?? actual.FechaInicio,
-            DuracionMeses           = req.DuracionMeses           ?? actual.DuracionMeses,
+            DuracionDias           = req.DuracionDias           ?? actual.DuracionDias,
             ReinvertirAlVencimiento = req.ReinvertirAlVencimiento ?? actual.ReinvertirAlVencimiento,
         };
 

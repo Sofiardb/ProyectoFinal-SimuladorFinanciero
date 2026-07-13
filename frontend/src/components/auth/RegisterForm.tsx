@@ -68,7 +68,7 @@ export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () 
       {
         onSuccess: (auth) => {
           login(auth)
-          navigate('/portfolios')
+          navigate('/bienvenida')
         },
       },
     )

@@ -49,7 +49,7 @@ public sealed record PlazoFijoTenenciaSimulacion(
     decimal  MontoInvertido,
     decimal  TnaPactada,
     DateOnly FechaInicio,
-    int      DuracionMeses,
+    int      DuracionDias,
     bool     ReinvertirAlVencimiento
 );
 

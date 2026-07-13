@@ -118,7 +118,7 @@ Para ejecutar una nueva simulación, **todos los instrumentos del portfolio debe
 | Acción | `mu`, `sigma` o `rho` son `null` (el catálogo no tiene GBM estimado) |
 | Letra | `fecha_vencimiento <= hoy` |
 | Bono | Todos los flujos de caja tienen `fecha_pago <= hoy` |
-| Plazo fijo (sin reinversión) | `fecha_inicio + duracion_meses <= hoy` |
+| Plazo fijo (sin reinversión) | `fecha_inicio + duracion_dias <= hoy` |
 
 Si algún instrumento bloquea la simulación, el endpoint `POST /portfolios/{id}/simular` devuelve `422` con el detalle de cuáles son. El endpoint `GET /portfolios/{id}/simular/preview` permite consultar el estado de cada instrumento antes de intentar simular.
 

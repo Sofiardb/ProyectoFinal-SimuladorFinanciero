@@ -109,7 +109,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public string   CodigoMoneda                { get; set; } = "";
         public decimal  MontoInvertido              { get; set; }
         public DateOnly FechaInicio                 { get; set; }
-        public int      DuracionMeses               { get; set; }
+        public int      DuracionDias               { get; set; }
         public bool     ReinvertirAlVencimiento     { get; set; }
     }
 
@@ -318,7 +318,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    m.codigo_iso AS codigo_moneda,
                    ppf.monto_invertido,
                    ppf.fecha_inicio,
-                   ppf.duracion_meses::int,
+                   ppf.duracion_dias::int,
                    ppf.reinvertir_al_vencimiento
             FROM portfolio_plazo_fijo ppf
             JOIN moneda m ON m.id_moneda = ppf.id_moneda
@@ -446,7 +446,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
 
         foreach (var r in plazosFijosTask.Result)
         {
-            var fechaVencimiento = r.FechaInicio.AddMonths(r.DuracionMeses);
+            var fechaVencimiento = r.FechaInicio.AddDays(r.DuracionDias);
             var vencido          = fechaVencimiento <= today && !r.ReinvertirAlVencimiento;
             var estado           = vencido ? "VENCIDO" : "ACTIVO";
             var mesesRestantes   = MesesEntre(today, fechaVencimiento);
@@ -600,7 +600,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    ppf.monto_invertido,
                    ppf.tna_pactada,
                    ppf.fecha_inicio,
-                   ppf.duracion_meses::int,
+                   ppf.duracion_dias::int,
                    ppf.reinvertir_al_vencimiento
             FROM portfolio_plazo_fijo ppf
             JOIN tipo_plazo_fijo tpf ON tpf.id_tipo_plazo_fijo = ppf.id_tipo_plazo_fijo
@@ -640,7 +640,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
             .ToList();
 
         var plazosFijos = plazosFijosTask.Result
-            .Select(r => new PlazoFijoTenenciaSimulacion(r.IdPortfolioPlazoFijo, r.TipoCodigo, r.MonedaCodigo, r.MontoInvertido, r.TnaPactada, r.FechaInicio, r.DuracionMeses, r.ReinvertirAlVencimiento))
+            .Select(r => new PlazoFijoTenenciaSimulacion(r.IdPortfolioPlazoFijo, r.TipoCodigo, r.MonedaCodigo, r.MontoInvertido, r.TnaPactada, r.FechaInicio, r.DuracionDias, r.ReinvertirAlVencimiento))
             .ToList();
 
         return new TenenciasSimulacionData(acciones, bonos, letras, plazosFijos);
@@ -851,7 +851,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public decimal  MontoInvertido          { get; set; }
         public decimal  TnaPactada              { get; set; }
         public DateOnly FechaInicio             { get; set; }
-        public int      DuracionMeses           { get; set; }
+        public int      DuracionDias           { get; set; }
         public bool     ReinvertirAlVencimiento { get; set; }
     }
 

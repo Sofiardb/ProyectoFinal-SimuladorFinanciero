@@ -511,7 +511,7 @@ Agrega un nuevo contrato de plazo fijo al portfolio.
   "montoInvertido":       50000.00,      // requerido, positivo
   "tnaPactada":           0.42,          // requerido, no negativo (decimal: 42% = 0.42)
   "fechaInicio":          "2026-06-01",  // requerido
-  "duracionMeses":        6,             // requerido, mínimo 1
+  "duracionDias":         180,           // requerido, mínimo 1
   "reinvertirAlVencimiento": false       // opcional, default false
 }
 ```

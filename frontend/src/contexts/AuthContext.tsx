@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { getToken, setToken as persistToken } from '@/api/client'
 import type { AuthResponse, Usuario } from '@/types'
 
@@ -27,34 +28,41 @@ function loadStoredUsuario(): Usuario | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(loadStoredUsuario)
+  const queryClient = useQueryClient()
 
-  const login = (auth: AuthResponse) => {
-    const nextUsuario: Usuario = {
-      email:    auth.email ?? '',
-      username: auth.username ?? '',
-      nombre:   auth.nombre,
-      apellido: auth.apellido,
-      esAdmin:  auth.esAdmin,
-    }
-    persistToken(auth.token)
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUsuario))
-    setUsuario(nextUsuario)
-  }
+  const login = useCallback(
+    (auth: AuthResponse) => {
+      const nextUsuario: Usuario = {
+        email:    auth.email ?? '',
+        username: auth.username ?? '',
+        nombre:   auth.nombre,
+        apellido: auth.apellido,
+        esAdmin:  auth.esAdmin,
+      }
+      // Evita mostrar datos cacheados del usuario anterior (portfolios, etc.) al cambiar de cuenta.
+      queryClient.clear()
+      persistToken(auth.token)
+      localStorage.setItem(USER_KEY, JSON.stringify(nextUsuario))
+      setUsuario(nextUsuario)
+    },
+    [queryClient],
+  )
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    queryClient.clear()
     persistToken(null)
     localStorage.removeItem(USER_KEY)
     setUsuario(null)
-  }
+  }, [queryClient])
 
-  const updateUsuario = (nextUsuario: Usuario) => {
+  const updateUsuario = useCallback((nextUsuario: Usuario) => {
     localStorage.setItem(USER_KEY, JSON.stringify(nextUsuario))
     setUsuario(nextUsuario)
-  }
+  }, [])
 
   const value = useMemo(
     () => ({ usuario, isAuthenticated: usuario !== null, login, logout, updateUsuario }),
-    [usuario],
+    [usuario, login, logout, updateUsuario],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
