@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
+import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
 
 export interface CatalogoOpcion {
@@ -25,17 +26,11 @@ interface Props {
   tenencias:     TenenciaItem[]
   catalogo:      CatalogoOpcion[]
   isMutating:    boolean
-  onAdd:    (idCatalogo: number, cantidad: number, precioCompra: number) => void
-  onUpdate: (idCatalogo: number, cantidad: number) => void
+  error?:        string | null
+  onAdd:    (idCatalogo: number, cantidad: number, precioCompra: number) => Promise<void>
+  onUpdate: (idCatalogo: number, cantidad: number) => Promise<void>
   onDelete: (idCatalogo: number) => void
 }
-
-const fieldLabel = 'mb-1 block text-[11px] text-ink-muted'
-const fieldInput =
-  'h-9 w-full rounded-[7px] border-[1.5px] border-field-border bg-white px-2.5 text-[12.5px] text-navy-950 outline-none focus:border-blue-brand'
-const readonlyChip = 'flex h-9 items-center rounded-[7px] bg-line-soft px-2.5 text-[12.5px] text-ink-muted'
-const cancelBtn =
-  'h-8 rounded-md border border-field-border bg-transparent px-3 text-xs font-semibold text-ink-muted'
 
 export default function CatalogoTenenciaSection({
   titulo,
@@ -46,6 +41,7 @@ export default function CatalogoTenenciaSection({
   tenencias,
   catalogo,
   isMutating,
+  error,
   onAdd,
   onUpdate,
   onDelete,
@@ -68,9 +64,13 @@ export default function CatalogoTenenciaSection({
               tenencia={t}
               isMutating={isMutating}
               onCancel={() => setEditingId(null)}
-              onSave={(cantidad) => {
-                onUpdate(t.idCatalogo, cantidad)
-                setEditingId(null)
+              onSave={async (cantidad) => {
+                try {
+                  await onUpdate(t.idCatalogo, cantidad)
+                  setEditingId(null)
+                } catch {
+                  // Mantener la fila abierta: el error ya se muestra debajo de la sección.
+                }
               }}
             />
           ) : (
@@ -90,9 +90,13 @@ export default function CatalogoTenenciaSection({
             catalogo={catalogo}
             isMutating={isMutating}
             onCancel={() => setIsAdding(false)}
-            onSave={(idCatalogo, cantidad, precioCompra) => {
-              onAdd(idCatalogo, cantidad, precioCompra)
-              setIsAdding(false)
+            onSave={async (idCatalogo, cantidad, precioCompra) => {
+              try {
+                await onAdd(idCatalogo, cantidad, precioCompra)
+                setIsAdding(false)
+              } catch {
+                // Mantener la fila abierta: el error ya se muestra debajo de la sección.
+              }
             }}
           />
         ) : (
@@ -103,6 +107,12 @@ export default function CatalogoTenenciaSection({
           >
             {addLabel}
           </button>
+        )}
+
+        {error && (
+          <div className="banner-danger">
+            <FormattedErrorMessage text={error} />
+          </div>
         )}
       </div>
     </div>
@@ -191,15 +201,15 @@ function EditExistingRow({
       <div className="grid grid-cols-2 gap-2">
         {tenencia.previewFields.map((f) => (
           <div key={f.label}>
-            <span className={fieldLabel}>{f.label}</span>
-            <div className={readonlyChip}>{f.value}</div>
+            <span className="field-label">{f.label}</span>
+            <div className="readonly-chip">{f.value}</div>
           </div>
         ))}
         <div>
-          <span className={fieldLabel}>Cantidad</span>
+          <span className="field-label">Cantidad</span>
           <input
             type="number"
-            className={fieldInput}
+            className="field-input"
             value={cantidad}
             placeholder="0"
             onChange={(e) => setCantidad(e.target.value)}
@@ -207,18 +217,14 @@ function EditExistingRow({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" className={cancelBtn} onClick={onCancel}>
+        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
           Cancelar
         </button>
         <button
           type="button"
           disabled={!canSave || isMutating}
           onClick={() => onSave(cantidadNum)}
-          className={
-            canSave
-              ? 'h-8 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white'
-              : 'h-8 cursor-not-allowed rounded-md bg-line px-3 text-xs font-semibold text-ink-soft'
-          }
+          className={canSave ? 'btn-save-sm' : 'btn-save-sm-disabled'}
         >
           Guardar
         </button>
@@ -251,14 +257,14 @@ function AddRow({
   return (
     <div className="flex flex-col gap-2.5 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
       {catalogo.length === 0 ? (
-        <div className="rounded-lg border border-warning-border bg-warning-bg px-3 py-2.5 text-[12.5px] leading-normal text-warning-title">
+        <div className="banner-warning">
           {emptyMessage}
         </div>
       ) : (
         <div>
-          <span className={fieldLabel}>{pickLabel}</span>
+          <span className="field-label">{pickLabel}</span>
           <select
-            className={fieldInput}
+            className="field-input"
             value={selectedId}
             onChange={(e) => {
               setSelectedId(e.target.value)
@@ -279,15 +285,15 @@ function AddRow({
         <div className="grid grid-cols-2 gap-2">
           {selected.previewFields.map((f) => (
             <div key={f.label}>
-              <span className={fieldLabel}>{f.label}</span>
-              <div className={readonlyChip}>{f.value}</div>
+              <span className="field-label">{f.label}</span>
+              <div className="readonly-chip">{f.value}</div>
             </div>
           ))}
           <div>
-            <span className={fieldLabel}>Cantidad</span>
+            <span className="field-label">Cantidad</span>
             <input
               type="number"
-              className={fieldInput}
+              className="field-input"
               value={cantidad}
               placeholder="0"
               onChange={(e) => setCantidad(e.target.value)}
@@ -297,18 +303,14 @@ function AddRow({
       )}
 
       <div className="flex justify-end gap-2">
-        <button type="button" className={cancelBtn} onClick={onCancel}>
+        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
           Cancelar
         </button>
         <button
           type="button"
           disabled={!canSave || isMutating}
           onClick={() => selected && onSave(selected.id, cantidadNum, selected.precioActual)}
-          className={
-            canSave
-              ? 'h-8 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white'
-              : 'h-8 cursor-not-allowed rounded-md bg-line px-3 text-xs font-semibold text-ink-soft'
-          }
+          className={canSave ? 'btn-save-sm' : 'btn-save-sm-disabled'}
         >
           Guardar
         </button>

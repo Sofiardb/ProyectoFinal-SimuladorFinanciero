@@ -49,6 +49,17 @@ import {
 } from '@/lib/tenenciaDisplay'
 import { formatFecha } from '@/lib/format'
 
+/** Limpia el error previo, ejecuta la mutación y, si falla, guarda el mensaje y relanza (para que el formulario que llama quede abierto). */
+async function conCaptura(setError: (mensaje: string | null) => void, fn: () => Promise<unknown>): Promise<void> {
+  setError(null)
+  try {
+    await fn()
+  } catch (error) {
+    setError((error as Error).message)
+    throw error
+  }
+}
+
 export default function PortfolioDetallePage() {
   const { id } = useParams<{ id: string }>()
   const idPortfolio = Number(id)
@@ -78,6 +89,12 @@ export default function PortfolioDetallePage() {
 
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const [errorAcciones, setErrorAcciones] = useState<string | null>(null)
+  const [errorBonos, setErrorBonos] = useState<string | null>(null)
+  const [errorLetras, setErrorLetras] = useState<string | null>(null)
+  const [errorPlazoFijoUsd, setErrorPlazoFijoUsd] = useState<string | null>(null)
+  const [errorPlazoFijoArs, setErrorPlazoFijoArs] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -175,11 +192,13 @@ export default function PortfolioDetallePage() {
   return (
     <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-16 sm:px-6 lg:px-8 lg:pt-9">
       <div className="mb-[18px] flex flex-wrap items-center gap-1.5 text-[12.5px] text-ink-soft">
-        <Link to="/portfolios" className="hover:text-navy-950">
+        <Link to={`/portfolios?perfil=${detalle.idPerfilRiesgo}`} className="hover:text-navy-950">
           Portfolios
         </Link>
         <span>/</span>
-        <span>{detalle.nombrePerfilRiesgo}</span>
+        <Link to={`/portfolios?perfil=${detalle.idPerfilRiesgo}`} className="hover:text-navy-950">
+          {detalle.nombrePerfilRiesgo}
+        </Link>
         <span>/</span>
         <span className="font-semibold text-navy-950">{detalle.nombre}</span>
       </div>
@@ -202,27 +221,21 @@ export default function PortfolioDetallePage() {
           <button
             onClick={() => navigate(`/portfolios/${idPortfolio}/simular`)}
             disabled={archivado}
-            className="h-9 rounded-lg bg-navy-950 px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-white disabled:opacity-50"
+            className="btn-primary"
           >
             Nueva simulación
           </button>
-          <button
-            onClick={() => setEditOpen(true)}
-            className="h-9 rounded-lg border-[1.5px] border-navy-950 bg-transparent px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-navy-950"
-          >
+          <button onClick={() => setEditOpen(true)} className="btn-secondary">
             Editar portfolio
           </button>
           <button
             onClick={handleToggleArchivado}
             disabled={updatePortfolio.isPending}
-            className="h-9 rounded-lg border-[1.5px] border-navy-950 bg-transparent px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-navy-950 disabled:opacity-50"
+            className="btn-secondary"
           >
             {archivado ? 'Reactivar portfolio' : 'Archivar portfolio'}
           </button>
-          <button
-            onClick={() => setDeleteOpen(true)}
-            className="h-9 rounded-lg border-[1.5px] border-danger-border bg-transparent px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-danger"
-          >
+          <button onClick={() => setDeleteOpen(true)} className="btn-danger-outline">
             Eliminar portfolio
           </button>
         </div>
@@ -251,17 +264,14 @@ export default function PortfolioDetallePage() {
                 tenencias={accionesTenencias}
                 catalogo={accionesOpciones}
                 isMutating={addAccion.isPending || updateAccion.isPending || deleteAccion.isPending}
+                error={errorAcciones}
                 onAdd={(idAccion, cantidad, precioCompra) =>
-                  addAccion.mutate(
-                    { idAccion, cantidad, precioCompra },
-                    { onError: (error) => toast.error(error.message) },
-                  )
+                  conCaptura(setErrorAcciones, () => addAccion.mutateAsync({ idAccion, cantidad, precioCompra }))
                 }
                 onUpdate={(idAccion, cantidad) => {
                   const precioCompra = detalle.acciones.find((a) => a.idAccion === idAccion)?.precioCompra ?? 0
-                  updateAccion.mutate(
-                    { idAccion, cantidad, precioCompra },
-                    { onError: (error) => toast.error(error.message) },
+                  return conCaptura(setErrorAcciones, () =>
+                    updateAccion.mutateAsync({ idAccion, cantidad, precioCompra }),
                   )
                 }}
                 onDelete={(idAccion) =>
@@ -280,16 +290,15 @@ export default function PortfolioDetallePage() {
                 tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === 'USD')}
                 tipos={tiposPfUsd}
                 isMutating={addPlazoFijo.isPending || updatePlazoFijo.isPending || deletePlazoFijo.isPending}
+                error={errorPlazoFijoUsd}
                 onAdd={(payload) =>
-                  addPlazoFijo.mutate(
-                    { ...payload, idMoneda: idMonedaUsd },
-                    { onError: (error) => toast.error(error.message) },
+                  conCaptura(setErrorPlazoFijoUsd, () =>
+                    addPlazoFijo.mutateAsync({ ...payload, idMoneda: idMonedaUsd }),
                   )
                 }
                 onUpdate={(idPortfolioPlazoFijo, payload) =>
-                  updatePlazoFijo.mutate(
-                    { idPortfolioPlazoFijo, ...payload },
-                    { onError: (error) => toast.error(error.message) },
+                  conCaptura(setErrorPlazoFijoUsd, () =>
+                    updatePlazoFijo.mutateAsync({ idPortfolioPlazoFijo, ...payload }),
                   )
                 }
                 onDelete={(idPortfolioPlazoFijo) =>
@@ -316,18 +325,13 @@ export default function PortfolioDetallePage() {
                 tenencias={bonosTenencias}
                 catalogo={bonosOpciones}
                 isMutating={addBono.isPending || updateBono.isPending || deleteBono.isPending}
+                error={errorBonos}
                 onAdd={(idBono, cantidad, precioCompra) =>
-                  addBono.mutate(
-                    { idBono, cantidad, precioCompra },
-                    { onError: (error) => toast.error(error.message) },
-                  )
+                  conCaptura(setErrorBonos, () => addBono.mutateAsync({ idBono, cantidad, precioCompra }))
                 }
                 onUpdate={(idBono, cantidad) => {
                   const precioCompra = detalle.bonos.find((b) => b.idBono === idBono)?.precioCompra ?? 0
-                  updateBono.mutate(
-                    { idBono, cantidad, precioCompra },
-                    { onError: (error) => toast.error(error.message) },
-                  )
+                  return conCaptura(setErrorBonos, () => updateBono.mutateAsync({ idBono, cantidad, precioCompra }))
                 }}
                 onDelete={(idBono) =>
                   deleteBono.mutate(idBono, { onError: (error) => toast.error(error.message) })
@@ -347,17 +351,14 @@ export default function PortfolioDetallePage() {
                 tenencias={letrasTenencias}
                 catalogo={letrasOpciones}
                 isMutating={addLetra.isPending || updateLetra.isPending || deleteLetra.isPending}
+                error={errorLetras}
                 onAdd={(idLetra, cantidad, precioCompra) =>
-                  addLetra.mutate(
-                    { idLetra, cantidad, precioCompra },
-                    { onError: (error) => toast.error(error.message) },
-                  )
+                  conCaptura(setErrorLetras, () => addLetra.mutateAsync({ idLetra, cantidad, precioCompra }))
                 }
                 onUpdate={(idLetra, cantidad) => {
                   const precioCompra = detalle.letras.find((l) => l.idLetra === idLetra)?.precioCompra ?? 0
-                  updateLetra.mutate(
-                    { idLetra, cantidad, precioCompra },
-                    { onError: (error) => toast.error(error.message) },
+                  return conCaptura(setErrorLetras, () =>
+                    updateLetra.mutateAsync({ idLetra, cantidad, precioCompra }),
                   )
                 }}
                 onDelete={(idLetra) =>
@@ -376,16 +377,15 @@ export default function PortfolioDetallePage() {
                 tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === 'ARS')}
                 tipos={tiposPfArs}
                 isMutating={addPlazoFijo.isPending || updatePlazoFijo.isPending || deletePlazoFijo.isPending}
+                error={errorPlazoFijoArs}
                 onAdd={(payload) =>
-                  addPlazoFijo.mutate(
-                    { ...payload, idMoneda: idMonedaArs },
-                    { onError: (error) => toast.error(error.message) },
+                  conCaptura(setErrorPlazoFijoArs, () =>
+                    addPlazoFijo.mutateAsync({ ...payload, idMoneda: idMonedaArs }),
                   )
                 }
                 onUpdate={(idPortfolioPlazoFijo, payload) =>
-                  updatePlazoFijo.mutate(
-                    { idPortfolioPlazoFijo, ...payload },
-                    { onError: (error) => toast.error(error.message) },
+                  conCaptura(setErrorPlazoFijoArs, () =>
+                    updatePlazoFijo.mutateAsync({ idPortfolioPlazoFijo, ...payload }),
                   )
                 }
                 onDelete={(idPortfolioPlazoFijo) =>
@@ -424,5 +424,5 @@ export default function PortfolioDetallePage() {
 }
 
 function TypeSectionCard({ children }: { children: ReactNode }) {
-  return <div className="rounded-xl border border-line bg-white p-5">{children}</div>
+  return <div className="card">{children}</div>
 }

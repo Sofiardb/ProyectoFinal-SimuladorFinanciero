@@ -6,12 +6,14 @@ using SimuladorFinanciero.Api.Infrastructure.Exceptions;
 using SimuladorFinanciero.Api.Models;
 using SimuladorFinanciero.Api.Repositories;
 using SimuladorFinanciero.Api.Services;
+using SimuladorFinanciero.Api.Services.Catalogo;
 
 namespace SimuladorFinanciero.Tests.Portfolios;
 
 public class PortfolioServiceTests
 {
     private readonly IPortfolioRepository _repo;
+    private readonly ITipoCambioService   _tipoCambio;
     private readonly PortfolioService     _svc;
 
     private const long IdUsuario   = 42;
@@ -23,18 +25,25 @@ public class PortfolioServiceTests
 
     public PortfolioServiceTests()
     {
-        _repo = Substitute.For<IPortfolioRepository>();
-        _svc  = new PortfolioService(_repo);
+        _repo       = Substitute.For<IPortfolioRepository>();
+        _tipoCambio = Substitute.For<ITipoCambioService>();
+        _svc        = new PortfolioService(_repo, _tipoCambio);
+
+        // Todos los portfolios de prueba usan id_moneda_base = 1 (ARS); las cotizaciones USD/ARS
+        // se estuban con una tasa fija de 1:1 salvo que un test específico la sobreescriba.
+        _repo.ObtenerCodigoMonedaAsync(1, Arg.Any<CancellationToken>()).Returns("ARS");
+        _tipoCambio.ObtenerCotizacionUsdArsAsync(Arg.Any<CancellationToken>()).Returns(1m);
     }
 
     // ── Datos de prueba ───────────────────────────────────────────────────────
 
-    private static Portfolio PortfolioActivo(int idPerfil = 2, decimal? capitalInicial = null) => new()
+    private static Portfolio PortfolioActivo(int idPerfil = 2, decimal? capitalInicial = null, int idMonedaBase = 1, string codigoMonedaBase = "ARS") => new()
     {
         IdPortfolio       = IdPortfolio,
         IdUsuario         = IdUsuario,
         IdPerfilRiesgo    = idPerfil,
-        IdMonedaBase      = 1,
+        IdMonedaBase      = idMonedaBase,
+        CodigoMonedaBase  = codigoMonedaBase,
         Nombre            = "Mi Portfolio",
         CapitalInicial    = capitalInicial,
         HorizonteMeses    = 12,
@@ -49,6 +58,7 @@ public class PortfolioServiceTests
         IdUsuario         = IdUsuario,
         IdPerfilRiesgo    = 2,
         IdMonedaBase      = 1,
+        CodigoMonedaBase  = "ARS",
         Nombre            = "Mi Portfolio",
         CapitalInicial    = null,
         HorizonteMeses    = 12,
@@ -787,7 +797,7 @@ public class PortfolioServiceTests
     [Fact]
     public async Task AgregarAccion_SinPresupuesto_OmiteValidacion()
     {
-        // CapitalInicial = null → budget check skipped, no call to ObtenerTotalInvertidoAsync
+        // CapitalInicial = null → budget check skipped, no call to ObtenerTotalInvertidoPorMonedaAsync
         var req    = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10m, PrecioCompra = 180m };
         var accion = AccionEjemplo();
         ConfigurarAccionValida(sigmaAccion: 0.04m, sigmaMax: 0.10m);
@@ -796,14 +806,15 @@ public class PortfolioServiceTests
 
         await _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
 
-        await _repo.DidNotReceive().ObtenerTotalInvertidoAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
+        await _repo.DidNotReceive().ObtenerTotalInvertidoPorMonedaAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task AgregarAccion_ExcedePresupuesto_LanzaValidationException()
     {
         var req = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10m, PrecioCompra = 180m };
-        // Portfolio con presupuesto de 1000, ya invertido 900 → añadir 1800 lo excede
+        // Portfolio (base ARS) con presupuesto de 1000, ya invertido 900 ARS → añadir una acción
+        // (siempre USD) de 1800 la excede, incluso a una cotización 1:1
         _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
              .Returns(PortfolioActivo(idPerfil: 2, capitalInicial: 1_000m));
         (bool Activa, decimal? Sigma)? info = (true, 0.04m);
@@ -811,7 +822,7 @@ public class PortfolioServiceTests
              .Returns(Task.FromResult(info));
         _repo.ObtenerSigmaMaxAsync(2, Arg.Any<CancellationToken>()).Returns(0.10m);
         _repo.ExisteAccionEnPortfolioAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>()).Returns(false);
-        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(900m);
+        _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 900m));
 
         var act = () => _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
 
@@ -826,7 +837,7 @@ public class PortfolioServiceTests
              .Returns(PortfolioActivo(capitalInicial: 5_000m));
         _repo.ExisteBonoActivoAsync(IdBono, Arg.Any<CancellationToken>()).Returns(true);
         _repo.ExisteBonoEnPortfolioAsync(IdPortfolio, IdBono, Arg.Any<CancellationToken>()).Returns(false);
-        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(0m);
+        _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 0m));
         // 0 + 100 * 92 = 9200 > 5000
 
         var act = () => _svc.AgregarBonoAsync(IdPortfolio, IdUsuario, req);
@@ -847,7 +858,7 @@ public class PortfolioServiceTests
              .Returns(PortfolioActivo(capitalInicial: 100_000m));
         _repo.ExisteTipoPlazoFijoAsync(1, Arg.Any<CancellationToken>()).Returns(true);
         _repo.ExisteMonedaAsync(1, Arg.Any<CancellationToken>()).Returns(true);
-        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(0m);
+        _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 0m));
         // 0 + 500_000 > 100_000
 
         var act = () => _svc.AgregarPlazoFijoAsync(IdPortfolio, IdUsuario, req);
@@ -861,12 +872,55 @@ public class PortfolioServiceTests
         var req = new ActualizarPortfolioRequest { CapitalInicial = 500m };
         _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
              .Returns(PortfolioActivo(capitalInicial: 100_000m));
-        _repo.ObtenerTotalInvertidoAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns(10_000m);
+        _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 10_000m));
         // Nuevo presupuesto 500 < 10_000 ya invertido
 
         var act = () => _svc.ActualizarAsync(IdPortfolio, IdUsuario, req);
 
         await act.Should().ThrowAsync<ValidationException>().WithMessage("*presupuesto*");
+    }
+
+    [Fact]
+    public async Task AgregarAccion_MismaMonedaQueBase_NoConsultaTipoCambio()
+    {
+        // Portfolio con base USD (id_moneda_base = 2) y una acción (siempre USD): no hay conversión que hacer
+        var req    = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10m, PrecioCompra = 180m };
+        var accion = AccionEjemplo();
+        var portfolioUsd = PortfolioActivo(idPerfil: 2, capitalInicial: 10_000m, idMonedaBase: 2, codigoMonedaBase: "USD");
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>()).Returns(portfolioUsd);
+        (bool Activa, decimal? Sigma)? info = (true, 0.04m);
+        _repo.ObtenerInfoAccionAsync(IdAccion, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(info));
+        _repo.ObtenerSigmaMaxAsync(2, Arg.Any<CancellationToken>()).Returns(0.10m);
+        _repo.ExisteAccionEnPortfolioAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 0m));
+        _repo.AgregarAccionAsync(IdPortfolio, IdAccion, 10m, 180m, Arg.Any<CancellationToken>()).Returns(accion);
+
+        await _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
+
+        await _tipoCambio.DidNotReceive().ObtenerCotizacionUsdArsAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AgregarAccion_TipoCambioNoDisponible_PropagaExcepcion()
+    {
+        // Portfolio base ARS con una acción (USD) pendiente de convertir: si el BCRA falla y no hay
+        // valor previo, ITipoCambioService propaga la excepción y el alta queda bloqueada
+        var req = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10m, PrecioCompra = 180m };
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo(idPerfil: 2, capitalInicial: 100_000m));
+        (bool Activa, decimal? Sigma)? info = (true, 0.04m);
+        _repo.ObtenerInfoAccionAsync(IdAccion, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(info));
+        _repo.ObtenerSigmaMaxAsync(2, Arg.Any<CancellationToken>()).Returns(0.10m);
+        _repo.ExisteAccionEnPortfolioAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>()).Returns(false);
+        _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 0m));
+        _tipoCambio.ObtenerCotizacionUsdArsAsync(Arg.Any<CancellationToken>())
+             .Returns(Task.FromException<decimal>(new ExternalApiException("BCRA no disponible.")));
+
+        var act = () => _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ExternalApiException>();
     }
 
     // ── Setup helpers ─────────────────────────────────────────────────────────

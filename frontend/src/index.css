@@ -76,6 +76,7 @@
 
   /* Estados negativos */
   --color-danger:        #d1503f;
+  --color-danger-bg:     #faeae6;
   --color-danger-border: #ecd3cd;
   --color-field-border:  #dfe3e8;
 
@@ -101,5 +102,48 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+}
+
+/* ─── Clases de componentes reutilizables ──────────────── */
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-white p-5;
+  }
+
+  .btn-primary {
+    @apply h-9 rounded-lg bg-navy-950 px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-white disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply h-9 rounded-lg border-[1.5px] border-navy-950 bg-transparent px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-navy-950 disabled:opacity-50;
+  }
+  .btn-danger-outline {
+    @apply h-9 rounded-lg border-[1.5px] border-danger-border bg-transparent px-3.5 text-[12.5px] font-semibold whitespace-nowrap text-danger disabled:opacity-50;
+  }
+  .btn-save-sm {
+    @apply h-8 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white;
+  }
+  .btn-save-sm-disabled {
+    @apply h-8 cursor-not-allowed rounded-md bg-line px-3 text-xs font-semibold text-ink-soft;
+  }
+  .btn-cancel-sm {
+    @apply h-8 rounded-md border border-field-border bg-transparent px-3 text-xs font-semibold text-ink-muted;
+  }
+
+  .field-label {
+    @apply mb-1 block text-[11px] text-ink-muted;
+  }
+  .field-input {
+    @apply h-9 w-full rounded-[7px] border-[1.5px] border-field-border bg-white px-2.5 text-[12.5px] text-navy-950 outline-none focus:border-blue-brand;
+  }
+  .readonly-chip {
+    @apply flex h-9 items-center rounded-[7px] bg-line-soft px-2.5 text-[12.5px] text-ink-muted;
+  }
+
+  .banner-danger {
+    @apply rounded-lg border border-danger-border bg-danger-bg px-3 py-2.5 text-[12.5px] leading-normal text-danger;
+  }
+  .banner-warning {
+    @apply rounded-lg border border-warning-border bg-warning-bg px-3 py-2.5 text-[12.5px] leading-normal text-warning-title;
   }
 }

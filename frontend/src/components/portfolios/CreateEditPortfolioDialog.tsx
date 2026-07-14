@@ -170,23 +170,32 @@ function PortfolioForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Perfil de riesgo</FormLabel>
-                  <Select
-                    value={field.value ? String(field.value) : undefined}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                  >
+                  {isEdit ? (
+                    <Select
+                      value={field.value ? String(field.value) : undefined}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Elegir" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {perfiles?.map((p) => (
+                          <SelectItem key={p.idPerfilRiesgo} value={String(p.idPerfilRiesgo)}>
+                            {p.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
                     <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Elegir" />
-                      </SelectTrigger>
+                      <Input
+                        disabled
+                        value={perfiles?.find((p) => p.idPerfilRiesgo === field.value)?.nombre ?? ''}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {perfiles?.map((p) => (
-                        <SelectItem key={p.idPerfilRiesgo} value={String(p.idPerfilRiesgo)}>
-                          {p.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

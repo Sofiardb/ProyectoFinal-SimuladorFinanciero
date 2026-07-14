@@ -35,6 +35,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(
       firstValidationError ??
         body?.detail ??
+        body?.mensaje ??
         body?.title ??
         'Ocurrió un error inesperado. Intentá de nuevo en unos segundos.',
     )

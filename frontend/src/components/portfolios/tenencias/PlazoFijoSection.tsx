@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import { formatPorcentaje } from '@/lib/format'
+import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
 import type { PortfolioPlazoFijo, TipoPlazoFijo } from '@/types'
 
 export interface NuevoPlazoFijo {
@@ -29,17 +30,11 @@ interface Props {
   tenencias:    PortfolioPlazoFijo[]
   tipos:        TipoPlazoFijo[]
   isMutating:   boolean
-  onAdd:    (payload: NuevoPlazoFijo) => void
-  onUpdate: (idPortfolioPlazoFijo: number, payload: EditarPlazoFijo) => void
+  error?:       string | null
+  onAdd:    (payload: NuevoPlazoFijo) => Promise<void>
+  onUpdate: (idPortfolioPlazoFijo: number, payload: EditarPlazoFijo) => Promise<void>
   onDelete: (idPortfolioPlazoFijo: number) => void
 }
-
-const fieldLabel = 'mb-1 block text-[11px] text-ink-muted'
-const fieldInput =
-  'h-9 w-full rounded-[7px] border-[1.5px] border-field-border bg-white px-2.5 text-[12.5px] text-navy-950 outline-none focus:border-blue-brand'
-const readonlyChip = 'flex h-9 items-center rounded-[7px] bg-line-soft px-2.5 text-[12.5px] text-ink-muted'
-const cancelBtn =
-  'h-8 rounded-md border border-field-border bg-transparent px-3 text-xs font-semibold text-ink-muted'
 
 function tasaLabelPara(codigoTipo: string | undefined): string {
   return codigoTipo === 'UVA' ? 'Tasa real' : 'TNA'
@@ -52,6 +47,7 @@ export default function PlazoFijoSection({
   tenencias,
   tipos,
   isMutating,
+  error,
   onAdd,
   onUpdate,
   onDelete,
@@ -76,9 +72,13 @@ export default function PlazoFijoSection({
               tipos={tipos}
               isMutating={isMutating}
               onCancel={() => setEditingId(null)}
-              onSave={(payload) => {
-                onUpdate(t.idPortfolioPlazoFijo, payload)
-                setEditingId(null)
+              onSave={async (payload) => {
+                try {
+                  await onUpdate(t.idPortfolioPlazoFijo, payload)
+                  setEditingId(null)
+                } catch {
+                  // Mantener la fila abierta: el error ya se muestra debajo de la sección.
+                }
               }}
             />
           ) : (
@@ -98,9 +98,13 @@ export default function PlazoFijoSection({
             tipos={tipos}
             isMutating={isMutating}
             onCancel={() => setIsAdding(false)}
-            onSave={(payload) => {
-              onAdd(payload)
-              setIsAdding(false)
+            onSave={async (payload) => {
+              try {
+                await onAdd(payload)
+                setIsAdding(false)
+              } catch {
+                // Mantener la fila abierta: el error ya se muestra debajo de la sección.
+              }
             }}
           />
         ) : (
@@ -111,6 +115,12 @@ export default function PlazoFijoSection({
           >
             + Agregar plazo fijo
           </button>
+        )}
+
+        {error && (
+          <div className="banner-danger">
+            <FormattedErrorMessage text={error} />
+          </div>
         )}
       </div>
     </div>
@@ -213,10 +223,10 @@ function TipoField({
   onChange: (id: string) => void
 }) {
   if (tipos.length <= 1) {
-    return <div className={readonlyChip}>{tipos[0]?.nombre ?? '—'}</div>
+    return <div className="readonly-chip">{tipos[0]?.nombre ?? '—'}</div>
   }
   return (
-    <select className={fieldInput} value={idTipoPlazoFijo} onChange={(e) => onChange(e.target.value)}>
+    <select className="field-input" value={idTipoPlazoFijo} onChange={(e) => onChange(e.target.value)}>
       {tipos.map((t) => (
         <option key={t.idTipoPlazoFijo} value={t.idTipoPlazoFijo}>
           {t.nombre}
@@ -247,10 +257,10 @@ function FormGrid({
   return (
     <>
       <div>
-        <span className={fieldLabel}>Alias</span>
+        <span className="field-label">Alias</span>
         <input
           type="text"
-          className={fieldInput}
+          className="field-input"
           value={fields.entidadFinanciera}
           placeholder="Ej: Banco Galicia"
           onChange={(e) => setFields((f) => ({ ...f, entidadFinanciera: e.target.value }))}
@@ -258,45 +268,45 @@ function FormGrid({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <span className={fieldLabel}>Tipo</span>
+          <span className="field-label">Tipo</span>
           <TipoField tipos={tipos} idTipoPlazoFijo={idTipoPlazoFijo} onChange={setIdTipoPlazoFijo} />
         </div>
         <div>
-          <span className={fieldLabel}>Monto ({moneda})</span>
+          <span className="field-label">Monto ({moneda})</span>
           <input
             type="number"
-            className={fieldInput}
+            className="field-input"
             value={fields.montoInvertido}
             placeholder="0"
             onChange={(e) => setFields((f) => ({ ...f, montoInvertido: e.target.value }))}
           />
         </div>
         <div>
-          <span className={fieldLabel}>{tasaLabel} (ej: 0.42)</span>
+          <span className="field-label">{tasaLabel} (ej: 0.42)</span>
           <input
             type="number"
-            className={fieldInput}
+            className="field-input"
             value={fields.tnaPactada}
             placeholder="0"
             onChange={(e) => setFields((f) => ({ ...f, tnaPactada: e.target.value }))}
           />
         </div>
         <div>
-          <span className={fieldLabel}>Plazo (días)</span>
+          <span className="field-label">Plazo (días)</span>
           <input
             type="number"
             min={1}
-            className={fieldInput}
+            className="field-input"
             value={fields.duracionDias}
             placeholder="180"
             onChange={(e) => setFields((f) => ({ ...f, duracionDias: e.target.value }))}
           />
         </div>
         <div>
-          <span className={fieldLabel}>Fecha de inicio</span>
+          <span className="field-label">Fecha de inicio</span>
           <input
             type="date"
-            className={fieldInput}
+            className="field-input"
             value={fields.fechaInicio}
             onChange={(e) => setFields((f) => ({ ...f, fechaInicio: e.target.value }))}
           />
@@ -356,7 +366,7 @@ function EditRow({
         setFields={setFields}
       />
       <div className="mt-0.5 flex justify-end gap-2">
-        <button type="button" className={cancelBtn} onClick={onCancel}>
+        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
           Cancelar
         </button>
         <button
@@ -372,11 +382,7 @@ function EditRow({
               reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
             })
           }
-          className={
-            isValid
-              ? 'h-8 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white'
-              : 'h-8 cursor-not-allowed rounded-md bg-line px-3 text-xs font-semibold text-ink-soft'
-          }
+          className={isValid ? 'btn-save-sm' : 'btn-save-sm-disabled'}
         >
           Guardar
         </button>
@@ -422,7 +428,7 @@ function AddRow({
         setFields={setFields}
       />
       <div className="mt-0.5 flex justify-end gap-2">
-        <button type="button" className={cancelBtn} onClick={onCancel}>
+        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
           Cancelar
         </button>
         <button
@@ -439,11 +445,7 @@ function AddRow({
               reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
             })
           }
-          className={
-            isValid
-              ? 'h-8 rounded-md bg-navy-950 px-3 text-xs font-semibold text-white'
-              : 'h-8 cursor-not-allowed rounded-md bg-line px-3 text-xs font-semibold text-ink-soft'
-          }
+          className={isValid ? 'btn-save-sm' : 'btn-save-sm-disabled'}
         >
           Guardar
         </button>

@@ -22,6 +22,7 @@ public sealed class AdminController : ControllerBase
     private readonly ILetraCatalogoService  _letras;
     private readonly IBonoCatalogoService   _bonos;
     private readonly IAccionCatalogoService _acciones;
+    private readonly ITipoCambioService     _tipoCambio;
     private readonly IDoctaApiClient        _docta;
     private readonly IBymaApiClient         _byma;
     private readonly ILogger<AdminController> _log;
@@ -30,16 +31,18 @@ public sealed class AdminController : ControllerBase
         ILetraCatalogoService  letras,
         IBonoCatalogoService   bonos,
         IAccionCatalogoService acciones,
+        ITipoCambioService     tipoCambio,
         IDoctaApiClient        docta,
         IBymaApiClient         byma,
         ILogger<AdminController> log)
     {
-        _letras   = letras;
-        _bonos    = bonos;
-        _acciones = acciones;
-        _docta    = docta;
-        _byma     = byma;
-        _log      = log;
+        _letras     = letras;
+        _bonos      = bonos;
+        _acciones   = acciones;
+        _tipoCambio = tipoCambio;
+        _docta      = docta;
+        _byma       = byma;
+        _log        = log;
     }
 
     /// <summary>
@@ -68,9 +71,11 @@ public sealed class AdminController : ControllerBase
         // Docta Capital: token + 1 call al catálogo
         var (doctaOk, doctaDetalle) = await _docta.VerificarConexionAsync(ct);
 
-        var todo = bymaOk && doctaOk;
-        return todo ? Ok(new { ok = true,  byma = bymaDetalle, docta = doctaDetalle })
-                    : StatusCode(502, new { ok = false, byma = bymaDetalle, docta = doctaDetalle });
+        return Ok(new
+        {
+            byma  = new { ok = bymaOk,  detalle = bymaDetalle },
+            docta = new { ok = doctaOk, detalle = doctaDetalle },
+        });
     }
 
     /// <summary>Fuerza un refresco de precios y TNA de letras desde BYMA (+ LECER desde Docta).</summary>
@@ -134,5 +139,16 @@ public sealed class AdminController : ControllerBase
         if (resultado is null)
             return UnprocessableEntity(new { mensaje = $"No se pudo calcular GBM para {t}: datos insuficientes o API no disponible." });
         return Ok(resultado);
+    }
+
+    /// <summary>Fuerza una consulta live al BCRA de la cotización USD/ARS (ignora el valor ya cacheado del día).</summary>
+    [HttpPost("refresh/tipo-cambio")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status502BadGateway)]
+    public async Task<IActionResult> RefreshTipoCambio(CancellationToken ct)
+    {
+        _log.LogInformation("Admin: refresco manual de cotización USD/ARS (BCRA) solicitado por {User}.", User.Identity?.Name);
+        var valor = await _tipoCambio.RefrescarAsync(ct);
+        return Ok(new { mensaje = "Cotización USD/ARS actualizada.", cotizacionUsdArs = valor });
     }
 }

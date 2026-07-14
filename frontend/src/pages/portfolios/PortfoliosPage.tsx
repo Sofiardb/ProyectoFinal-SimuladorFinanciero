@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import PortfolioCard from '@/components/portfolios/PortfolioCard'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
@@ -9,14 +10,29 @@ import { cn } from '@/lib/utils'
 export default function PortfoliosPage() {
   const { data: perfiles, isLoading: perfilesLoading } = usePerfilesRiesgo()
   const { data: portfolios, isLoading: portfoliosLoading } = usePortfolios()
-  const [activeTab, setActiveTab] = useState<number | undefined>(undefined)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [createOpen, setCreateOpen] = useState(false)
+
+  const perfilParam = Number(searchParams.get('perfil'))
+  const activeTab = perfiles?.some((p) => p.idPerfilRiesgo === perfilParam) ? perfilParam : undefined
+
+  const setActiveTab = (idPerfilRiesgo: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('perfil', String(idPerfilRiesgo))
+      return next
+    })
+  }
 
   useEffect(() => {
     if (activeTab === undefined && perfiles && perfiles.length > 0) {
-      setActiveTab(perfiles[0].idPerfilRiesgo)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('perfil', String(perfiles[0].idPerfilRiesgo))
+        return next
+      }, { replace: true })
     }
-  }, [perfiles, activeTab])
+  }, [perfiles, activeTab, setSearchParams])
 
   const perfilActivo = perfiles?.find((p) => p.idPerfilRiesgo === activeTab)
   const estilo = perfilActivo ? getPerfilEstilo(perfilActivo.nombre) : null

@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SimuladorFinanciero.Api.Infrastructure.Database;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.AlphaVantage;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Bcra;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
 using SimuladorFinanciero.Api.Infrastructure.Middleware;
@@ -50,6 +51,11 @@ builder.Services.AddSingleton<IAccionCatalogoService, AccionCatalogoService>();
 
 // Job de refresco automático (cada 15 min en horario bursátil)
 builder.Services.AddHostedService<CatalogoRefreshJob>();
+
+// Tipo de cambio (BCRA)
+builder.Services.AddScoped<IBcraApiClient, BcraApiClient>();
+builder.Services.AddSingleton<ITipoCambioRepository, TipoCambioRepository>();
+builder.Services.AddScoped<ITipoCambioService, TipoCambioService>();
 
 // Portfolio CRUD
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
@@ -139,6 +145,15 @@ builder.Services.AddHttpClient("MotorSimulacion", client =>
         ?? throw new InvalidOperationException("MotorSimulacion:BaseUrl no está configurada.");
     client.BaseAddress = new Uri(url);
     client.Timeout = TimeSpan.FromSeconds(60);
+});
+
+// HttpClient para la API de Estadísticas Cambiarias del BCRA
+builder.Services.AddHttpClient("Bcra", client =>
+{
+    var url = builder.Configuration["Bcra:BaseUrl"]
+        ?? throw new InvalidOperationException("Bcra:BaseUrl no está configurada.");
+    client.BaseAddress = new Uri(url);
+    client.Timeout = TimeSpan.FromSeconds(10);
 });
 
 var app = builder.Build();

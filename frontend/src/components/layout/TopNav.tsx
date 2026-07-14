@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import Logo from '@/components/brand/Logo'
 import { useAuth } from '@/contexts/AuthContext'
 
-const navItems = [
+const baseNavItems = [
   { to: '/bienvenida', label: 'Inicio' },
   { to: '/portfolios', label: 'Portfolios' },
   { to: '/simulaciones', label: 'Historial' },
@@ -31,6 +31,10 @@ export default function TopNav() {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const navItems = usuario?.esAdmin
+    ? [...baseNavItems, { to: '/admin', label: 'Admin' }]
+    : baseNavItems
 
   const handleLogout = () => {
     logout()

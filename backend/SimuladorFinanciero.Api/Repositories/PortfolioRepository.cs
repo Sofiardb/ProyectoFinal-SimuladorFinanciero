@@ -26,12 +26,13 @@ public interface IPortfolioRepository
     Task<Portfolio?> ObtenerCabeceraAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
     Task<PortfolioResumenResponse> CrearAsync(long idUsuario, CrearPortfolioRequest req, CancellationToken ct = default);
     Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default);
-    Task<decimal> ObtenerTotalInvertidoAsync(long idPortfolio, CancellationToken ct = default);
+    Task<(decimal TotalUsd, decimal TotalArs)> ObtenerTotalInvertidoPorMonedaAsync(long idPortfolio, CancellationToken ct = default);
     Task<bool> EliminarAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
 
     // Validaciones de catálogo
     Task<bool> ExistePerfilRiesgoAsync(int idPerfilRiesgo, CancellationToken ct = default);
     Task<bool> ExisteMonedaAsync(int idMoneda, CancellationToken ct = default);
+    Task<string?> ObtenerCodigoMonedaAsync(int idMoneda, CancellationToken ct = default);
     Task<bool> ExisteTipoPlazoFijoAsync(int idTipoPlazoFijo, CancellationToken ct = default);
     Task<decimal> ObtenerSigmaMaxAsync(int idPerfilRiesgo, CancellationToken ct = default);
     Task<(bool Activa, decimal? Sigma)?> ObtenerInfoAccionAsync(long idAccion, CancellationToken ct = default);
@@ -308,13 +309,15 @@ public sealed class PortfolioRepository : IPortfolioRepository
     {
         using var conn = _db.Crear();
         const string sql = """
-            SELECT id_portfolio, id_usuario,
-                   id_perfil_riesgo::int, id_moneda_base::int,
-                   nombre, descripcion, capital_inicial,
-                   horizonte_meses::int,
-                   fecha_creacion, fecha_modificacion, estado
-            FROM portfolio
-            WHERE id_portfolio = @idPortfolio AND id_usuario = @idUsuario
+            SELECT p.id_portfolio, p.id_usuario,
+                   p.id_perfil_riesgo::int, p.id_moneda_base::int,
+                   m.codigo_iso AS codigo_moneda_base,
+                   p.nombre, p.descripcion, p.capital_inicial,
+                   p.horizonte_meses::int,
+                   p.fecha_creacion, p.fecha_modificacion, p.estado
+            FROM portfolio p
+            JOIN moneda m ON m.id_moneda = p.id_moneda_base
+            WHERE p.id_portfolio = @idPortfolio AND p.id_usuario = @idUsuario
             """;
         return await conn.QuerySingleOrDefaultAsync<Portfolio>(
             new CommandDefinition(sql, new { idPortfolio, idUsuario }, cancellationToken: ct));
@@ -419,6 +422,15 @@ public sealed class PortfolioRepository : IPortfolioRepository
         return await conn.ExecuteScalarAsync<bool>(
             new CommandDefinition(
                 "SELECT EXISTS(SELECT 1 FROM moneda WHERE id_moneda = @idMoneda::smallint)",
+                new { idMoneda }, cancellationToken: ct));
+    }
+
+    public async Task<string?> ObtenerCodigoMonedaAsync(int idMoneda, CancellationToken ct = default)
+    {
+        using var conn = _db.Crear();
+        return await conn.ExecuteScalarAsync<string?>(
+            new CommandDefinition(
+                "SELECT codigo_iso FROM moneda WHERE id_moneda = @idMoneda::smallint",
                 new { idMoneda }, cancellationToken: ct));
     }
 
@@ -918,18 +930,28 @@ public sealed class PortfolioRepository : IPortfolioRepository
 
     // ── Presupuesto ───────────────────────────────────────────────────────────
 
-    public async Task<decimal> ObtenerTotalInvertidoAsync(long idPortfolio, CancellationToken ct = default)
+    private sealed class TotalInvertidoRow
+    {
+        public decimal TotalUsd { get; set; }
+        public decimal TotalArs { get; set; }
+    }
+
+    public async Task<(decimal TotalUsd, decimal TotalArs)> ObtenerTotalInvertidoPorMonedaAsync(long idPortfolio, CancellationToken ct = default)
     {
         using var conn = _db.Crear();
+        // Acciones siempre cotizan en USD y Bonos/Letras siempre en ARS (ver AccionRepository/BonoRepository/LetraRepository);
+        // Plazo Fijo agrupa por su propia moneda.
         const string sql = """
             SELECT
-                COALESCE((SELECT SUM(pa.cantidad * pa.precio_compra)  FROM portfolio_accion    pa  WHERE pa.id_portfolio  = @idPortfolio), 0) +
-                COALESCE((SELECT SUM(pb.cantidad * pb.precio_compra)  FROM portfolio_bono      pb  WHERE pb.id_portfolio  = @idPortfolio), 0) +
-                COALESCE((SELECT SUM(pl.cantidad * pl.precio_compra)  FROM portfolio_letra     pl  WHERE pl.id_portfolio  = @idPortfolio), 0) +
-                COALESCE((SELECT SUM(ppf.monto_invertido)             FROM portfolio_plazo_fijo ppf WHERE ppf.id_portfolio = @idPortfolio), 0)
+                COALESCE((SELECT SUM(pa.cantidad * pa.precio_compra) FROM portfolio_accion pa WHERE pa.id_portfolio = @idPortfolio), 0)
+                    + COALESCE((SELECT SUM(ppf.monto_invertido) FROM portfolio_plazo_fijo ppf JOIN moneda m ON m.id_moneda = ppf.id_moneda WHERE ppf.id_portfolio = @idPortfolio AND m.codigo_iso = 'USD'), 0) AS total_usd,
+                COALESCE((SELECT SUM(pb.cantidad * pb.precio_compra) FROM portfolio_bono pb WHERE pb.id_portfolio = @idPortfolio), 0)
+                    + COALESCE((SELECT SUM(pl.cantidad * pl.precio_compra) FROM portfolio_letra pl WHERE pl.id_portfolio = @idPortfolio), 0)
+                    + COALESCE((SELECT SUM(ppf.monto_invertido) FROM portfolio_plazo_fijo ppf JOIN moneda m ON m.id_moneda = ppf.id_moneda WHERE ppf.id_portfolio = @idPortfolio AND m.codigo_iso = 'ARS'), 0) AS total_ars
             """;
-        return await conn.ExecuteScalarAsync<decimal>(
+        var row = await conn.QuerySingleAsync<TotalInvertidoRow>(
             new CommandDefinition(sql, new { idPortfolio }, cancellationToken: ct));
+        return (row.TotalUsd, row.TotalArs);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ using SimuladorFinanciero.Api.DTOs.Portfolio;
 using SimuladorFinanciero.Api.Infrastructure.Exceptions;
 using SimuladorFinanciero.Api.Models;
 using SimuladorFinanciero.Api.Repositories;
+using SimuladorFinanciero.Api.Services.Catalogo;
 
 namespace SimuladorFinanciero.Api.Services;
 
@@ -33,8 +34,13 @@ public interface IPortfolioService
 public sealed class PortfolioService : IPortfolioService
 {
     private readonly IPortfolioRepository _repo;
+    private readonly ITipoCambioService _tipoCambio;
 
-    public PortfolioService(IPortfolioRepository repo) => _repo = repo;
+    public PortfolioService(IPortfolioRepository repo, ITipoCambioService tipoCambio)
+    {
+        _repo = repo;
+        _tipoCambio = tipoCambio;
+    }
 
     // ── Portfolio CRUD ────────────────────────────────────────────────────────
 
@@ -110,11 +116,16 @@ public sealed class PortfolioService : IPortfolioService
         // Si se establece o cambia el presupuesto, verificar que no quede por debajo del total ya invertido
         if (req.CapitalInicial.HasValue)
         {
-            var totalActual = await _repo.ObtenerTotalInvertidoAsync(idPortfolio, ct);
+            var (totalUsd, totalArs) = await _repo.ObtenerTotalInvertidoPorMonedaAsync(idPortfolio, ct);
+            // Solo hay que resolver el nuevo código de moneda si la moneda base cambió; si no, ya lo tenemos en `actual`.
+            var codigoMonedaBase = req.IdMonedaBase.HasValue
+                ? await _repo.ObtenerCodigoMonedaAsync(idMonedaBase, ct)
+                : actual.CodigoMonedaBase;
+            var totalActual = await ConvertirAMonedaBaseAsync(totalArs, totalUsd, codigoMonedaBase!, ct);
             if (totalActual > req.CapitalInicial.Value)
                 throw new ValidationException(
-                    $"El presupuesto ({req.CapitalInicial.Value:N2}) es menor que el total actualmente invertido " +
-                    $"({totalActual:N2}). Ajuste las tenencias antes de modificar el presupuesto.");
+                    $"El presupuesto ({req.CapitalInicial.Value:N2} {codigoMonedaBase}) es menor que el total actualmente invertido " +
+                    $"({totalActual:N2} {codigoMonedaBase}). Ajuste las tenencias antes de modificar el presupuesto.");
         }
 
         var updated = await _repo.ActualizarAsync(
@@ -158,7 +169,7 @@ public sealed class PortfolioService : IPortfolioService
         if (await _repo.ExisteAccionEnPortfolioAsync(idPortfolio, req.IdAccion, ct))
             throw new ConflictException($"La acción {req.IdAccion} ya existe en el portfolio. Use PUT para actualizar la posición.");
 
-        await ValidarPresupuestoAsync(portfolio, req.Cantidad * req.PrecioCompra, ct);
+        await ValidarPresupuestoAsync(portfolio, req.Cantidad * req.PrecioCompra, "USD", ct);
 
         return await _repo.AgregarAccionAsync(idPortfolio, req.IdAccion, req.Cantidad, req.PrecioCompra, ct);
     }
@@ -176,7 +187,7 @@ public sealed class PortfolioService : IPortfolioService
         var cantidad     = req.Cantidad     ?? actual.Cantidad;
         var precioCompra = req.PrecioCompra ?? actual.PrecioCompra;
 
-        await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, ct,
+        await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, "USD", ct,
             montoRemplazo: actual.Cantidad * actual.PrecioCompra);
 
         var updated = await _repo.ActualizarAccionAsync(idPortfolio, idAccion, cantidad, precioCompra, ct)
@@ -211,7 +222,7 @@ public sealed class PortfolioService : IPortfolioService
         if (await _repo.ExisteBonoEnPortfolioAsync(idPortfolio, req.IdBono, ct))
             throw new ConflictException($"El bono {req.IdBono} ya existe en el portfolio. Use PUT para actualizar la posición.");
 
-        await ValidarPresupuestoAsync(portfolio, req.Cantidad * req.PrecioCompra, ct);
+        await ValidarPresupuestoAsync(portfolio, req.Cantidad * req.PrecioCompra, "ARS", ct);
 
         return await _repo.AgregarBonoAsync(idPortfolio, req.IdBono, req.Cantidad, req.PrecioCompra, ct);
     }
@@ -229,7 +240,7 @@ public sealed class PortfolioService : IPortfolioService
         var cantidad     = req.Cantidad     ?? actual.Cantidad;
         var precioCompra = req.PrecioCompra ?? actual.PrecioCompra;
 
-        await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, ct,
+        await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, "ARS", ct,
             montoRemplazo: actual.Cantidad * actual.PrecioCompra);
 
         var updated = await _repo.ActualizarBonoAsync(idPortfolio, idBono, cantidad, precioCompra, ct)
@@ -264,7 +275,7 @@ public sealed class PortfolioService : IPortfolioService
         if (await _repo.ExisteLetraEnPortfolioAsync(idPortfolio, req.IdLetra, ct))
             throw new ConflictException($"La letra {req.IdLetra} ya existe en el portfolio. Use PUT para actualizar la posición.");
 
-        await ValidarPresupuestoAsync(portfolio, req.Cantidad * req.PrecioCompra, ct);
+        await ValidarPresupuestoAsync(portfolio, req.Cantidad * req.PrecioCompra, "ARS", ct);
 
         return await _repo.AgregarLetraAsync(idPortfolio, req.IdLetra, req.Cantidad, req.PrecioCompra, ct);
     }
@@ -282,7 +293,7 @@ public sealed class PortfolioService : IPortfolioService
         var cantidad     = req.Cantidad     ?? actual.Cantidad;
         var precioCompra = req.PrecioCompra ?? actual.PrecioCompra;
 
-        await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, ct,
+        await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, "ARS", ct,
             montoRemplazo: actual.Cantidad * actual.PrecioCompra);
 
         var updated = await _repo.ActualizarLetraAsync(idPortfolio, idLetra, cantidad, precioCompra, ct)
@@ -317,7 +328,8 @@ public sealed class PortfolioService : IPortfolioService
         if (!await _repo.ExisteMonedaAsync(req.IdMoneda, ct))
             throw new NotFoundException($"Moneda {req.IdMoneda} no existe.");
 
-        await ValidarPresupuestoAsync(portfolio, req.MontoInvertido, ct);
+        var codigoMoneda = await _repo.ObtenerCodigoMonedaAsync(req.IdMoneda, ct);
+        await ValidarPresupuestoAsync(portfolio, req.MontoInvertido, codigoMoneda!, ct);
 
         return await _repo.AgregarPlazoFijoAsync(idPortfolio, req, ct);
     }
@@ -350,8 +362,12 @@ public sealed class PortfolioService : IPortfolioService
             ReinvertirAlVencimiento = req.ReinvertirAlVencimiento ?? actual.ReinvertirAlVencimiento,
         };
 
-        await ValidarPresupuestoAsync(portfolio, data.MontoInvertido, ct,
-            montoRemplazo: actual.MontoInvertido);
+        var codigoMonedaNuevaTask  = _repo.ObtenerCodigoMonedaAsync(data.IdMoneda, ct);
+        var codigoMonedaActualTask = _repo.ObtenerCodigoMonedaAsync(actual.IdMoneda, ct);
+        await Task.WhenAll(codigoMonedaNuevaTask, codigoMonedaActualTask);
+
+        await ValidarPresupuestoAsync(portfolio, data.MontoInvertido, codigoMonedaNuevaTask.Result!, ct,
+            montoRemplazo: actual.MontoInvertido, codigoMonedaRemplazo: codigoMonedaActualTask.Result);
 
         var updated = await _repo.ActualizarPlazoFijoAsync(idPortfolioPlazoFijo, idPortfolio, data, ct)
             ?? throw new NotFoundException($"Plazo fijo {idPortfolioPlazoFijo} no está en el portfolio {idPortfolio}.");
@@ -378,17 +394,40 @@ public sealed class PortfolioService : IPortfolioService
             throw new ValidationException("No se puede modificar un portfolio archivado. Reactívelo primero cambiando su estado a ACTIVO.");
     }
 
-    private async Task ValidarPresupuestoAsync(Portfolio portfolio, decimal montoNuevo, CancellationToken ct, decimal montoRemplazo = 0m)
+    private async Task ValidarPresupuestoAsync(
+        Portfolio portfolio, decimal montoNuevo, string codigoMonedaNuevo, CancellationToken ct,
+        decimal montoRemplazo = 0m, string? codigoMonedaRemplazo = null)
     {
         if (!portfolio.CapitalInicial.HasValue) return;
-        var totalActual = await _repo.ObtenerTotalInvertidoAsync(portfolio.IdPortfolio, ct);
-        var nuevoTotal  = totalActual - montoRemplazo + montoNuevo;
-        if (nuevoTotal > portfolio.CapitalInicial.Value)
+        codigoMonedaRemplazo ??= codigoMonedaNuevo;
+
+        var (totalUsd, totalArs) = await _repo.ObtenerTotalInvertidoPorMonedaAsync(portfolio.IdPortfolio, ct);
+        if (codigoMonedaRemplazo == "USD") totalUsd -= montoRemplazo; else totalArs -= montoRemplazo;
+        if (codigoMonedaNuevo   == "USD") totalUsd += montoNuevo;   else totalArs += montoNuevo;
+
+        var totalEnBase = await ConvertirAMonedaBaseAsync(totalArs, totalUsd, portfolio.CodigoMonedaBase, ct);
+
+        if (totalEnBase > portfolio.CapitalInicial.Value)
+        {
+            var exceso = totalEnBase - portfolio.CapitalInicial.Value;
             throw new ValidationException(
-                $"La tenencia supera el presupuesto del portfolio. " +
-                $"Presupuesto: {portfolio.CapitalInicial.Value:N2} | " +
-                $"Invertido actual: {totalActual:N2} | " +
-                $"Nueva tenencia: {montoNuevo:N2} | " +
-                $"Exceso: {nuevoTotal - portfolio.CapitalInicial.Value:N2}.");
+                $"Esta tenencia supera el presupuesto del portfolio: **{totalEnBase:N2} {portfolio.CodigoMonedaBase}** de " +
+                $"**{portfolio.CapitalInicial.Value:N2} {portfolio.CodigoMonedaBase}** (excede por **{exceso:N2} {portfolio.CodigoMonedaBase}**).\n" +
+                "Podés aumentar el presupuesto del portfolio, reducir la cantidad, o elegir otro instrumento.");
+        }
+    }
+
+    private async Task<decimal> ConvertirAMonedaBaseAsync(decimal totalArs, decimal totalUsd, string codigoMonedaBase, CancellationToken ct)
+    {
+        switch (codigoMonedaBase)
+        {
+            case "ARS":
+                return totalUsd == 0m ? totalArs : totalArs + totalUsd * await _tipoCambio.ObtenerCotizacionUsdArsAsync(ct);
+            case "USD":
+                return totalArs == 0m ? totalUsd : totalUsd + totalArs / await _tipoCambio.ObtenerCotizacionUsdArsAsync(ct);
+            default:
+                throw new ValidationException(
+                    $"No se puede calcular el presupuesto: la moneda '{codigoMonedaBase}' no está soportada para conversión (solo ARS/USD).");
+        }
     }
 }

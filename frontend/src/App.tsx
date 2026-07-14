@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import PublicLayout from '@/layouts/PublicLayout'
 import AppLayout from '@/layouts/AppLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import AdminRoute from '@/components/AdminRoute'
 import LandingPage from '@/pages/auth/LandingPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
@@ -14,6 +15,7 @@ import ResultadosPage from '@/pages/simulaciones/ResultadosPage'
 import HistorialPage from '@/pages/simulaciones/HistorialPage'
 import CompararPage from '@/pages/simulaciones/CompararPage'
 import PerfilPage from '@/pages/perfil/PerfilPage'
+import AdminPage from '@/pages/admin/AdminPage'
 
 export default function App() {
   return (
@@ -42,6 +44,9 @@ export default function App() {
             <Route path="/simulaciones/:id" element={<ResultadosPage />} />
             <Route path="/simulaciones/comparar" element={<CompararPage />} />
             <Route path="/perfil" element={<PerfilPage />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
           </Route>
         </Route>
 
