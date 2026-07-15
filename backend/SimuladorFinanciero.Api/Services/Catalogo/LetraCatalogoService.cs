@@ -58,51 +58,41 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
         {
             if (!DateOnly.TryParse(l.MaturityDate, out var vencimiento)) continue;
 
-            if (l.Symbol.StartsWith('S'))
-            {
-                // LECAP: TNA derivada del precio de descuento
-                var tna = (100m / l.SettlementPrice - 1m) * (365m / l.DaysToMaturity);
-                await _repo.UpsertAsync(new LetraUpsertData
-                {
-                    Ticker            = l.Symbol,
-                    Nombre            = $"LECAP {l.Symbol} - Vence {vencimiento:dd/MM/yyyy}",
-                    TipoLetraCodigo   = "LECAP",
-                    Tasa              = tna,
-                    FechaEmision      = hoy,
-                    FechaVencimiento  = vencimiento,
-                    PrecioActual      = l.SettlementPrice
-                }, ct);
-            }
-            else if (l.Symbol.StartsWith('X'))
-            {
-                // LECER: TIR real desde Docta Capital
-                DoctaYieldDto? yield = null;
-                try
-                {
-                    yield = await _docta.ObtenerYieldAsync(l.Symbol, ct);
-                }
-                catch (Exception ex)
-                {
-                    _log.LogWarning(ex, "Docta: error al obtener yield para LECER {Ticker}.", l.Symbol);
-                }
+            string tipoLetraCodigo;
+            if (l.Symbol.StartsWith('S')) tipoLetraCodigo = "LECAP";
+            else if (l.Symbol.StartsWith('X')) tipoLetraCodigo = "LECER";
+            else continue;
 
-                if (yield is null)
-                {
-                    _log.LogDebug("LECER {Ticker}: sin yield en Docta, se omite.", l.Symbol);
-                    continue;
-                }
-
-                await _repo.UpsertAsync(new LetraUpsertData
-                {
-                    Ticker            = l.Symbol,
-                    Nombre            = $"LECER {l.Symbol} - Vence {vencimiento:dd/MM/yyyy}",
-                    TipoLetraCodigo   = "LECER",
-                    Tasa              = yield.Tir,
-                    FechaEmision      = hoy,
-                    FechaVencimiento  = vencimiento,
-                    PrecioActual      = l.SettlementPrice
-                }, ct);
+            // TNA/TIR real desde Docta Capital. El precio de descuento de BYMA no alcanza
+            // para derivar la tasa localmente: las LECAP son capitalizables (su valor técnico
+            // crece por sobre 100 durante toda su vida), así que asumir cara 100 en la fórmula
+            // de descuento invierte el signo de la tasa apenas el precio supera 100.
+            DoctaYieldDto? yield = null;
+            try
+            {
+                yield = await _docta.ObtenerYieldAsync(l.Symbol, ct);
             }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "Docta: error al obtener yield para {Tipo} {Ticker}.", tipoLetraCodigo, l.Symbol);
+            }
+
+            if (yield is null)
+            {
+                _log.LogDebug("{Tipo} {Ticker}: sin yield en Docta, se omite.", tipoLetraCodigo, l.Symbol);
+                continue;
+            }
+
+            await _repo.UpsertAsync(new LetraUpsertData
+            {
+                Ticker            = l.Symbol,
+                Nombre            = $"{tipoLetraCodigo} {l.Symbol} - Vence {vencimiento:dd/MM/yyyy}",
+                TipoLetraCodigo   = tipoLetraCodigo,
+                Tasa              = tipoLetraCodigo == "LECAP" ? yield.Tna : yield.Tir,
+                FechaEmision      = hoy,
+                FechaVencimiento  = vencimiento,
+                PrecioActual      = l.SettlementPrice
+            }, ct);
         }
 
         _log.LogInformation("LetraCatalogo: {Count} letras procesadas desde BYMA.", letras.Count);

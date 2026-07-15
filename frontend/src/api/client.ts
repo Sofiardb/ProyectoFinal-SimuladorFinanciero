@@ -12,6 +12,10 @@ export function setToken(token: string | null): void {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!path.startsWith('/')) {
+    throw new Error(`Ruta de API inválida: "${path}" debe empezar con "/".`)
+  }
+
   const token = getToken()
   let res: Response
   try {
@@ -23,8 +27,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       },
       ...init,
     })
-  } catch {
-    throw new Error('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.')
+  } catch (err) {
+    throw new Error(
+      err instanceof Error && err.message
+        ? `No se pudo conectar con el servidor: ${err.message}`
+        : 'No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.',
+    )
   }
 
   if (!res.ok) {

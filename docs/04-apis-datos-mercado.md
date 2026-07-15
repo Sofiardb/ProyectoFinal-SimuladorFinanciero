@@ -10,10 +10,10 @@ Este documento describe las fuentes de datos externas que consume el backend par
 |---|---|---|
 | Plazo fijo tradicional | — | Sin datos externos (el usuario ingresa la TNA) |
 | Plazo fijo UVA | — | Sin datos externos (la inflación la genera el orquestador) |
-| LECAP | BYMA Open Data | Precio, vencimiento → TNA derivada |
+| LECAP | BYMA Open Data + Docta Capital | BYMA: precio. Docta: TNA real |
 | LECER | BYMA Open Data + Docta Capital | BYMA: precio. Docta: TIR real (spread sobre CER) |
-| Bono tasa fija | BYMA Open Data + Docta Capital | BYMA: precio de cotización. Docta: catálogo, flujos de caja, TIR |
-| Bono CER | BYMA Open Data + Docta Capital | BYMA: precio de cotización. Docta: catálogo, flujos base, TIR real |
+| Bono tasa fija | ArgentinaDatos + Docta Capital | ArgentinaDatos: precio de cotización. Docta: catálogo, flujos de caja, TIR |
+| Bono CER | ArgentinaDatos + Docta Capital | ArgentinaDatos: precio de cotización. Docta: catálogo, flujos base, TIR real |
 | Acciones USA | Alpha Vantage | Histórico de precios ajustados → μ, σ, S₀, ρ |
 
 ---
@@ -74,38 +74,52 @@ El simulador procesa únicamente LECAP (`S`) y LECER (`X`). El resto se ignora.
 
 ### Derivación de parámetros del motor
 
-**Para LECAP** — TNA derivada directamente del precio:
+**Para LECAP** — la TNA no puede derivarse del precio de BYMA asumiendo cara 100: al ser capitalizables, su valor técnico crece por sobre 100 durante toda su vida, así que `settlementPrice > 100` es el caso normal (no una excepción cerca del vencimiento) y una fórmula de descuento ingenua invierte el signo de la tasa. En su lugar, el backend consulta el endpoint de yields de Docta Capital (ver sección 3.3) y usa el campo `tna` directamente.
 
-```
-tna = (100 / settlementPrice - 1) × (365 / daysToMaturity)
-```
+**Para LECER** — la TNA real (spread sobre CER) tampoco puede derivarse del precio de BYMA sin conocer el factor CER diario del BCRA. El backend consulta el mismo endpoint de yields de Docta Capital y usa el campo `tir` como spread real.
 
-**Para LECER** — la TNA real (spread sobre CER) no puede derivarse del precio de BYMA sin conocer el factor CER diario del BCRA. En su lugar, el backend consulta el endpoint de yields de Docta Capital (ver sección 3.3). Si Docta no devuelve yield para un ticker LECER, ese instrumento se omite del catálogo (la columna `tasa` en DB es NOT NULL).
+Para ambos, si Docta no devuelve yield para un ticker, ese instrumento se omite del catálogo (la columna `tasa` en DB es NOT NULL).
 
 ---
 
-## 2. BYMA Open Data — Precio de cotización de bonos soberanos
+## 2. ArgentinaDatos — Precio de cotización de bonos del Tesoro
 
-El precio de cotización del bono (precio al que el usuario compra, input del motor) se obtiene de BYMA. Docta Capital no provee precio de mercado directamente.
+El precio de cotización del bono (precio al que el usuario compra, input del motor) se obtiene de
+ArgentinaDatos. Docta Capital no provee precio de mercado directamente (solo TIR/TEA a partir de un
+precio objetivo, es decir la dirección inversa — ver sección 3.3).
 
-**Endpoint:**
+> **Por qué no BYMA:** BYMA Open Data (usado para letras, ver sección 1) no cotiza LECAP/BONTE/BONCER
+> en sus endpoints gratuitos (`/lebacs` y `/public-bonds`) — ambos cubren únicamente bonos soberanos
+> reestructurados (AL/AE/AN/AO), deuda provincial/municipal y letras de corto plazo, ningún ticker de
+> los que Docta lista como `FIXED_RATE`/`CER`. Se verificó cruzando ambos endpoints de BYMA contra el
+> catálogo completo de Docta: cero coincidencias. Por eso el precio de bonos se toma de una fuente
+> distinta a la de letras.
+
+**API:** ArgentinaDatos (`https://argentinadatos.com`) — API pública **no oficial** que agrega datos de
+mercado argentino. Sin autenticación.
+
+**Endpoints:**
 
 ```
-POST /vanoms-be-core/rest/api/bymadata/free/public-bonds
-
-Body:
-{
-  "excludeZeroPxAndQty": false,
-  "T2": false,
-  "T1": true,
-  "T0": false,
-  "Content-Type": "application/json"
-}
+GET https://api.argentinadatos.com/v1/finanzas/letras
 ```
+A pesar del nombre, cubre LECAP y BONTE (tasa fija) — todo lo que Docta lista bajo `FIXED_RATE`.
+**Campo de precio:** `vpv` (valor por VN 100).
 
-**Campo de precio:** `settlementPrice` (mismo criterio que letras; el campo `closingPrice` es siempre 0).
+```
+GET https://api.argentinadatos.com/v1/finanzas/bonos-cer
+```
+Cubre BONCER (ajustados por CER) — lo que Docta lista bajo `CER`. Respuesta: `{ bonos: [...] }`.
+**Campo de precio:** `precioArs` (valor por VN 100).
 
-**Uso:** el backend descarga el diccionario `{ ticker → settlementPrice }` de todos los bonos con precio > 0 y lo cruza con el catálogo de Docta para enriquecer cada bono con su precio actual.
+**Uso:** el backend arma un diccionario `{ ticker → precio }` combinando ambos endpoints y lo cruza
+contra el catálogo de Docta (que es la fuente de verdad de qué tickers existen, su TIR y sus flujos).
+
+**Regla de `activo`:** Docta se consulta primero — es la fuente de verdad de qué instrumentos existen.
+Un bono solo queda `activo = TRUE` si aparece en **ambas** fuentes (Docta *y* ArgentinaDatos con
+precio). Si Docta deja de listar un ticker (venció, fue delisteado), o lo lista pero ArgentinaDatos no
+tiene precio para él, el bono se desactiva en el próximo refresh (`BonoRepository.DesactivarNoListadosAsync`).
+Esto evita instrumentos huérfanos con datos stale que ninguna fuente vuelve a tocar.
 
 ---
 
@@ -378,7 +392,7 @@ El catálogo de acciones es fijo: 50 instrumentos sembrados directamente en `db/
 
 **Horario bursátil:** lunes a viernes, 11:00–17:00 ART (America/Argentina/Buenos_Aires). Fuera de este rango, `CatalogoRefreshJob` omite el ciclo.
 
-**Instrumentos sin precio:** se filtra `settlementPrice > 0` en BYMA antes de persistir. Un instrumento sin precio no puede incluirse en un portfolio.
+**Instrumentos sin precio:** para letras se filtra `settlementPrice > 0` en BYMA antes de persistir; para bonos, se filtra `vpv`/`precioArs > 0` en ArgentinaDatos y solo se activa el ticker si Docta también lo lista (ver sección 2). Un instrumento sin precio no puede incluirse en un portfolio.
 
 **Caché de SPX:** la serie histórica del índice S&P 500 se mantiene en memoria durante 24 horas. Durante el recálculo semanal (20 tickers), solo se hace una llamada a la API por la serie SPX.
 

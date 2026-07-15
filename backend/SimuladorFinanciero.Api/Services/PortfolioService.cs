@@ -328,6 +328,8 @@ public sealed class PortfolioService : IPortfolioService
         if (!await _repo.ExisteMonedaAsync(req.IdMoneda, ct))
             throw new NotFoundException($"Moneda {req.IdMoneda} no existe.");
 
+        ValidarFechaInicio(req.FechaInicio!.Value);
+
         var codigoMoneda = await _repo.ObtenerCodigoMonedaAsync(req.IdMoneda, ct);
         await ValidarPresupuestoAsync(portfolio, req.MontoInvertido, codigoMoneda!, ct);
 
@@ -349,6 +351,9 @@ public sealed class PortfolioService : IPortfolioService
 
         if (req.IdMoneda.HasValue && !await _repo.ExisteMonedaAsync(req.IdMoneda.Value, ct))
             throw new NotFoundException($"Moneda {req.IdMoneda.Value} no existe.");
+
+        if (req.FechaInicio.HasValue)
+            ValidarFechaInicio(req.FechaInicio.Value);
 
         var data = new ActualizarPlazoFijoData
         {
@@ -392,6 +397,12 @@ public sealed class PortfolioService : IPortfolioService
     {
         if (estado != "ACTIVO")
             throw new ValidationException("No se puede modificar un portfolio archivado. Reactívelo primero cambiando su estado a ACTIVO.");
+    }
+
+    private static void ValidarFechaInicio(DateOnly fechaInicio)
+    {
+        if (fechaInicio < DateOnly.FromDateTime(DateTime.UtcNow))
+            throw new ValidationException("La fecha de inicio no puede ser anterior a hoy.");
     }
 
     private async Task ValidarPresupuestoAsync(

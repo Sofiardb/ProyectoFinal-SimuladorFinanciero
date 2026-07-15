@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
-import { formatPorcentaje } from '@/lib/format'
+import { formatFecha, formatPorcentaje, hoyISO } from '@/lib/format'
 import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
 import type { PortfolioPlazoFijo, TipoPlazoFijo } from '@/types'
 
@@ -143,6 +143,8 @@ function ViewRow({
     { label: 'Monto', value: `${moneda} ${tenencia.montoInvertido}` },
     { label: tasaLabel, value: `${formatPorcentaje(tenencia.tnaPactada * 100)}` },
     { label: 'Plazo', value: `${tenencia.duracionDias} días` },
+    { label: 'Inicio', value: formatFecha(tenencia.fechaInicio) },
+    { label: 'Reinversión', value: tenencia.reinvertirAlVencimiento ? 'Sí' : 'No' },
   ]
 
   return (
@@ -306,6 +308,7 @@ function FormGrid({
           <span className="field-label">Fecha de inicio</span>
           <input
             type="date"
+            min={hoyISO()}
             className="field-input"
             value={fields.fechaInicio}
             onChange={(e) => setFields((f) => ({ ...f, fechaInicio: e.target.value }))}

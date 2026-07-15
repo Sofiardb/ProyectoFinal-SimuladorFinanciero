@@ -273,18 +273,20 @@ internal static class MotorPayloadBuilder
                 .OrderBy(f => f.FechaPago)
                 .ToList();
 
+            // flujo_bono está normalizado a VN 100 (un lote); se escala por la cantidad de lotes
+            // de la tenencia para que la trayectoria simulada esté en la misma unidad que `monto`.
             object inst;
             if (b.Tipo == "bono_tasa_fija")
             {
                 var flujos = flujosFuturos
-                    .Select(f => new { mes = MesesEntre(today, f.FechaPago), monto = (double)(f.MontoCupon + f.MontoCapital) })
+                    .Select(f => new { mes = MesesEntre(today, f.FechaPago), monto = (double)((f.MontoCupon + f.MontoCapital) * b.Cantidad) })
                     .ToArray();
                 inst = new { id = ambito, tipo = b.Tipo, monto = (double)monto, flujos, tir = (double)b.TasaDescuento };
             }
             else
             {
                 var flujos_base = flujosFuturos
-                    .Select(f => new { mes = MesesEntre(today, f.FechaPago), capital_adj = (double)f.MontoCapital, interest_adj = (double)f.MontoCupon })
+                    .Select(f => new { mes = MesesEntre(today, f.FechaPago), capital_adj = (double)(f.MontoCapital * b.Cantidad), interest_adj = (double)(f.MontoCupon * b.Cantidad) })
                     .ToArray();
                 inst = new { id = ambito, tipo = b.Tipo, monto = (double)monto, flujos_base, tir_real = (double)b.TasaDescuento };
             }

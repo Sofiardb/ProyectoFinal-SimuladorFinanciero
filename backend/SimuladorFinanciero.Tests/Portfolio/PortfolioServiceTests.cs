@@ -657,7 +657,7 @@ public class PortfolioServiceTests
             EntidadFinanciera      = "Banco Nación",
             MontoInvertido         = 500_000m,
             TnaPactada             = 0.40m,
-            FechaInicio            = new DateOnly(2024, 1, 15),
+            FechaInicio            = DateOnly.FromDateTime(DateTime.UtcNow),
             DuracionDias          = 3,
             ReinvertirAlVencimiento = false
         };
@@ -852,7 +852,7 @@ public class PortfolioServiceTests
         {
             IdTipoPlazoFijo   = 1, IdMoneda = 1, EntidadFinanciera = "Banco",
             MontoInvertido    = 500_000m, TnaPactada = 0.40m,
-            FechaInicio       = new DateOnly(2024, 1, 15), DuracionDias = 3
+            FechaInicio       = DateOnly.FromDateTime(DateTime.UtcNow), DuracionDias = 3
         };
         _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
              .Returns(PortfolioActivo(capitalInicial: 100_000m));

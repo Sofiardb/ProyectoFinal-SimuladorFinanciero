@@ -74,6 +74,8 @@ public class MotorPayloadBuilderTests
         {
             new(new DateOnly(2026, 10, 1), 420.5m, 4400m)
         };
+        // flujo_bono está normalizado a un lote de VN 100; con Cantidad=2 lotes, el flujo
+        // pasado al motor debe escalar 2x para quedar en la misma unidad que `monto`.
         var bono = new BonoTenenciaSimulacion(3, "AL30", "bono_tasa_fija", 2m, 4600m, 0.55m, flujos);
         var tenencias = new TenenciasSimulacionData([], [bono], [], []);
 
@@ -82,7 +84,7 @@ public class MotorPayloadBuilderTests
         var inst   = payload.GetProperty("instrumentos")[0];
         var flujo0 = inst.GetProperty("flujos")[0];
         flujo0.GetProperty("mes").GetInt32().Should().Be(3); // Jul→Oct = 3 months
-        flujo0.GetProperty("monto").GetDouble().Should().BeApproximately(4820.5, 0.001);
+        flujo0.GetProperty("monto").GetDouble().Should().BeApproximately(9641.0, 0.001); // (420.5+4400) * 2
     }
 
     [Fact]

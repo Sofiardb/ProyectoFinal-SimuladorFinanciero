@@ -26,6 +26,13 @@ public interface IBonoRepository
     Task UpsertAsync(BonoUpsertData data, CancellationToken ct = default);
     Task ActualizarPrecioAsync(string ticker, decimal precio, CancellationToken ct = default);
     Task ActualizarYieldAsync(string ticker, decimal tir, CancellationToken ct = default);
+
+    /// <summary>
+    /// Desactiva todo bono cuyo ticker no esté en <paramref name="tickersVigentes"/> — instrumentos que
+    /// Docta ya no lista, o que Docta lista pero ninguna fuente de precio (ArgentinaDatos) cotiza.
+    /// </summary>
+    Task DesactivarNoListadosAsync(IReadOnlyCollection<string> tickersVigentes, CancellationToken ct = default);
+
     Task<IReadOnlyList<BonoResponse>> ObtenerActivosAsync(CancellationToken ct = default);
     Task<BonoResponse?> ObtenerPorIdAsync(long id, CancellationToken ct = default);
 }
@@ -115,6 +122,19 @@ public sealed class BonoRepository : IBonoRepository
             new CommandDefinition(
                 "UPDATE bono SET tasa_descuento = @tir WHERE ticker = @ticker",
                 new { tir, ticker }, cancellationToken: ct));
+    }
+
+    public async Task DesactivarNoListadosAsync(IReadOnlyCollection<string> tickersVigentes, CancellationToken ct = default)
+    {
+        // Lista vacía casi siempre significa que una fuente falló, no que no hay bonos vigentes.
+        // No desactivar todo el catálogo por un error transitorio de red.
+        if (tickersVigentes.Count == 0) return;
+
+        using var conn = _db.Crear();
+        await conn.ExecuteAsync(
+            new CommandDefinition(
+                "UPDATE bono SET activo = FALSE WHERE activo = TRUE AND NOT (ticker = ANY(@tickersVigentes))",
+                new { tickersVigentes = tickersVigentes.ToArray() }, cancellationToken: ct));
     }
 
     public async Task<IReadOnlyList<BonoResponse>> ObtenerActivosAsync(CancellationToken ct = default)

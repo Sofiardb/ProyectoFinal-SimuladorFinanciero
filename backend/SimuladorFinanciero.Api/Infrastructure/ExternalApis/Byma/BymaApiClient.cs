@@ -27,12 +27,6 @@ internal sealed class BymaResponseDto
 public interface IBymaApiClient
 {
     Task<IReadOnlyList<BymaLetraDto>> ObtenerLetrasAsync(CancellationToken ct = default);
-
-    /// <summary>
-    /// Devuelve un diccionario ticker → settlementPrice para todos los bonos con precio en BYMA.
-    /// Se usa como fuente de precio de cotización; Docta provee TIR y flujos.
-    /// </summary>
-    Task<IReadOnlyDictionary<string, decimal>> ObtenerPreciosBonosAsync(CancellationToken ct = default);
 }
 
 // ── Implementación ────────────────────────────────────────────────────────────
@@ -41,7 +35,6 @@ public sealed class BymaApiClient : IBymaApiClient, IDisposable
 {
     private const string HomeUrl   = "https://open.bymadata.com.ar";
     private const string LetrasUrl = "https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/lebacs";
-    private const string BonosUrl  = "https://open.bymadata.com.ar/vanoms-be-core/rest/api/bymadata/free/public-bonds";
 
     private static readonly string BodyJson = JsonSerializer.Serialize(new
     {
@@ -90,24 +83,6 @@ public sealed class BymaApiClient : IBymaApiClient, IDisposable
                      && l.DaysToMaturity  > 0
                      && (l.Symbol.StartsWith('S') || l.Symbol.StartsWith('X')))
             .ToList() ?? [];
-    }
-
-    public async Task<IReadOnlyDictionary<string, decimal>> ObtenerPreciosBonosAsync(CancellationToken ct = default)
-    {
-        await AsegurarSesionAsync(ct);
-
-        var content  = new StringContent(BodyJson, Encoding.UTF8, "application/json");
-        var response = await _http.PostAsync(BonosUrl, content, ct);
-        response.EnsureSuccessStatusCode();
-
-        var json   = await response.Content.ReadAsStringAsync(ct);
-        var result = JsonSerializer.Deserialize<BymaResponseDto>(json, JsonOpts);
-
-        return result?.Data
-            .Where(b => b.SettlementPrice > 0)
-            .GroupBy(b => b.Symbol)
-            .ToDictionary(g => g.Key, g => g.First().SettlementPrice)
-            ?? new Dictionary<string, decimal>();
     }
 
     private async Task AsegurarSesionAsync(CancellationToken ct)

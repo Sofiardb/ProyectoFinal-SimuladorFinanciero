@@ -10,12 +10,29 @@ import type {
 } from '@/types'
 
 export interface CampoPreview {
-  label: string
-  value: string
+  label:    string
+  value:    string
+  tooltip?: string
 }
 
 export function tasaTexto(tipo: string, tasa: number): string {
   return `${tipo} ${formatPorcentaje(tasa * 100)}`
+}
+
+const PRECIO_VN_TOOLTIP =
+  'El precio cotiza cada 100 de valor nominal (VN). Por ejemplo, $105 significa que pagás $105 por cada $100 de VN que comprás — no es el precio de "una unidad".'
+
+function precioVnField(precioActual?: number): CampoPreview {
+  return {
+    label:   'Precio actual',
+    value:   precioActual != null ? `$${precioActual.toFixed(2)} / VN 100` : '—',
+    tooltip: PRECIO_VN_TOOLTIP,
+  }
+}
+
+/** Cantidad de lotes de VN100 mostrada como el valor nominal en $ que el usuario ingresó. */
+function valorNominalField(cantidadLotes: number): CampoPreview {
+  return { label: 'Valor nominal', value: `$${(cantidadLotes * 100).toLocaleString('es-AR')}` }
 }
 
 // ─── Acciones ──────────────────────────────────────────────────────────────
@@ -35,10 +52,12 @@ export function bonoPreview(b: {
   fechaVencimiento: string
   tipoBono: 'TASA_FIJA' | 'INDEXADO_INFLACION'
   tasaDescuento: number
+  precioActual?: number
 }): CampoPreview[] {
   return [
     { label: 'Vencimiento', value: b.fechaVencimiento },
     { label: 'Tasa', value: tasaTexto(b.tipoBono === 'TASA_FIJA' ? 'Fija' : 'CER', b.tasaDescuento) },
+    precioVnField(b.precioActual),
   ]
 }
 
@@ -51,10 +70,12 @@ export function letraPreview(l: {
   fechaVencimiento: string
   tipoLetra: 'LECAP' | 'LECER'
   tasa: number
+  precioActual?: number
 }): CampoPreview[] {
   return [
     { label: 'Vencimiento', value: l.fechaVencimiento },
     { label: 'Tasa', value: tasaTexto(l.tipoLetra === 'LECAP' ? 'Fija' : 'CER', l.tasa) },
+    precioVnField(l.precioActual),
   ]
 }
 
@@ -77,22 +98,31 @@ export function letraCatalogoPorId(catalogo: LetraCatalogo[] | undefined): Map<n
 
 export function accionHeldPreview(a: PortfolioAccion, catalogo: Map<number, AccionCatalogo>): CampoPreview[] {
   const c = catalogo.get(a.idAccion)
-  return accionPreview({ sector: a.sector ?? c?.sector, precioActual: a.precioActual ?? c?.precioActual })
+  return [
+    { label: 'Cantidad', value: a.cantidad.toLocaleString('es-AR') },
+    ...accionPreview({ sector: a.sector ?? c?.sector, precioActual: a.precioActual ?? c?.precioActual }),
+  ]
 }
 
 export function bonoHeldPreview(b: PortfolioBono, catalogo: Map<number, BonoCatalogo>): CampoPreview[] {
   const c = catalogo.get(b.idBono)
-  if (!c) return [{ label: 'Emisor', value: b.emisor ?? '—' }, { label: 'Precio actual', value: b.precioActual != null ? `USD ${b.precioActual.toFixed(2)}` : '—' }]
-  return bonoPreview(c)
+  const resto = !c
+    ? [{ label: 'Emisor', value: b.emisor ?? '—' }, precioVnField(b.precioActual)]
+    : bonoPreview({ ...c, precioActual: b.precioActual ?? c.precioActual })
+  return [valorNominalField(b.cantidad), ...resto]
 }
 
 export function letraHeldPreview(l: PortfolioLetra, catalogo: Map<number, LetraCatalogo>): CampoPreview[] {
   const c = catalogo.get(l.idLetra)
-  return letraPreview({
-    fechaVencimiento: l.fechaVencimiento,
-    tipoLetra: c?.tipoLetra ?? 'LECAP',
-    tasa: l.tasa,
-  })
+  return [
+    valorNominalField(l.cantidad),
+    ...letraPreview({
+      fechaVencimiento: l.fechaVencimiento,
+      tipoLetra: c?.tipoLetra ?? 'LECAP',
+      tasa: l.tasa,
+      precioActual: l.precioActual ?? c?.precioActual,
+    }),
+  ]
 }
 
 // ─── Filas mini para la card de la lista de portfolios ───────────────────────

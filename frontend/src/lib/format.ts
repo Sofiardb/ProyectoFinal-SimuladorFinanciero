@@ -17,3 +17,12 @@ export function formatFecha(iso: string): string {
     year: 'numeric',
   }).format(new Date(iso))
 }
+
+/** Fecha de hoy en el huso horario local, formato YYYY-MM-DD (para atributos `min`/`value` de <input type="date">). */
+export function hoyISO(): string {
+  const d = new Date()
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}

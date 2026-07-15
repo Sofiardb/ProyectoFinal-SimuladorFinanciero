@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SimuladorFinanciero.Api.Infrastructure.Database;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.AlphaVantage;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.ArgentinaDatos;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Bcra;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
@@ -36,6 +37,7 @@ builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 // Clientes de APIs externas (Singleton: mantienen cookies y tokens entre llamadas)
 builder.Services.AddSingleton<IBymaApiClient, BymaApiClient>();
 builder.Services.AddSingleton<IDoctaApiClient, DoctaApiClient>();
+builder.Services.AddSingleton<IArgentinaDatosApiClient, ArgentinaDatosApiClient>();
 builder.Services.AddSingleton<IAlphaVantageApiClient, AlphaVantageApiClient>();
 
 // Repositorios de catálogo

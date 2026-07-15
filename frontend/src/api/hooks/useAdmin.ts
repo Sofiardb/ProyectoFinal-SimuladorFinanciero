@@ -36,43 +36,43 @@ export interface RefreshTipoCambioResponse {
 
 export function useAdminCheck() {
   return useMutation({
-    mutationFn: () => api.get<CheckResponse>('admin/catalogo/check'),
+    mutationFn: () => api.get<CheckResponse>('/admin/catalogo/check'),
   })
 }
 
 export function useRefreshLetras() {
   return useMutation({
-    mutationFn: () => api.post<MensajeResponse>('admin/catalogo/refresh/letras', {}),
+    mutationFn: () => api.post<MensajeResponse>('/admin/catalogo/refresh/letras', {}),
   })
 }
 
 export function useRefreshBonosYields() {
   return useMutation({
-    mutationFn: () => api.post<MensajeResponse>('admin/catalogo/refresh/bonos/yields', {}),
+    mutationFn: () => api.post<MensajeResponse>('/admin/catalogo/refresh/bonos/yields', {}),
   })
 }
 
 export function useRefreshBonosFlujos() {
   return useMutation({
-    mutationFn: () => api.post<MensajeResponse>('admin/catalogo/refresh/bonos/flujos', {}),
+    mutationFn: () => api.post<MensajeResponse>('/admin/catalogo/refresh/bonos/flujos', {}),
   })
 }
 
 export function useRefreshAcciones() {
   return useMutation({
-    mutationFn: () => api.post<RefreshAccionesResponse>('admin/catalogo/refresh/acciones', {}),
+    mutationFn: () => api.post<RefreshAccionesResponse>('/admin/catalogo/refresh/acciones', {}),
   })
 }
 
 export function useRefreshAccion() {
   return useMutation({
     mutationFn: (ticker: string) =>
-      api.post<GbmRefreshResult>(`admin/catalogo/refresh/acciones/${encodeURIComponent(ticker)}`, {}),
+      api.post<GbmRefreshResult>(`/admin/catalogo/refresh/acciones/${encodeURIComponent(ticker)}`, {}),
   })
 }
 
 export function useRefreshTipoCambio() {
   return useMutation({
-    mutationFn: () => api.post<RefreshTipoCambioResponse>('admin/catalogo/refresh/tipo-cambio', {}),
+    mutationFn: () => api.post<RefreshTipoCambioResponse>('/admin/catalogo/refresh/tipo-cambio', {}),
   })
 }

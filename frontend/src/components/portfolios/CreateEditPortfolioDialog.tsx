@@ -43,7 +43,7 @@ const schema = z.object({
       (v) => !v || (!Number.isNaN(Number(v)) && Number(v) > 0),
       'Debe ser un valor positivo.',
     ),
-  horizonteMeses: z.number().int().min(1, 'Mínimo 1 mes.').max(360, 'Máximo 360 meses.'),
+  horizonteMeses: z.number().int().min(1, 'Mínimo 1 mes.').max(60, 'Máximo 60 meses.'),
 })
 
 type Values = z.infer<typeof schema>
@@ -172,6 +172,7 @@ function PortfolioForm({
                   <FormLabel>Perfil de riesgo</FormLabel>
                   {isEdit ? (
                     <Select
+                      items={Object.fromEntries((perfiles ?? []).map((p) => [String(p.idPerfilRiesgo), p.nombre]))}
                       value={field.value ? String(field.value) : undefined}
                       onValueChange={(v) => field.onChange(Number(v))}
                     >
@@ -208,6 +209,7 @@ function PortfolioForm({
                 <FormItem>
                   <FormLabel>Moneda base</FormLabel>
                   <Select
+                    items={Object.fromEntries((monedas ?? []).map((m) => [String(m.idMoneda), m.codigoIso]))}
                     value={field.value ? String(field.value) : undefined}
                     onValueChange={(v) => field.onChange(Number(v))}
                   >
@@ -252,7 +254,13 @@ function PortfolioForm({
                 <FormItem>
                   <FormLabel>Horizonte (meses)</FormLabel>
                   <FormControl>
-                    <Input type="number" min={1} max={360} {...field} />
+                    <Input
+                      type="number"
+                      min={1}
+                      max={60}
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

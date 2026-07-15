@@ -146,6 +146,7 @@ export default function PortfolioDetallePage() {
     titulo: `${a.ticker} · ${a.nombre}`,
     subtitulo: accionSubtitulo({ sector: a.sector }),
     previewFields: accionHeldPreview(a, accionesPorId),
+    cantidadActual: a.cantidad,
   }))
   const accionesOpciones: CatalogoOpcion[] = (accionesCatalogo ?? [])
     .filter((a) => !detalle.acciones.some((existing) => existing.idAccion === a.idAccion))
@@ -163,6 +164,7 @@ export default function PortfolioDetallePage() {
     titulo: `${b.ticker} · ${b.nombre}`,
     subtitulo: bonosPorId.get(b.idBono) ? bonoSubtitulo(bonosPorId.get(b.idBono)!) : (b.emisor ?? ''),
     previewFields: bonoHeldPreview(b, bonosPorId),
+    cantidadActual: b.cantidad,
   }))
   const bonosOpciones: CatalogoOpcion[] = (bonosCatalogo ?? [])
     .filter((b) => !detalle.bonos.some((existing) => existing.idBono === b.idBono))
@@ -179,6 +181,7 @@ export default function PortfolioDetallePage() {
     titulo: `${l.ticker} · ${l.nombre}`,
     subtitulo: letraSubtitulo({ fechaVencimiento: l.fechaVencimiento }),
     previewFields: letraHeldPreview(l, letrasPorId),
+    cantidadActual: l.cantidad,
   }))
   const letrasOpciones: CatalogoOpcion[] = (letrasCatalogo ?? [])
     .filter((l) => !detalle.letras.some((existing) => existing.idLetra === l.idLetra))
@@ -321,6 +324,9 @@ export default function PortfolioDetallePage() {
                 tooltip="Deuda emitida por el Estado o una empresa. Puede tener tasa fija o ajustar por CER (inflación)."
                 pickLabel="Elegí un bono"
                 addLabel="+ Agregar bono"
+                cantidadLabel="Valor nominal ($)"
+                cantidadTooltip="El monto en pesos que compraste de este bono, no la cantidad de unidades. Por ejemplo, si invertiste $500.000, ingresá 500000."
+                cantidadEscala={100}
                 emptyMessage={`No hay bonos disponibles para el perfil ${perfilLower} en este momento.`}
                 tenencias={bonosTenencias}
                 catalogo={bonosOpciones}
@@ -347,6 +353,9 @@ export default function PortfolioDetallePage() {
                 tooltip="Deuda de corto plazo emitida por el Tesoro. Puede tener tasa fija o ajustar por CER (inflación)."
                 pickLabel="Elegí una letra"
                 addLabel="+ Agregar letra"
+                cantidadLabel="Valor nominal ($)"
+                cantidadTooltip="El monto en pesos que compraste de esta letra, no la cantidad de unidades. Por ejemplo, si invertiste $500.000, ingresá 500000."
+                cantidadEscala={100}
                 emptyMessage={`No hay letras disponibles para el perfil ${perfilLower} en este momento.`}
                 tenencias={letrasTenencias}
                 catalogo={letrasOpciones}

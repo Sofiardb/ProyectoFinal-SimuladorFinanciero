@@ -11,22 +11,29 @@ export interface CatalogoOpcion {
 }
 
 export interface TenenciaItem {
-  idCatalogo:    number
-  titulo:        string
-  subtitulo:     string
-  previewFields: CampoPreview[]
+  idCatalogo:      number
+  titulo:          string
+  subtitulo:       string
+  previewFields:   CampoPreview[]
+  /** Cantidad actualmente guardada (unidad "backend", p. ej. lotes de VN100 para bonos/letras). */
+  cantidadActual:  number
 }
 
 interface Props {
-  titulo:        string
-  tooltip:       string
-  pickLabel:     string
-  addLabel:      string
-  emptyMessage:  string
-  tenencias:     TenenciaItem[]
-  catalogo:      CatalogoOpcion[]
-  isMutating:    boolean
-  error?:        string | null
+  titulo:           string
+  tooltip:          string
+  pickLabel:        string
+  addLabel:         string
+  emptyMessage:     string
+  tenencias:        TenenciaItem[]
+  catalogo:         CatalogoOpcion[]
+  isMutating:       boolean
+  error?:           string | null
+  cantidadLabel?:   string
+  cantidadTooltip?: string
+  /** Factor de conversión entre lo que el usuario escribe y el "cantidad" que se envía al backend
+   *  (p. ej. 100 para que el usuario ingrese valor nominal en $ y se envíe la cantidad de lotes de VN100). */
+  cantidadEscala?:  number
   onAdd:    (idCatalogo: number, cantidad: number, precioCompra: number) => Promise<void>
   onUpdate: (idCatalogo: number, cantidad: number) => Promise<void>
   onDelete: (idCatalogo: number) => void
@@ -42,6 +49,9 @@ export default function CatalogoTenenciaSection({
   catalogo,
   isMutating,
   error,
+  cantidadLabel = 'Cantidad',
+  cantidadTooltip,
+  cantidadEscala = 1,
   onAdd,
   onUpdate,
   onDelete,
@@ -64,6 +74,9 @@ export default function CatalogoTenenciaSection({
               tenencia={t}
               isMutating={isMutating}
               onCancel={() => setEditingId(null)}
+              cantidadLabel={cantidadLabel}
+              cantidadTooltip={cantidadTooltip}
+              cantidadEscala={cantidadEscala}
               onSave={async (cantidad) => {
                 try {
                   await onUpdate(t.idCatalogo, cantidad)
@@ -90,6 +103,9 @@ export default function CatalogoTenenciaSection({
             catalogo={catalogo}
             isMutating={isMutating}
             onCancel={() => setIsAdding(false)}
+            cantidadLabel={cantidadLabel}
+            cantidadTooltip={cantidadTooltip}
+            cantidadEscala={cantidadEscala}
             onSave={async (idCatalogo, cantidad, precioCompra) => {
               try {
                 await onAdd(idCatalogo, cantidad, precioCompra)
@@ -137,7 +153,10 @@ function ViewRow({
       <div className="flex shrink-0 gap-[18px]">
         {tenencia.previewFields.map((f) => (
           <div key={f.label} className="text-right">
-            <p className="text-[9.5px] tracking-[0.3px] text-ink-soft uppercase">{f.label}</p>
+            <p className="flex items-center justify-end gap-1 text-[9.5px] tracking-[0.3px] text-ink-soft uppercase">
+              {f.label}
+              {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+            </p>
             <p className="mt-0.5 text-[12.5px] font-semibold text-navy-950">{f.value}</p>
           </div>
         ))}
@@ -185,15 +204,21 @@ function EditExistingRow({
   tenencia,
   isMutating,
   onCancel,
+  cantidadLabel,
+  cantidadTooltip,
+  cantidadEscala,
   onSave,
 }: {
   tenencia: TenenciaItem
   isMutating: boolean
   onCancel: () => void
+  cantidadLabel: string
+  cantidadTooltip?: string
+  cantidadEscala: number
   onSave: (cantidad: number) => void
 }) {
-  const [cantidad, setCantidad] = useState('')
-  const cantidadNum = Number(cantidad)
+  const [cantidad, setCantidad] = useState(() => String(tenencia.cantidadActual * cantidadEscala))
+  const cantidadNum = Number(cantidad) / cantidadEscala
   const canSave = cantidadNum > 0
 
   return (
@@ -201,12 +226,18 @@ function EditExistingRow({
       <div className="grid grid-cols-2 gap-2">
         {tenencia.previewFields.map((f) => (
           <div key={f.label}>
-            <span className="field-label">{f.label}</span>
+            <span className="field-label inline-flex items-center gap-1">
+              {f.label}
+              {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+            </span>
             <div className="readonly-chip">{f.value}</div>
           </div>
         ))}
         <div>
-          <span className="field-label">Cantidad</span>
+          <span className="field-label inline-flex items-center gap-1">
+            {cantidadLabel}
+            {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
+          </span>
           <input
             type="number"
             className="field-input"
@@ -214,6 +245,9 @@ function EditExistingRow({
             placeholder="0"
             onChange={(e) => setCantidad(e.target.value)}
           />
+          {cantidadEscala !== 1 && canSave && (
+            <p className="mt-1 text-[11px] text-ink-soft">= {cantidadNum.toLocaleString('es-AR')} lotes de VN 100</p>
+          )}
         </div>
       </div>
       <div className="flex justify-end gap-2">
@@ -239,6 +273,9 @@ function AddRow({
   catalogo,
   isMutating,
   onCancel,
+  cantidadLabel,
+  cantidadTooltip,
+  cantidadEscala,
   onSave,
 }: {
   pickLabel: string
@@ -246,12 +283,15 @@ function AddRow({
   catalogo: CatalogoOpcion[]
   isMutating: boolean
   onCancel: () => void
+  cantidadLabel: string
+  cantidadTooltip?: string
+  cantidadEscala: number
   onSave: (idCatalogo: number, cantidad: number, precioCompra: number) => void
 }) {
   const [selectedId, setSelectedId] = useState('')
   const [cantidad, setCantidad] = useState('')
   const selected = catalogo.find((c) => String(c.id) === selectedId)
-  const cantidadNum = Number(cantidad)
+  const cantidadNum = Number(cantidad) / cantidadEscala
   const canSave = !!selected && cantidadNum > 0
 
   return (
@@ -285,12 +325,18 @@ function AddRow({
         <div className="grid grid-cols-2 gap-2">
           {selected.previewFields.map((f) => (
             <div key={f.label}>
-              <span className="field-label">{f.label}</span>
+              <span className="field-label inline-flex items-center gap-1">
+                {f.label}
+                {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+              </span>
               <div className="readonly-chip">{f.value}</div>
             </div>
           ))}
           <div>
-            <span className="field-label">Cantidad</span>
+            <span className="field-label inline-flex items-center gap-1">
+              {cantidadLabel}
+              {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
+            </span>
             <input
               type="number"
               className="field-input"
@@ -298,6 +344,9 @@ function AddRow({
               placeholder="0"
               onChange={(e) => setCantidad(e.target.value)}
             />
+            {cantidadEscala !== 1 && canSave && (
+              <p className="mt-1 text-[11px] text-ink-soft">= {cantidadNum.toLocaleString('es-AR')} lotes de VN 100</p>
+            )}
           </div>
         </div>
       )}
