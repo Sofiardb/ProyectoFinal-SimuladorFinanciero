@@ -1,4 +1,4 @@
-import { formatFecha, formatPorcentaje } from '@/lib/format'
+import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
 import { PRECIO_VN_TOOLTIP } from '@/lib/tooltips'
 import type {
   AccionCatalogo,
@@ -158,7 +158,7 @@ export function letraRow(l: PortfolioLetra, catalogo: Map<number, LetraCatalogo>
 export function plazoFijoPreview(pf: PortfolioPlazoFijo): CampoPreview[] {
   const tasaLabel = pf.nombreTipoPlazoFijo === 'Plazo fijo UVA' ? 'Tasa real' : 'TNA'
   return [
-    { label: 'Monto', value: `${pf.codigoMoneda} ${pf.montoInvertido}` },
+    { label: 'Monto', value: formatMoneda(pf.montoInvertido, pf.codigoMoneda) },
     { label: tasaLabel, value: formatPorcentaje(pf.tnaPactada * 100) },
     { label: 'Plazo', value: `${pf.duracionDias} días` },
     { label: 'Inicio', value: formatFecha(pf.fechaInicio) },

@@ -20,9 +20,8 @@ Antes de esta feature, la única comparación que existía era puramente informa
 `GET /portfolios/{id}/simular/preview` — comparaba `precio_actual` vs. `precio_compra`, no cubría tasa ni
 GBM, y no le daba al usuario ninguna decisión real que tomar.
 
-**Tipo de cambio** (cotización USD/ARS) queda fuera de esta feature: no está claro qué significa
-"desactualizado" para una cotización usada para convertir presupuesto entre monedas, a diferencia de un
-precio o tasa que valúa una tenencia puntual.
+**Tipo de cambio** (cotización USD/ARS) no sigue el mismo mecanismo que esta feature — su staleness se
+maneja distinto, ver sección 6.
 
 **No es la misma regla que la de instrumentos vencidos** (`docs/07-portfolio-reglas-negocio.md`, sección
 de re-simulación): esa regla bloquea con `422` cuando un instrumento ya agotó todos sus flujos y sigue
@@ -165,7 +164,8 @@ quedan fuera de esta iteración, sin stub ni placeholder:
   — hoy esa situación no bloquea (el motor trunca en el horizonte, ver
   `docs/02-orquestador-montecarlo.md`, Decisión 7), por lo que no hay urgencia de UX adicional.
 
-**Tipo de cambio** también queda fuera (ver sección 1).
+**Tipo de cambio** no sigue este mismo mecanismo (snapshot + Vista Comparativa) — tiene su propia decisión
+de diseño e implementación, ver sección 6.
 
 ---
 
@@ -185,3 +185,73 @@ quedan fuera de esta iteración, sin stub ni placeholder:
 - `pages/simulaciones/ComparacionMercadoPage.tsx` — nueva, ruta `/portfolios/:id/comparar-mercado`.
 - `components/portfolios/PreviewBanner.tsx` — eliminado.
 - `api/hooks/useSimulacion.ts` — `useRefrescarMercado`, `useLanzarSimulacion` (nuevos).
+
+---
+
+## 6. Tipo de cambio — implementado
+
+### 6.1 Por qué no es el mismo mecanismo que tasa/precio
+
+El patrón de la sección 3 (snapshot `_compra` + Vista Comparativa + `RefrescarTenenciasMercadoAsync`)
+resuelve staleness para datos que **alimentan al motor de simulación** (tasa, μ/σ/ρ) o que son **el costo
+histórico de una tenencia puntual** (`precio_compra`). El tipo de cambio (`tipo_cambio`, cotización
+USD/ARS) no encaja en ninguno de los dos casos:
+
+- **No alimenta al motor.** `MotorPayloadBuilder` (`docs/08-integracion-motor.md`) nunca lo usa — el motor
+  trabaja `portfolio_ars`/`portfolio_usd` como resultados separados, sin conversión entre sí.
+- **No tiene snapshot por portfolio.** Su único uso hoy es `PortfolioService.ValidarPresupuestoAsync`,
+  que llama a `ITipoCambioService.ObtenerCotizacionUsdArsAsync` para convertir el total ya invertido a la
+  moneda base del portfolio y compararlo contra `capital_inicial`. No existe ni existió nunca un "tipo de
+  cambio de referencia congelado en el portfolio" del cual este valor pudiera divergir — a diferencia de
+  `precio_compra`/tasa, que sí tenían ese concepto (o se le agregó, en el caso de tasa).
+- **Su propio mecanismo de refresco ya es distinto** al de letra/bono/acción. `TipoCambioService.cs`
+  cachea por día en `tipo_cambio`: la primera llamada del día dispara una consulta live al BCRA y la
+  persiste; llamadas posteriores el mismo día reutilizan ese valor. Si el BCRA falla, cae al último valor
+  conocido (que puede ser de días atrás). `RefrescarAsync` (admin) fuerza una consulta live ignorando el
+  caché de hoy, pero es un *override* manual, no el único mecanismo — a diferencia de letra/bono/acción,
+  donde el refresh de admin es la única forma en que el valor cambia (sin fallback automático diario).
+
+Es decir: la staleness relevante acá no es "¿el portfolio quedó desactualizado respecto al catálogo?"
+(no hay tal snapshot), sino "¿el valor cacheado globalmente en `tipo_cambio` está viejo respecto al tipo
+de cambio real?" — un problema de una sola variable global, no por-portfolio ni por-instrumento.
+
+### 6.2 Decisión: aplicación silenciosa + timestamp visible
+
+Dado que el tipo de cambio solo participa como guardarraíl de presupuesto (bloquea o permite una compra),
+no como insumo analítico de la simulación, quedar desactualizado no cambia ningún resultado simulado —
+como mucho corre dónde cae la línea de presupuesto. Eso es un riesgo mucho menor que el de tasa/μ/σ, que si
+está vieja cambia directamente el resultado de la corrida Monte Carlo. Construir un flujo paralelo tipo
+Vista Comparativa para esto sería una complejidad desproporcionada para el riesgo real.
+
+Se decidió:
+
+- **Seguir aplicando el tipo de cambio en silencio** — `ValidarPresupuestoAsync` sigue usando siempre el
+  valor vivo cacheado, sin pedirle al usuario que elija nada.
+- **Mostrar de forma visible cuándo se actualizó por última vez**, dondequiera que el tipo de cambio se
+  use o se muestre (ej. el formulario de alta de tenencia, el resumen de presupuesto del portfolio) — algo
+  como *"TC: $X (actualizado hace N días)"* — para que el usuario tenga conciencia pasiva de la
+  antigüedad del dato sin que se le fuerce una decisión.
+
+### 6.3 Cómo se implementó
+
+`ITipoCambioService.ObtenerCotizacionUsdArsAsync` devolvía solo `decimal`. Se cambió su firma a
+`Task<(decimal Valor, DateOnly Fecha)>` — cuando la cotización sale del caché del día, `Fecha` es hoy;
+cuando sale del fallback (`ITipoCambioRepository.ObtenerUltimaCotizacionAsync`, que también pasó a
+devolver `(decimal Valor, DateOnly Fecha)?` en vez de `decimal?`), `Fecha` es la del último registro
+persistido. `ValidarPresupuestoAsync` sigue leyendo solo `.Valor` — el comportamiento de validación de
+presupuesto no cambió, solo se sumó la fecha al contrato para quien la necesite mostrar.
+
+Se agregó `GET /referencia/tipo-cambio` (`ReferenciaController.cs`) devolviendo `TipoCambioResponse(Valor,
+Fecha)`, que expone exactamente ese par sin ningún cálculo adicional.
+
+En el frontend, `TipoCambioIndicator.tsx` (componente nuevo, reusable) consume `useTipoCambio()`
+(`api/hooks/useReferencia.ts`) y renderiza *"TC: $X USD/ARS · actualizado {hace N días / ayer / hoy}"*
+(`formatDiasDesde`, nuevo helper en `lib/format.ts`). Se ubicó en dos lugares:
+
+- `CreateEditPortfolioDialog.tsx`, junto al campo "Presupuesto" — es donde se define la moneda base y el
+  presupuesto que después se convierte contra tenencias en otra moneda.
+- `PortfolioDetallePage.tsx`, en el encabezado — solo si el portfolio tiene `capitalInicial` definido (si
+  no hay presupuesto, `ValidarPresupuestoAsync` nunca convierte nada, así que no hay nada que mostrar).
+
+No hizo falta tocar schema, motor, `SimulacionRepository` ni `SimulacionService` — el alcance fue
+puramente de exposición de un dato que ya existía (`tipo_cambio.fecha`) donde antes no se mostraba.

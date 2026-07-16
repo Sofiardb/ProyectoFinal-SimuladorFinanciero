@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import TipoCambioIndicator from '@/components/portfolios/TipoCambioIndicator'
 import { useCreatePortfolio, useUpdatePortfolio, useMonedas, usePerfilesRiesgo } from '@/api/hooks'
 import type { PortfolioResumen } from '@/types'
 
@@ -222,6 +223,7 @@ function PortfolioForm({
             label="Presupuesto (opcional)"
             inputProps={{ type: 'number', step: '0.01', placeholder: 'Sin límite' }}
           />
+          <TipoCambioIndicator />
 
           {mutation.isError && (
             <Alert variant="destructive">

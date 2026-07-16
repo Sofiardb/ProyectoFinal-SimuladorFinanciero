@@ -32,7 +32,8 @@ public class PortfolioServiceTests
         // Todos los portfolios de prueba usan id_moneda_base = 1 (ARS); las cotizaciones USD/ARS
         // se estuban con una tasa fija de 1:1 salvo que un test específico la sobreescriba.
         _repo.ObtenerCodigoMonedaAsync(1, Arg.Any<CancellationToken>()).Returns("ARS");
-        _tipoCambio.ObtenerCotizacionUsdArsAsync(Arg.Any<CancellationToken>()).Returns(1m);
+        _tipoCambio.ObtenerCotizacionUsdArsAsync(Arg.Any<CancellationToken>())
+            .Returns((1m, DateOnly.FromDateTime(DateTime.UtcNow)));
     }
 
     // ── Datos de prueba ───────────────────────────────────────────────────────
@@ -964,7 +965,7 @@ public class PortfolioServiceTests
         _repo.ExisteAccionEnPortfolioAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>()).Returns(false);
         _repo.ObtenerTotalInvertidoPorMonedaAsync(IdPortfolio, Arg.Any<CancellationToken>()).Returns((0m, 0m));
         _tipoCambio.ObtenerCotizacionUsdArsAsync(Arg.Any<CancellationToken>())
-             .Returns(Task.FromException<decimal>(new ExternalApiException("BCRA no disponible.")));
+             .Returns(Task.FromException<(decimal, DateOnly)>(new ExternalApiException("BCRA no disponible.")));
 
         var act = () => _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
 

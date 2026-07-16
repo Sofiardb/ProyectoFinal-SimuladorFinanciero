@@ -40,9 +40,10 @@ public class TipoCambioServiceTests
         _tipoCambioRepo.ObtenerCotizacionDelDiaAsync(IdUsd, IdArs, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .Returns(1_400m);
 
-        var resultado = await _svc.ObtenerCotizacionUsdArsAsync();
+        var (valor, fecha) = await _svc.ObtenerCotizacionUsdArsAsync();
 
-        resultado.Should().Be(1_400m);
+        valor.Should().Be(1_400m);
+        fecha.Should().Be(DateOnly.FromDateTime(DateTime.UtcNow));
         await _bcra.DidNotReceive().ObtenerCotizacionUsdAsync(Arg.Any<CancellationToken>());
     }
 
@@ -53,26 +54,30 @@ public class TipoCambioServiceTests
             .ReturnsNull();
         _bcra.ObtenerCotizacionUsdAsync(Arg.Any<CancellationToken>()).Returns(1_500m);
 
-        var resultado = await _svc.ObtenerCotizacionUsdArsAsync();
+        var (valor, fecha) = await _svc.ObtenerCotizacionUsdArsAsync();
 
-        resultado.Should().Be(1_500m);
+        valor.Should().Be(1_500m);
+        fecha.Should().Be(DateOnly.FromDateTime(DateTime.UtcNow));
         await _tipoCambioRepo.Received(1).GuardarCotizacionAsync(
             IdUsd, IdArs, Arg.Any<DateOnly>(), 1_500m, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task BcraFalla_ExisteCotizacionPrevia_DevuelveElUltimoValor()
+    public async Task BcraFalla_ExisteCotizacionPrevia_DevuelveElUltimoValorYSuFecha()
     {
+        var fechaAnterior = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-3);
         _tipoCambioRepo.ObtenerCotizacionDelDiaAsync(IdUsd, IdArs, Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
             .ReturnsNull();
         _bcra.ObtenerCotizacionUsdAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException<decimal>(new ExternalApiException("BCRA no disponible.")));
+        (decimal Valor, DateOnly Fecha)? ultima = (1_350m, fechaAnterior);
         _tipoCambioRepo.ObtenerUltimaCotizacionAsync(IdUsd, IdArs, Arg.Any<CancellationToken>())
-            .Returns(1_350m);
+            .Returns(Task.FromResult(ultima));
 
-        var resultado = await _svc.ObtenerCotizacionUsdArsAsync();
+        var (valor, fecha) = await _svc.ObtenerCotizacionUsdArsAsync();
 
-        resultado.Should().Be(1_350m);
+        valor.Should().Be(1_350m);
+        fecha.Should().Be(fechaAnterior);
     }
 
     [Fact]
@@ -97,8 +102,9 @@ public class TipoCambioServiceTests
             .ReturnsNull();
         _bcra.ObtenerCotizacionUsdAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException<decimal>(new ExternalApiException("BCRA no disponible.")));
+        (decimal Valor, DateOnly Fecha)? ultima = null;
         _tipoCambioRepo.ObtenerUltimaCotizacionAsync(IdUsd, IdArs, Arg.Any<CancellationToken>())
-            .ReturnsNull();
+            .Returns(Task.FromResult(ultima));
 
         var act = () => _svc.ObtenerCotizacionUsdArsAsync();
 

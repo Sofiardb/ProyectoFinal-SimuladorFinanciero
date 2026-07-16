@@ -224,6 +224,31 @@ public class SimulacionServiceTests
     }
 
     [Fact]
+    public void MotorPayloadBuilder_PlazoFijoConFechaInicioPasada_SumaInteresDevengadoAlMonto()
+    {
+        // fechaInicio quedó 6 meses atrás pero el depósito todavía no venció (dura 365 días) — el
+        // motor arranca su reloj en "today" y no sabe nada de lo transcurrido antes de esa fecha,
+        // por eso el ajuste tiene que hacerse acá, antes de armar el payload.
+        var today       = DateOnly.FromDateTime(DateTime.UtcNow);
+        var fechaInicio = today.AddMonths(-6);
+        var pf = new PlazoFijoTenenciaSimulacion(
+            11, "TRADICIONAL", "ARS", 1000m, 0.12m, fechaInicio, 365, false);
+        var tenencias = new TenenciasSimulacionData([], [], [], [pf]);
+        var snapshots = new List<InstrumentoSimulacionSnapshot>();
+
+        var payload = MotorPayloadBuilder.Build(tenencias, EscenariosVigentes(), 12, 1L, today, snapshots);
+
+        var esperado = 1000m * (decimal)Math.Pow(1 + 0.12 / 12, 6);
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(payload));
+        var montoEnviado = doc.RootElement.GetProperty("instrumentos")[0].GetProperty("monto").GetDecimal();
+
+        montoEnviado.Should().BeApproximately(esperado, 0.5m);
+        montoEnviado.Should().BeGreaterThan(1000m);
+        snapshots.Should().ContainSingle().Which.Monto.Should().BeApproximately(esperado, 0.5m);
+    }
+
+    [Fact]
     public async Task Simular_BonoVenceDespuesDelHorizonte_NoLanzaExcepcion()
     {
         // El motor trunca la trayectoria del bono al horizonte elegido — ya no se bloquea la simulación.

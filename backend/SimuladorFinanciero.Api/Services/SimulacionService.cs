@@ -291,6 +291,13 @@ internal static class MotorPayloadBuilder
             var tVenc   = MesesEntre(today, fv);
             var tipo    = ResolveTipoPlazoFijo(pf);
 
+            // El motor arranca su reloj en "hoy" (t=0) y toma `monto` como V(0) tal cual. Si
+            // fechaInicio ya quedó en el pasado, el capital real hoy incluye el interés devengado
+            // desde entonces — sin este ajuste, V(0) subestima el capital para todo depósito cuya
+            // fechaInicio no sea exactamente hoy. Los instrumentos vencidos (sin reinvertir) nunca
+            // llegan acá: SimularAsync ya los bloquea antes de construir el payload.
+            var monto = CapitalDevengado(pf.MontoInvertido, pf.TnaPactada, MesesEntre(pf.FechaInicio, today));
+
             object inst;
             if (pf.TipoCodigo == "UVA")
             {
@@ -298,7 +305,7 @@ internal static class MotorPayloadBuilder
                 {
                     id               = ambito,
                     tipo,
-                    monto            = (double)pf.MontoInvertido,
+                    monto            = (double)monto,
                     tasa_real_anual  = (double)pf.TnaPactada,
                     t_venc_meses     = tVenc,
                     reinvertir       = pf.ReinvertirAlVencimiento
@@ -310,7 +317,7 @@ internal static class MotorPayloadBuilder
                 {
                     id           = ambito,
                     tipo,
-                    monto        = (double)pf.MontoInvertido,
+                    monto        = (double)monto,
                     tna          = (double)pf.TnaPactada,
                     t_venc_meses = tVenc,
                     reinvertir   = pf.ReinvertirAlVencimiento
@@ -318,7 +325,7 @@ internal static class MotorPayloadBuilder
             }
             instrumentos.Add(inst);
             snapshots.Add(new InstrumentoSimulacionSnapshot(
-                ambito, tipo, null, null, null, pf.IdPortfolioPlazoFijo, pf.MontoInvertido,
+                ambito, tipo, null, null, null, pf.IdPortfolioPlazoFijo, monto,
                 JsonSerializer.Serialize(inst)));
         }
 
@@ -351,4 +358,13 @@ internal static class MotorPayloadBuilder
 
     private static int MesesEntre(DateOnly desde, DateOnly hasta)
         => (hasta.Year - desde.Year) * 12 + (hasta.Month - desde.Month);
+
+    /// Capitaliza mensualmente a la TNA/tasa pactada — misma convención que usa el motor (r_m = tasa/12)
+    /// para llevar el capital hasta la fecha de corte (normalmente "hoy").
+    private static decimal CapitalDevengado(decimal montoInvertido, decimal tasaAnual, int mesesTranscurridos)
+    {
+        if (mesesTranscurridos <= 0) return montoInvertido;
+        var rm = tasaAnual / 12m;
+        return montoInvertido * (decimal)Math.Pow((double)(1 + rm), mesesTranscurridos);
+    }
 }

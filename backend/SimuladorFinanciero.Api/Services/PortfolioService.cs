@@ -458,9 +458,9 @@ public sealed class PortfolioService : IPortfolioService
         switch (codigoMonedaBase)
         {
             case "ARS":
-                return totalUsd == 0m ? totalArs : totalArs + totalUsd * await _tipoCambio.ObtenerCotizacionUsdArsAsync(ct);
+                return totalUsd == 0m ? totalArs : totalArs + totalUsd * (await _tipoCambio.ObtenerCotizacionUsdArsAsync(ct)).Valor;
             case "USD":
-                return totalArs == 0m ? totalUsd : totalUsd + totalArs / await _tipoCambio.ObtenerCotizacionUsdArsAsync(ct);
+                return totalArs == 0m ? totalUsd : totalUsd + totalArs / (await _tipoCambio.ObtenerCotizacionUsdArsAsync(ct)).Valor;
             default:
                 throw new ValidationException(
                     $"No se puede calcular el presupuesto: la moneda '{codigoMonedaBase}' no está soportada para conversión (solo ARS/USD).");

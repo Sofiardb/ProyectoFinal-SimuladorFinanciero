@@ -7,7 +7,7 @@ public interface ITipoCambioRepository
 {
     Task<decimal?> ObtenerCotizacionDelDiaAsync(int idMonedaOrigen, int idMonedaDestino, DateOnly fecha, CancellationToken ct = default);
     Task GuardarCotizacionAsync(int idMonedaOrigen, int idMonedaDestino, DateOnly fecha, decimal valor, CancellationToken ct = default);
-    Task<decimal?> ObtenerUltimaCotizacionAsync(int idMonedaOrigen, int idMonedaDestino, CancellationToken ct = default);
+    Task<(decimal Valor, DateOnly Fecha)?> ObtenerUltimaCotizacionAsync(int idMonedaOrigen, int idMonedaDestino, CancellationToken ct = default);
 }
 
 public sealed class TipoCambioRepository : ITipoCambioRepository
@@ -42,18 +42,25 @@ public sealed class TipoCambioRepository : ITipoCambioRepository
                 new { idMonedaOrigen, idMonedaDestino, fecha, valor }, cancellationToken: ct));
     }
 
-    public async Task<decimal?> ObtenerUltimaCotizacionAsync(int idMonedaOrigen, int idMonedaDestino, CancellationToken ct = default)
+    private sealed class UltimaCotizacionRow
+    {
+        public decimal  Valor { get; set; }
+        public DateOnly Fecha { get; set; }
+    }
+
+    public async Task<(decimal Valor, DateOnly Fecha)?> ObtenerUltimaCotizacionAsync(int idMonedaOrigen, int idMonedaDestino, CancellationToken ct = default)
     {
         using var conn = _db.Crear();
-        return await conn.ExecuteScalarAsync<decimal?>(
+        var row = await conn.QuerySingleOrDefaultAsync<UltimaCotizacionRow>(
             new CommandDefinition(
                 """
-                SELECT valor FROM tipo_cambio
+                SELECT valor, fecha FROM tipo_cambio
                 WHERE id_moneda_origen = @idMonedaOrigen::smallint
                   AND id_moneda_destino = @idMonedaDestino::smallint
                 ORDER BY fecha DESC
                 LIMIT 1
                 """,
                 new { idMonedaOrigen, idMonedaDestino }, cancellationToken: ct));
+        return row is null ? null : (row.Valor, row.Fecha);
     }
 }

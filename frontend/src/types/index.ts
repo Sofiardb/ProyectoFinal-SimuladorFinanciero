@@ -73,6 +73,12 @@ export interface PerfilRiesgo {
   sigmaMaxAccion: number
 }
 
+/** Cotización USD/ARS vigente y fecha del registro del que salió (docs/09, sección 6). */
+export interface TipoCambio {
+  valor: number
+  fecha: string
+}
+
 // ─── Catálogo de instrumentos disponibles para agregar a un portfolio ────────
 export interface AccionCatalogo {
   idAccion:               number

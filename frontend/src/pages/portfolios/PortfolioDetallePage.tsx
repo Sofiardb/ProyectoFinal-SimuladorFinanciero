@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
+import TipoCambioIndicator from '@/components/portfolios/TipoCambioIndicator'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import DeletePortfolioDialog from '@/components/portfolios/DeletePortfolioDialog'
 import CatalogoTenenciaSection, {
@@ -213,6 +214,7 @@ export default function PortfolioDetallePage() {
             Creado el {formatFecha(detalle.fechaCreacion)} · Última modificación{' '}
             {formatFecha(detalle.fechaModificacion)}
           </p>
+          {detalle.capitalInicial != null && <TipoCambioIndicator />}
         </div>
 
         <div className="flex flex-wrap gap-2">
