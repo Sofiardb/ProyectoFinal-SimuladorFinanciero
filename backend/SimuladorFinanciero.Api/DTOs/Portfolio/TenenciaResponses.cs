@@ -10,7 +10,10 @@ public sealed record PortfolioAccionResponse(
     decimal? SigmaVolatilidad,
     decimal? PrecioActual,
     decimal  Cantidad,
-    decimal  PrecioCompra
+    decimal  PrecioCompra,
+    decimal? MuRetornoEsperadoCompra,
+    decimal? SigmaVolatilidadCompra,
+    decimal? RhoCorrelacionIndiceCompra
 );
 
 public sealed record PortfolioBonoResponse(
@@ -21,7 +24,8 @@ public sealed record PortfolioBonoResponse(
     string?  Emisor,
     decimal? PrecioActual,
     decimal  Cantidad,
-    decimal  PrecioCompra
+    decimal  PrecioCompra,
+    decimal  TasaDescuentoCompra
 );
 
 public sealed record PortfolioLetraResponse(
@@ -33,7 +37,8 @@ public sealed record PortfolioLetraResponse(
     DateOnly FechaVencimiento,
     decimal? PrecioActual,
     decimal  Cantidad,
-    decimal  PrecioCompra
+    decimal  PrecioCompra,
+    decimal  TasaCompra
 );
 
 public sealed record PortfolioPlazoFijoResponse(

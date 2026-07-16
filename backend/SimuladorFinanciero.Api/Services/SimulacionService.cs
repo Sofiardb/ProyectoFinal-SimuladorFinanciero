@@ -30,11 +30,11 @@ public sealed class SimulacionService : ISimulacionService
     public async Task<SimulacionResumenResponse> SimularAsync(
         long idPortfolio, long idUsuario, SimularRequest req, CancellationToken ct = default)
     {
-        // 1. Load portfolio header
+        // 1. Cargar cabecera del portfolio
         var portfolio = await _portfolioRepo.ObtenerCabeceraAsync(idPortfolio, idUsuario, ct)
             ?? throw new NotFoundException($"Portfolio {idPortfolio} no encontrado.");
 
-        // 2. Load tenencias + escenarios in parallel
+        // 2. Cargar tenencias + escenarios en paralelo
         var tenenciasTask  = _simRepo.ObtenerTenenciasParaSimulacionAsync(idPortfolio, ct);
         var escenariosTask = _simRepo.ObtenerEscenariosVigentesAsync(ct);
         await Task.WhenAll(tenenciasTask, escenariosTask);
@@ -42,7 +42,7 @@ public sealed class SimulacionService : ISimulacionService
         var tenencias  = tenenciasTask.Result;
         var escenarios = escenariosTask.Result;
 
-        // 3. Validations
+        // 3. Validaciones
         var totalInstrumentos = tenencias.Acciones.Count + tenencias.Bonos.Count
                               + tenencias.Letras.Count   + tenencias.PlazosFijos.Count;
         if (totalInstrumentos == 0)
@@ -80,29 +80,17 @@ public sealed class SimulacionService : ISimulacionService
         if (escenarios.Length < 3)
             throw new ValidationException("No hay escenarios económicos vigentes configurados.");
 
-        var tMeses = req.HorizonteMeses ?? portfolio.HorizonteMeses;
+        var tMeses = req.HorizonteMeses;
 
-        // 4. Validate bono flujos vs horizon
-        foreach (var b in tenencias.Bonos)
-        {
-            var flujosFuturos = b.Flujos.Where(f => f.FechaPago > today).ToList();
-            if (flujosFuturos.Count == 0) continue;
-            var maxMes = flujosFuturos.Max(f => MesesEntre(today, f.FechaPago));
-            if (maxMes > tMeses)
-                throw new ValidationException(
-                    $"El horizonte ({tMeses} meses) no cubre todos los flujos del bono {b.Ticker} " +
-                    $"(vence en {maxMes} meses). Amplíe el horizonte o elimine el bono.");
-        }
-
-        // 5. Build motor payload
+        // 4. Armar payload del motor
         var semilla   = req.Semilla ?? new Random().NextInt64(1, long.MaxValue);
         var snapshots = new List<InstrumentoSimulacionSnapshot>();
         var payload   = MotorPayloadBuilder.Build(tenencias, escenarios, tMeses, semilla, today, snapshots);
 
-        // 6. Call motor
+        // 5. Invocar al motor
         var motorResponse = await _motor.SimularAsync(payload, ct);
 
-        // 7. Extract aggregate metrics
+        // 6. Extraer métricas agregadas
         var valorInicial = snapshots.Sum(s => s.Monto);
         var (valorEsperado, valorMinimo, valorMaximo) = ExtraerAgregados(motorResponse);
         decimal? retornoEsperadoPct = valorInicial != 0
@@ -116,7 +104,7 @@ public sealed class SimulacionService : ISimulacionService
             ? semEl.GetInt64()
             : semilla;
 
-        // 8. Persist (transaction)
+        // 7. Persistir (transacción)
         var insertData = new InsertSimulacionData(
             IdPortfolio:        idPortfolio,
             HorizonteMeses:     tMeses,
@@ -212,7 +200,7 @@ public sealed class SimulacionService : ISimulacionService
         => (hasta.Year - desde.Year) * 12 + (hasta.Month - desde.Month);
 }
 
-// ── Motor payload builder ─────────────────────────────────────────────────────
+// ── Constructor del payload del motor ─────────────────────────────────────────
 
 internal static class MotorPayloadBuilder
 {

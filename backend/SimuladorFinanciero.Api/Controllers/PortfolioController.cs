@@ -207,4 +207,17 @@ public sealed class PortfolioController : ControllerBase
         await _service.EliminarPlazoFijoAsync(id, GetUserId(), idPlazoFijo, ct);
         return NoContent();
     }
+
+    // ── Staleness de mercado (docs/09) ────────────────────────────────────────
+
+    /// <summary>Refresca precio y tasa/parámetros GBM de todas las tenencias del portfolio contra el catálogo actual.</summary>
+    [HttpPost("{id:long}/refrescar-mercado")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> RefrescarMercado(long id, CancellationToken ct)
+    {
+        await _service.RefrescarTenenciasMercadoAsync(id, GetUserId(), ct);
+        return NoContent();
+    }
 }

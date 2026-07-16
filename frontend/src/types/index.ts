@@ -139,6 +139,9 @@ export interface PortfolioAccion {
   precioActual?:     number
   cantidad:          number
   precioCompra:      number
+  muRetornoEsperadoCompra?:    number
+  sigmaVolatilidadCompra?:     number
+  rhoCorrelacionIndiceCompra?: number
 }
 
 export interface PortfolioBono {
@@ -150,6 +153,7 @@ export interface PortfolioBono {
   precioActual?:   number
   cantidad:        number
   precioCompra:    number
+  tasaDescuentoCompra: number
 }
 
 export interface PortfolioLetra {
@@ -162,6 +166,7 @@ export interface PortfolioLetra {
   precioActual?:    number
   cantidad:         number
   precioCompra:     number
+  tasaCompra:       number
 }
 
 export interface PortfolioPlazoFijo {
@@ -190,7 +195,6 @@ export interface PortfolioResumen {
   idMonedaBase:       number
   codigoMonedaBase:   string
   capitalInicial?:    number
-  horizonteMeses:     number
   fechaCreacion:      string
   fechaModificacion:  string
   estado:             EstadoPortfolio
@@ -231,6 +235,16 @@ export interface InstrumentoPreviewItem {
   flujosVencidos?:    number
   fechaVencimiento?:  string
   mesesRestantes?:    number
+  // Tasa/parámetros GBM: snapshot de la tenencia vs. catálogo actual (docs/09)
+  estadoTasa?:        EstadoPreviewInstrumento
+  tasaOriginal?:      number
+  tasaMercado?:       number
+  muOriginal?:        number
+  muMercado?:         number
+  sigmaOriginal?:     number
+  sigmaMercado?:      number
+  rhoOriginal?:       number
+  rhoMercado?:        number
 }
 
 export interface SimulacionPreview {
@@ -238,14 +252,28 @@ export interface SimulacionPreview {
   totalInvertidoOriginal:  number
   totalInvertidoMercado?:  number
   puedeSimular:            boolean
+  tieneActualizaciones:    boolean
   instrumentos:            InstrumentoPreviewItem[]
 }
 
 // ─── Simulation ───────────────────────────────────────────────────────────────
-export interface Simulacion {
-  id:          string
-  portfolioId: string
-  tMeses:      number
-  estado:      'pendiente' | 'completada' | 'error'
-  creadoEn:    string
+export interface SimularRequest {
+  horizonteMeses: number
+}
+
+export interface SimulacionResumen {
+  idSimulacion:        number
+  idPortfolio:         number
+  fechaEjecucion:      string
+  horizonteMeses:      number
+  numTrayectorias:     number
+  seedAleatoria:       number
+  valorInicial:        number
+  valorEsperado?:      number
+  valorMinimo?:        number
+  valorMaximo?:        number
+  retornoEsperadoPct?: number
+  rendimientoRealPct?: number
+  desvioEstandar?:     number
+  observaciones?:      string
 }

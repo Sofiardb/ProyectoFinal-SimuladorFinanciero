@@ -4,16 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Form } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout'
 import { useForgotPassword } from '@/api/hooks'
 
@@ -68,23 +61,13 @@ export default function ForgotPasswordPage() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-              <FormField
+              <TextFormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
-                  <FormItem className="space-y-1.5">
-                    <FormLabel className="text-navy-950">Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="h-11 rounded-[9px]"
-                        placeholder="vos@ejemplo.com"
-                        autoComplete="email"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Email"
+                itemClassName="space-y-1.5"
+                labelClassName="text-navy-950"
+                inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'vos@ejemplo.com', autoComplete: 'email' }}
               />
 
               {forgotPassword.isError && (
@@ -96,7 +79,7 @@ export default function ForgotPasswordPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900"
+                className="btn-auth-submit"
                 disabled={forgotPassword.isPending}
               >
                 {forgotPassword.isPending ? 'Enviando…' : 'Enviar enlace'}

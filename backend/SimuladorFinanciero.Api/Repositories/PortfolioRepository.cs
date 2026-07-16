@@ -25,7 +25,7 @@ public interface IPortfolioRepository
     Task<PortfolioDetalleResponse?> ObtenerDetalleAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
     Task<Portfolio?> ObtenerCabeceraAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
     Task<PortfolioResumenResponse> CrearAsync(long idUsuario, CrearPortfolioRequest req, CancellationToken ct = default);
-    Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default);
+    Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, string estado, CancellationToken ct = default);
     Task<(decimal TotalUsd, decimal TotalArs)> ObtenerTotalInvertidoPorMonedaAsync(long idPortfolio, CancellationToken ct = default);
     Task<bool> EliminarAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
 
@@ -68,6 +68,9 @@ public interface IPortfolioRepository
     Task<PortfolioPlazoFijoResponse> AgregarPlazoFijoAsync(long idPortfolio, AgregarPlazoFijoRequest req, CancellationToken ct = default);
     Task<PortfolioPlazoFijoResponse?> ActualizarPlazoFijoAsync(long idPortfolioPlazoFijo, long idPortfolio, ActualizarPlazoFijoData data, CancellationToken ct = default);
     Task<bool> EliminarPlazoFijoAsync(long idPortfolioPlazoFijo, long idPortfolio, CancellationToken ct = default);
+
+    // Staleness de mercado (docs/09)
+    Task RefrescarTenenciasMercadoAsync(long idPortfolio, CancellationToken ct = default);
 }
 
 public sealed class PortfolioRepository : IPortfolioRepository
@@ -87,7 +90,6 @@ public sealed class PortfolioRepository : IPortfolioRepository
                p.id_moneda_base::int,
                m.codigo_iso AS codigo_moneda_base,
                p.capital_inicial,
-               p.horizonte_meses::int,
                p.fecha_creacion,
                p.fecha_modificacion,
                p.estado
@@ -106,7 +108,10 @@ public sealed class PortfolioRepository : IPortfolioRepository
                a.sector,
                a.mu_retorno_esperado,
                a.sigma_volatilidad,
-               a.precio_actual
+               a.precio_actual,
+               pa.mu_retorno_esperado_compra,
+               pa.sigma_volatilidad_compra,
+               pa.rho_correlacion_indice_compra
         FROM portfolio_accion pa
         JOIN accion a ON a.id_accion = pa.id_accion
         """;
@@ -119,7 +124,8 @@ public sealed class PortfolioRepository : IPortfolioRepository
                b.ticker,
                b.nombre,
                b.emisor,
-               b.precio_actual
+               b.precio_actual,
+               pb.tasa_descuento_compra
         FROM portfolio_bono pb
         JOIN bono b ON b.id_bono = pb.id_bono
         """;
@@ -133,7 +139,8 @@ public sealed class PortfolioRepository : IPortfolioRepository
                l.nombre,
                l.tasa,
                l.fecha_vencimiento,
-               l.precio_actual
+               l.precio_actual,
+               pl.tasa_compra
         FROM portfolio_letra pl
         JOIN letra l ON l.id_letra = pl.id_letra
         """;
@@ -167,7 +174,6 @@ public sealed class PortfolioRepository : IPortfolioRepository
         public int      IdMonedaBase       { get; set; }
         public string   CodigoMonedaBase   { get; set; } = "";
         public decimal? CapitalInicial     { get; set; }
-        public int      HorizonteMeses     { get; set; }
         public DateTimeOffset FechaCreacion     { get; set; }
         public DateTimeOffset FechaModificacion { get; set; }
         public string   Estado             { get; set; } = "ACTIVO";
@@ -185,6 +191,9 @@ public sealed class PortfolioRepository : IPortfolioRepository
         public decimal? MuRetornoEsperado  { get; set; }
         public decimal? SigmaVolatilidad   { get; set; }
         public decimal? PrecioActual       { get; set; }
+        public decimal? MuRetornoEsperadoCompra    { get; set; }
+        public decimal? SigmaVolatilidadCompra     { get; set; }
+        public decimal? RhoCorrelacionIndiceCompra { get; set; }
     }
 
     private sealed class BonoTenenciaRow
@@ -197,6 +206,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
         public string  Nombre          { get; set; } = "";
         public string? Emisor          { get; set; }
         public decimal? PrecioActual   { get; set; }
+        public decimal TasaDescuentoCompra { get; set; }
     }
 
     private sealed class LetraTenenciaRow
@@ -210,6 +220,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
         public decimal Tasa              { get; set; }
         public DateOnly FechaVencimiento { get; set; }
         public decimal? PrecioActual     { get; set; }
+        public decimal TasaCompra        { get; set; }
     }
 
     private sealed class PlazoFijoTenenciaRow
@@ -233,21 +244,22 @@ public sealed class PortfolioRepository : IPortfolioRepository
         r.IdPortfolio, r.Nombre, r.Descripcion,
         r.IdPerfilRiesgo, r.NombrePerfilRiesgo,
         r.IdMonedaBase, r.CodigoMonedaBase,
-        r.CapitalInicial, r.HorizonteMeses,
+        r.CapitalInicial,
         r.FechaCreacion, r.FechaModificacion, r.Estado);
 
     private static PortfolioAccionResponse ToAccion(AccionTenenciaRow r) => new(
         r.IdPortfolioAccion, r.IdAccion, r.Ticker, r.Nombre, r.Sector,
         r.MuRetornoEsperado, r.SigmaVolatilidad, r.PrecioActual,
-        r.Cantidad, r.PrecioCompra);
+        r.Cantidad, r.PrecioCompra,
+        r.MuRetornoEsperadoCompra, r.SigmaVolatilidadCompra, r.RhoCorrelacionIndiceCompra);
 
     private static PortfolioBonoResponse ToBono(BonoTenenciaRow r) => new(
         r.IdPortfolioBono, r.IdBono, r.Ticker, r.Nombre, r.Emisor,
-        r.PrecioActual, r.Cantidad, r.PrecioCompra);
+        r.PrecioActual, r.Cantidad, r.PrecioCompra, r.TasaDescuentoCompra);
 
     private static PortfolioLetraResponse ToLetra(LetraTenenciaRow r) => new(
         r.IdPortfolioLetra, r.IdLetra, r.Ticker, r.Nombre,
-        r.Tasa, r.FechaVencimiento, r.PrecioActual, r.Cantidad, r.PrecioCompra);
+        r.Tasa, r.FechaVencimiento, r.PrecioActual, r.Cantidad, r.PrecioCompra, r.TasaCompra);
 
     private static PortfolioPlazoFijoResponse ToPlazoFijo(PlazoFijoTenenciaRow r) => new(
         r.IdPortfolioPlazoFijo, r.IdTipoPlazoFijo, r.NombreTipoPlazoFijo,
@@ -300,7 +312,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
             header.IdPortfolio, header.Nombre, header.Descripcion,
             header.IdPerfilRiesgo, header.NombrePerfilRiesgo,
             header.IdMonedaBase, header.CodigoMonedaBase,
-            header.CapitalInicial, header.HorizonteMeses,
+            header.CapitalInicial,
             header.FechaCreacion, header.FechaModificacion, header.Estado,
             acciones, bonos, letras, plazosFijos);
     }
@@ -313,7 +325,6 @@ public sealed class PortfolioRepository : IPortfolioRepository
                    p.id_perfil_riesgo::int, p.id_moneda_base::int,
                    m.codigo_iso AS codigo_moneda_base,
                    p.nombre, p.descripcion, p.capital_inicial,
-                   p.horizonte_meses::int,
                    p.fecha_creacion, p.fecha_modificacion, p.estado
             FROM portfolio p
             JOIN moneda m ON m.id_moneda = p.id_moneda_base
@@ -328,8 +339,8 @@ public sealed class PortfolioRepository : IPortfolioRepository
         using var conn = _db.Crear();
         const string sql = """
             WITH ins AS (
-                INSERT INTO portfolio (id_usuario, id_perfil_riesgo, id_moneda_base, nombre, descripcion, capital_inicial, horizonte_meses)
-                VALUES (@idUsuario, @IdPerfilRiesgo::smallint, @IdMonedaBase::smallint, @Nombre, @Descripcion, @CapitalInicial, @HorizonteMeses::smallint)
+                INSERT INTO portfolio (id_usuario, id_perfil_riesgo, id_moneda_base, nombre, descripcion, capital_inicial)
+                VALUES (@idUsuario, @IdPerfilRiesgo::smallint, @IdMonedaBase::smallint, @Nombre, @Descripcion, @CapitalInicial)
                 RETURNING *
             )
             SELECT ins.id_portfolio,
@@ -340,7 +351,6 @@ public sealed class PortfolioRepository : IPortfolioRepository
                    ins.id_moneda_base::int,
                    m.codigo_iso AS codigo_moneda_base,
                    ins.capital_inicial,
-                   ins.horizonte_meses::int,
                    ins.fecha_creacion,
                    ins.fecha_modificacion,
                    ins.estado
@@ -350,12 +360,12 @@ public sealed class PortfolioRepository : IPortfolioRepository
             """;
         var row = await conn.QuerySingleAsync<PortfolioHeaderRow>(
             new CommandDefinition(sql,
-                new { idUsuario, req.IdPerfilRiesgo, req.IdMonedaBase, req.Nombre, req.Descripcion, req.CapitalInicial, req.HorizonteMeses },
+                new { idUsuario, req.IdPerfilRiesgo, req.IdMonedaBase, req.Nombre, req.Descripcion, req.CapitalInicial },
                 cancellationToken: ct));
         return ToResumen(row);
     }
 
-    public async Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, int horizonteMeses, string estado, CancellationToken ct = default)
+    public async Task<PortfolioResumenResponse?> ActualizarAsync(long idPortfolio, long idUsuario, string nombre, string? descripcion, int idPerfilRiesgo, int idMonedaBase, decimal? capitalInicial, string estado, CancellationToken ct = default)
     {
         using var conn = _db.Crear();
         const string sql = """
@@ -366,7 +376,6 @@ public sealed class PortfolioRepository : IPortfolioRepository
                     id_perfil_riesgo   = @idPerfilRiesgo::smallint,
                     id_moneda_base     = @idMonedaBase::smallint,
                     capital_inicial    = @capitalInicial,
-                    horizonte_meses    = @horizonteMeses::smallint,
                     estado             = @estado,
                     fecha_modificacion = NOW()
                 WHERE id_portfolio = @idPortfolio AND id_usuario = @idUsuario
@@ -380,7 +389,6 @@ public sealed class PortfolioRepository : IPortfolioRepository
                    upd.id_moneda_base::int,
                    m.codigo_iso AS codigo_moneda_base,
                    upd.capital_inicial,
-                   upd.horizonte_meses::int,
                    upd.fecha_creacion,
                    upd.fecha_modificacion,
                    upd.estado
@@ -390,7 +398,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
             """;
         var row = await conn.QuerySingleOrDefaultAsync<PortfolioHeaderRow>(
             new CommandDefinition(sql,
-                new { idPortfolio, idUsuario, nombre, descripcion, idPerfilRiesgo, idMonedaBase, capitalInicial, horizonteMeses, estado },
+                new { idPortfolio, idUsuario, nombre, descripcion, idPerfilRiesgo, idMonedaBase, capitalInicial, estado },
                 cancellationToken: ct));
         return row is null ? null : ToResumen(row);
     }
@@ -544,29 +552,53 @@ public sealed class PortfolioRepository : IPortfolioRepository
         return row is null ? null : ToAccion(row);
     }
 
+    private sealed class AccionGbmRow
+    {
+        public decimal? MuRetornoEsperado    { get; set; }
+        public decimal? SigmaVolatilidad     { get; set; }
+        public decimal? RhoCorrelacionIndice { get; set; }
+    }
+
     public async Task<PortfolioAccionResponse> AgregarAccionAsync(long idPortfolio, long idAccion, decimal cantidad, decimal precioCompra, CancellationToken ct = default)
     {
         using var conn = _db.Crear();
         conn.Open();
         using var tx = conn.BeginTransaction();
 
+        // Snapshot de GBM leído aparte del INSERT: así el alta nunca depende de que una SELECT
+        // embebida en el INSERT devuelva filas (si la acción no existe, falla acá con un error claro
+        // en vez de insertar 0 filas y romper el QuerySingleAsync de más abajo).
+        var gbm = await conn.QuerySingleOrDefaultAsync<AccionGbmRow>(
+            new CommandDefinition(
+                "SELECT mu_retorno_esperado, sigma_volatilidad, rho_correlacion_indice FROM accion WHERE id_accion = @idAccion",
+                new { idAccion }, transaction: tx, cancellationToken: ct))
+            ?? throw new InvalidOperationException($"Acción {idAccion} no existe en el catálogo.");
+
         const string sql = """
             WITH ins AS (
-                INSERT INTO portfolio_accion (id_portfolio, id_accion, cantidad, precio_compra)
-                VALUES (@idPortfolio, @idAccion, @cantidad, @precioCompra)
-                RETURNING id_portfolio_accion, id_accion, cantidad, precio_compra
+                INSERT INTO portfolio_accion
+                    (id_portfolio, id_accion, cantidad, precio_compra,
+                     mu_retorno_esperado_compra, sigma_volatilidad_compra, rho_correlacion_indice_compra)
+                VALUES (@idPortfolio, @idAccion, @cantidad, @precioCompra, @mu, @sigma, @rho)
+                RETURNING id_portfolio_accion, id_accion, cantidad, precio_compra,
+                          mu_retorno_esperado_compra, sigma_volatilidad_compra, rho_correlacion_indice_compra
             )
             SELECT ins.id_portfolio_accion,
                    ins.id_accion,
                    ins.cantidad,
                    ins.precio_compra,
                    a.ticker, a.nombre, a.sector,
-                   a.mu_retorno_esperado, a.sigma_volatilidad, a.precio_actual
+                   a.mu_retorno_esperado, a.sigma_volatilidad, a.precio_actual,
+                   ins.mu_retorno_esperado_compra, ins.sigma_volatilidad_compra, ins.rho_correlacion_indice_compra
             FROM ins
             JOIN accion a ON a.id_accion = ins.id_accion
             """;
         var row = await conn.QuerySingleAsync<AccionTenenciaRow>(
-            new CommandDefinition(sql, new { idPortfolio, idAccion, cantidad, precioCompra }, transaction: tx, cancellationToken: ct));
+            new CommandDefinition(sql, new
+            {
+                idPortfolio, idAccion, cantidad, precioCompra,
+                mu = gbm.MuRetornoEsperado, sigma = gbm.SigmaVolatilidad, rho = gbm.RhoCorrelacionIndice
+            }, transaction: tx, cancellationToken: ct));
 
         await TouchPortfolioAsync(conn, idPortfolio, tx, ct);
         tx.Commit();
@@ -583,11 +615,13 @@ public sealed class PortfolioRepository : IPortfolioRepository
             WITH upd AS (
                 UPDATE portfolio_accion SET cantidad = @cantidad, precio_compra = @precioCompra
                 WHERE id_portfolio = @idPortfolio AND id_accion = @idAccion
-                RETURNING id_portfolio_accion, id_accion, cantidad, precio_compra
+                RETURNING id_portfolio_accion, id_accion, cantidad, precio_compra,
+                          mu_retorno_esperado_compra, sigma_volatilidad_compra, rho_correlacion_indice_compra
             )
             SELECT upd.id_portfolio_accion, upd.id_accion, upd.cantidad, upd.precio_compra,
                    a.ticker, a.nombre, a.sector,
-                   a.mu_retorno_esperado, a.sigma_volatilidad, a.precio_actual
+                   a.mu_retorno_esperado, a.sigma_volatilidad, a.precio_actual,
+                   upd.mu_retorno_esperado_compra, upd.sigma_volatilidad_compra, upd.rho_correlacion_indice_compra
             FROM upd
             JOIN accion a ON a.id_accion = upd.id_accion
             """;
@@ -646,19 +680,26 @@ public sealed class PortfolioRepository : IPortfolioRepository
         conn.Open();
         using var tx = conn.BeginTransaction();
 
+        // Snapshot de tasa leído aparte del INSERT (ver comentario equivalente en AgregarAccionAsync).
+        var tasaDescuento = await conn.ExecuteScalarAsync<decimal?>(
+            new CommandDefinition(
+                "SELECT tasa_descuento FROM bono WHERE id_bono = @idBono",
+                new { idBono }, transaction: tx, cancellationToken: ct))
+            ?? throw new InvalidOperationException($"Bono {idBono} no existe en el catálogo.");
+
         const string sql = """
             WITH ins AS (
-                INSERT INTO portfolio_bono (id_portfolio, id_bono, cantidad, precio_compra)
-                VALUES (@idPortfolio, @idBono, @cantidad, @precioCompra)
-                RETURNING id_portfolio_bono, id_bono, cantidad, precio_compra
+                INSERT INTO portfolio_bono (id_portfolio, id_bono, cantidad, precio_compra, tasa_descuento_compra)
+                VALUES (@idPortfolio, @idBono, @cantidad, @precioCompra, @tasaDescuento)
+                RETURNING id_portfolio_bono, id_bono, cantidad, precio_compra, tasa_descuento_compra
             )
             SELECT ins.id_portfolio_bono, ins.id_bono, ins.cantidad, ins.precio_compra,
-                   b.ticker, b.nombre, b.emisor, b.precio_actual
+                   b.ticker, b.nombre, b.emisor, b.precio_actual, ins.tasa_descuento_compra
             FROM ins
             JOIN bono b ON b.id_bono = ins.id_bono
             """;
         var row = await conn.QuerySingleAsync<BonoTenenciaRow>(
-            new CommandDefinition(sql, new { idPortfolio, idBono, cantidad, precioCompra }, transaction: tx, cancellationToken: ct));
+            new CommandDefinition(sql, new { idPortfolio, idBono, cantidad, precioCompra, tasaDescuento }, transaction: tx, cancellationToken: ct));
 
         await TouchPortfolioAsync(conn, idPortfolio, tx, ct);
         tx.Commit();
@@ -675,10 +716,10 @@ public sealed class PortfolioRepository : IPortfolioRepository
             WITH upd AS (
                 UPDATE portfolio_bono SET cantidad = @cantidad, precio_compra = @precioCompra
                 WHERE id_portfolio = @idPortfolio AND id_bono = @idBono
-                RETURNING id_portfolio_bono, id_bono, cantidad, precio_compra
+                RETURNING id_portfolio_bono, id_bono, cantidad, precio_compra, tasa_descuento_compra
             )
             SELECT upd.id_portfolio_bono, upd.id_bono, upd.cantidad, upd.precio_compra,
-                   b.ticker, b.nombre, b.emisor, b.precio_actual
+                   b.ticker, b.nombre, b.emisor, b.precio_actual, upd.tasa_descuento_compra
             FROM upd
             JOIN bono b ON b.id_bono = upd.id_bono
             """;
@@ -737,19 +778,26 @@ public sealed class PortfolioRepository : IPortfolioRepository
         conn.Open();
         using var tx = conn.BeginTransaction();
 
+        // Snapshot de tasa leído aparte del INSERT (ver comentario equivalente en AgregarAccionAsync).
+        var tasa = await conn.ExecuteScalarAsync<decimal?>(
+            new CommandDefinition(
+                "SELECT tasa FROM letra WHERE id_letra = @idLetra",
+                new { idLetra }, transaction: tx, cancellationToken: ct))
+            ?? throw new InvalidOperationException($"Letra {idLetra} no existe en el catálogo.");
+
         const string sql = """
             WITH ins AS (
-                INSERT INTO portfolio_letra (id_portfolio, id_letra, cantidad, precio_compra)
-                VALUES (@idPortfolio, @idLetra, @cantidad, @precioCompra)
-                RETURNING id_portfolio_letra, id_letra, cantidad, precio_compra
+                INSERT INTO portfolio_letra (id_portfolio, id_letra, cantidad, precio_compra, tasa_compra)
+                VALUES (@idPortfolio, @idLetra, @cantidad, @precioCompra, @tasa)
+                RETURNING id_portfolio_letra, id_letra, cantidad, precio_compra, tasa_compra
             )
             SELECT ins.id_portfolio_letra, ins.id_letra, ins.cantidad, ins.precio_compra,
-                   l.ticker, l.nombre, l.tasa, l.fecha_vencimiento, l.precio_actual
+                   l.ticker, l.nombre, l.tasa, l.fecha_vencimiento, l.precio_actual, ins.tasa_compra
             FROM ins
             JOIN letra l ON l.id_letra = ins.id_letra
             """;
         var row = await conn.QuerySingleAsync<LetraTenenciaRow>(
-            new CommandDefinition(sql, new { idPortfolio, idLetra, cantidad, precioCompra }, transaction: tx, cancellationToken: ct));
+            new CommandDefinition(sql, new { idPortfolio, idLetra, cantidad, precioCompra, tasa }, transaction: tx, cancellationToken: ct));
 
         await TouchPortfolioAsync(conn, idPortfolio, tx, ct);
         tx.Commit();
@@ -766,10 +814,10 @@ public sealed class PortfolioRepository : IPortfolioRepository
             WITH upd AS (
                 UPDATE portfolio_letra SET cantidad = @cantidad, precio_compra = @precioCompra
                 WHERE id_portfolio = @idPortfolio AND id_letra = @idLetra
-                RETURNING id_portfolio_letra, id_letra, cantidad, precio_compra
+                RETURNING id_portfolio_letra, id_letra, cantidad, precio_compra, tasa_compra
             )
             SELECT upd.id_portfolio_letra, upd.id_letra, upd.cantidad, upd.precio_compra,
-                   l.ticker, l.nombre, l.tasa, l.fecha_vencimiento, l.precio_actual
+                   l.ticker, l.nombre, l.tasa, l.fecha_vencimiento, l.precio_actual, upd.tasa_compra
             FROM upd
             JOIN letra l ON l.id_letra = upd.id_letra
             """;
@@ -952,6 +1000,47 @@ public sealed class PortfolioRepository : IPortfolioRepository
         var row = await conn.QuerySingleAsync<TotalInvertidoRow>(
             new CommandDefinition(sql, new { idPortfolio }, cancellationToken: ct));
         return (row.TotalUsd, row.TotalArs);
+    }
+
+    // ── Staleness de mercado (docs/09) ────────────────────────────────────────
+
+    public async Task RefrescarTenenciasMercadoAsync(long idPortfolio, CancellationToken ct = default)
+    {
+        using var conn = _db.Crear();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        const string sqlAcciones = """
+            UPDATE portfolio_accion pa SET
+                precio_compra                 = COALESCE(a.precio_actual, pa.precio_compra),
+                mu_retorno_esperado_compra     = a.mu_retorno_esperado,
+                sigma_volatilidad_compra       = a.sigma_volatilidad,
+                rho_correlacion_indice_compra  = a.rho_correlacion_indice
+            FROM accion a
+            WHERE a.id_accion = pa.id_accion AND pa.id_portfolio = @idPortfolio
+            """;
+        const string sqlBonos = """
+            UPDATE portfolio_bono pb SET
+                precio_compra          = COALESCE(b.precio_actual, pb.precio_compra),
+                tasa_descuento_compra  = b.tasa_descuento
+            FROM bono b
+            WHERE b.id_bono = pb.id_bono AND pb.id_portfolio = @idPortfolio
+            """;
+        const string sqlLetras = """
+            UPDATE portfolio_letra pl SET
+                precio_compra = COALESCE(l.precio_actual, pl.precio_compra),
+                tasa_compra   = l.tasa
+            FROM letra l
+            WHERE l.id_letra = pl.id_letra AND pl.id_portfolio = @idPortfolio
+            """;
+
+        var param = new { idPortfolio };
+        await conn.ExecuteAsync(new CommandDefinition(sqlAcciones, param, transaction: tx, cancellationToken: ct));
+        await conn.ExecuteAsync(new CommandDefinition(sqlBonos, param, transaction: tx, cancellationToken: ct));
+        await conn.ExecuteAsync(new CommandDefinition(sqlLetras, param, transaction: tx, cancellationToken: ct));
+
+        await TouchPortfolioAsync(conn, idPortfolio, tx, ct);
+        tx.Commit();
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

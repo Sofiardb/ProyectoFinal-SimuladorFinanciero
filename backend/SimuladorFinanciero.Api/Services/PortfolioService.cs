@@ -29,6 +29,8 @@ public interface IPortfolioService
     Task<PortfolioPlazoFijoResponse> AgregarPlazoFijoAsync(long idPortfolio, long idUsuario, AgregarPlazoFijoRequest req, CancellationToken ct = default);
     Task<PortfolioPlazoFijoResponse> ActualizarPlazoFijoAsync(long idPortfolio, long idUsuario, long idPortfolioPlazoFijo, ActualizarPlazoFijoRequest req, CancellationToken ct = default);
     Task EliminarPlazoFijoAsync(long idPortfolio, long idUsuario, long idPortfolioPlazoFijo, CancellationToken ct = default);
+
+    Task RefrescarTenenciasMercadoAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
 }
 
 public sealed class PortfolioService : IPortfolioService
@@ -110,7 +112,6 @@ public sealed class PortfolioService : IPortfolioService
         var idPerfilRiesgo = req.IdPerfilRiesgo ?? actual.IdPerfilRiesgo;
         var idMonedaBase   = req.IdMonedaBase   ?? actual.IdMonedaBase;
         var capitalInicial = req.CapitalInicial ?? actual.CapitalInicial;   // decimal?
-        var horizonteMeses = req.HorizonteMeses ?? actual.HorizonteMeses;
         var estado         = req.Estado         ?? actual.Estado;
 
         // Si se establece o cambia el presupuesto, verificar que no quede por debajo del total ya invertido
@@ -130,7 +131,7 @@ public sealed class PortfolioService : IPortfolioService
 
         var updated = await _repo.ActualizarAsync(
             idPortfolio, idUsuario, nombre, descripcion,
-            idPerfilRiesgo, idMonedaBase, capitalInicial, horizonteMeses, estado, ct);
+            idPerfilRiesgo, idMonedaBase, capitalInicial, estado, ct);
 
         return updated ?? throw new NotFoundException($"Portfolio {idPortfolio} no encontrado.");
     }
@@ -149,6 +150,7 @@ public sealed class PortfolioService : IPortfolioService
             ?? throw new NotFoundException($"Portfolio {idPortfolio} no encontrado.");
 
         ValidarEstadoActivo(portfolio.Estado);
+        ValidarCantidadEntera(req.Cantidad);
 
         var infoAccion = await _repo.ObtenerInfoAccionAsync(req.IdAccion, ct);
         if (infoAccion is null)
@@ -186,6 +188,7 @@ public sealed class PortfolioService : IPortfolioService
 
         var cantidad     = req.Cantidad     ?? actual.Cantidad;
         var precioCompra = req.PrecioCompra ?? actual.PrecioCompra;
+        ValidarCantidadEntera(cantidad);
 
         await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, "USD", ct,
             montoRemplazo: actual.Cantidad * actual.PrecioCompra);
@@ -215,6 +218,7 @@ public sealed class PortfolioService : IPortfolioService
             ?? throw new NotFoundException($"Portfolio {idPortfolio} no encontrado.");
 
         ValidarEstadoActivo(portfolio.Estado);
+        ValidarCantidadEntera(req.Cantidad);
 
         if (!await _repo.ExisteBonoActivoAsync(req.IdBono, ct))
             throw new NotFoundException($"Bono {req.IdBono} no existe o no está activo.");
@@ -239,6 +243,7 @@ public sealed class PortfolioService : IPortfolioService
 
         var cantidad     = req.Cantidad     ?? actual.Cantidad;
         var precioCompra = req.PrecioCompra ?? actual.PrecioCompra;
+        ValidarCantidadEntera(cantidad);
 
         await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, "ARS", ct,
             montoRemplazo: actual.Cantidad * actual.PrecioCompra);
@@ -268,6 +273,7 @@ public sealed class PortfolioService : IPortfolioService
             ?? throw new NotFoundException($"Portfolio {idPortfolio} no encontrado.");
 
         ValidarEstadoActivo(portfolio.Estado);
+        ValidarCantidadEntera(req.Cantidad);
 
         if (!await _repo.ExisteLetraActivaAsync(req.IdLetra, ct))
             throw new NotFoundException($"Letra {req.IdLetra} no existe o no está activa.");
@@ -292,6 +298,7 @@ public sealed class PortfolioService : IPortfolioService
 
         var cantidad     = req.Cantidad     ?? actual.Cantidad;
         var precioCompra = req.PrecioCompra ?? actual.PrecioCompra;
+        ValidarCantidadEntera(cantidad);
 
         await ValidarPresupuestoAsync(portfolio, cantidad * precioCompra, "ARS", ct,
             montoRemplazo: actual.Cantidad * actual.PrecioCompra);
@@ -391,12 +398,30 @@ public sealed class PortfolioService : IPortfolioService
             throw new NotFoundException($"Plazo fijo {idPortfolioPlazoFijo} no está en el portfolio {idPortfolio}.");
     }
 
+    // ── Staleness de mercado (docs/09) ───────────────────────────────────────
+
+    public async Task RefrescarTenenciasMercadoAsync(long idPortfolio, long idUsuario, CancellationToken ct = default)
+    {
+        var portfolio = await _repo.ObtenerCabeceraAsync(idPortfolio, idUsuario, ct)
+            ?? throw new NotFoundException($"Portfolio {idPortfolio} no encontrado.");
+
+        ValidarEstadoActivo(portfolio.Estado);
+
+        await _repo.RefrescarTenenciasMercadoAsync(idPortfolio, ct);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static void ValidarEstadoActivo(string estado)
     {
         if (estado != "ACTIVO")
             throw new ValidationException("No se puede modificar un portfolio archivado. Reactívelo primero cambiando su estado a ACTIVO.");
+    }
+
+    private static void ValidarCantidadEntera(decimal cantidad)
+    {
+        if (cantidad != Math.Truncate(cantidad))
+            throw new ValidationException("La cantidad debe ser un número entero.");
     }
 
     private static void ValidarFechaInicio(DateOnly fechaInicio)

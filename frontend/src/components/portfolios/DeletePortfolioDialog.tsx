@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useDeletePortfolio } from '@/api/hooks'
+import { onErrorToast } from '@/lib/toast'
 import type { PortfolioResumen } from '@/types'
 
 interface Props {
@@ -28,7 +29,7 @@ export default function DeletePortfolioDialog({ open, onOpenChange, portfolio, o
         onOpenChange(false)
         onDeleted?.()
       },
-      onError: (error) => toast.error(error.message),
+      onError: onErrorToast,
     })
   }
 

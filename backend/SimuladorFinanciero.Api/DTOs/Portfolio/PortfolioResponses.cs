@@ -9,7 +9,6 @@ public sealed record PortfolioResumenResponse(
     int      IdMonedaBase,
     string   CodigoMonedaBase,
     decimal? CapitalInicial,
-    int      HorizonteMeses,
     DateTimeOffset FechaCreacion,
     DateTimeOffset FechaModificacion,
     string   Estado
@@ -24,7 +23,6 @@ public sealed record PortfolioDetalleResponse(
     int      IdMonedaBase,
     string   CodigoMonedaBase,
     decimal? CapitalInicial,
-    int      HorizonteMeses,
     DateTimeOffset FechaCreacion,
     DateTimeOffset FechaModificacion,
     string   Estado,

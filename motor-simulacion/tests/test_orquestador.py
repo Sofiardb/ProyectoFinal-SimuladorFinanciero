@@ -81,9 +81,73 @@ PARAMS_BASE = {
 }
 
 
+_MONTO_BONO_FIJO_LARGO   = 8000.0
+_TIR_BONO_FIJO_LARGO     = 0.55
+_MES_VENC_LARGO          = 6  # > T_meses=3
+_FLUJO_BONO_FIJO_LARGO   = _MONTO_BONO_FIJO_LARGO * (1 + _TIR_BONO_FIJO_LARGO) ** (_MES_VENC_LARGO / 12)
+
+_MONTO_BONO_IDX_LARGO      = 8000.0
+_TIR_REAL_BONO_IDX_LARGO   = 0.05
+_FLUJO_BASE_BONO_IDX_LARGO = _MONTO_BONO_IDX_LARGO * (1 + _TIR_REAL_BONO_IDX_LARGO) ** (_MES_VENC_LARGO / 12)
+
+# Todos los instrumentos financieros (lecap/lecer/bonos) vencen después del horizonte simulado
+# (T_meses=3), salvo lecap_corto que vence antes — para probar que ambos casos conviven en el
+# mismo portfolio sin mismatch de shapes.
+PARAMS_VENCE_DESPUES_HORIZONTE = {
+    "T_meses": 3,
+    "escenarios": {
+        "favorable":    {"inflacion_mensual_min": 0.02, "inflacion_mensual_max": 0.03},
+        "moderado":     {"inflacion_mensual_min": 0.04, "inflacion_mensual_max": 0.06},
+        "desfavorable": {"inflacion_mensual_min": 0.08, "inflacion_mensual_max": 0.12},
+    },
+    "instrumentos": [
+        {
+            "id": "lecap_corto",
+            "tipo": "lecap",
+            "monto": 5000.0,
+            "tna": 0.50,
+            "t_venc_meses": 2,
+        },
+        {
+            "id": "lecap_largo",
+            "tipo": "lecap",
+            "monto": 5000.0,
+            "tna": 0.50,
+            "t_venc_meses": _MES_VENC_LARGO,
+        },
+        {
+            "id": "lecer_largo",
+            "tipo": "lecer",
+            "monto": 5000.0,
+            "tna": 0.05,
+            "t_venc_meses": _MES_VENC_LARGO,
+        },
+        {
+            "id": "bono_fijo_largo",
+            "tipo": "bono_tasa_fija",
+            "monto": _MONTO_BONO_FIJO_LARGO,
+            "flujos": [{"mes": _MES_VENC_LARGO, "monto": _FLUJO_BONO_FIJO_LARGO}],
+            "tir": _TIR_BONO_FIJO_LARGO,
+        },
+        {
+            "id": "bono_idx_largo",
+            "tipo": "bono_indexado",
+            "monto": _MONTO_BONO_IDX_LARGO,
+            "flujos_base": [{"mes": _MES_VENC_LARGO, "capital_adj": _FLUJO_BASE_BONO_IDX_LARGO, "interest_adj": 0.0}],
+            "tir_real": _TIR_REAL_BONO_IDX_LARGO,
+        },
+    ],
+}
+
+
 @pytest.fixture
 def params():
     return copy.deepcopy(PARAMS_BASE)
+
+
+@pytest.fixture
+def params_vence_despues():
+    return copy.deepcopy(PARAMS_VENCE_DESPUES_HORIZONTE)
 
 # Tests de estructura y longitud
 
@@ -249,3 +313,44 @@ def test_inflacion_acumulada_crece_con_escenario(params):
     media_fav  = resultado["inflacion_acumulada"]["favorable"]["media"][-1]
     media_desf = resultado["inflacion_acumulada"]["desfavorable"]["media"][-1]
     assert media_desf > media_fav
+
+# Tests de vencimiento posterior al horizonte de simulación
+
+def test_instrumentos_vencen_despues_del_horizonte_no_rompen(params_vence_despues):
+    # Antes de truncar en el orquestador, esto rompía: shape mismatch (lecap/lecer/bono_tasa_fija)
+    # o IndexError directo (bono_indexado, por indexar factor_cer_matrix fuera de sus T_meses+1 columnas).
+    resultado = simular_portfolio(params_vence_despues)
+    T = params_vence_despues["T_meses"]
+
+    for inst in params_vence_despues["instrumentos"]:
+        serie = resultado["instrumentos"][inst["id"]]["patrimonio"]["global"]["media"]
+        assert len(serie) == T + 1
+
+
+def test_truncado_no_llega_a_la_par(params_vence_despues):
+    # Vencen en el mes 6 pero el horizonte es 3 → V(3) todavía no debe alcanzar el valor final
+    # de vencimiento (ni haber quedado en el precio de compra).
+    resultado = simular_portfolio(params_vence_despues)
+
+    vn_lecap = 5000.0 * (1 + 0.50 * _MES_VENC_LARGO / 12)
+    v3_lecap = resultado["instrumentos"]["lecap_largo"]["patrimonio"]["global"]["media"][-1]
+    assert 5000.0 < v3_lecap < vn_lecap
+
+    v3_bono = resultado["instrumentos"]["bono_fijo_largo"]["patrimonio"]["global"]["media"][-1]
+    assert _MONTO_BONO_FIJO_LARGO < v3_bono < _FLUJO_BONO_FIJO_LARGO
+
+
+def test_portfolio_mixto_vencimientos_distintos_agrega_sin_error(params_vence_despues):
+    # lecap_corto vence en el mes 2 (< T=3), el resto vence en el mes 6 (> T=3) — deben poder
+    # sumarse en el mismo portfolio_ars sin mismatch de shapes.
+    resultado = simular_portfolio(params_vence_despues)
+    T = params_vence_despues["T_meses"]
+
+    media_portfolio = resultado["portfolio_ars"]["patrimonio"]["global"]["media"]
+    assert len(media_portfolio) == T + 1
+
+    suma_instrumentos = sum(
+        resultado["instrumentos"][inst["id"]]["patrimonio"]["global"]["media"][-1]
+        for inst in params_vence_despues["instrumentos"]
+    )
+    assert media_portfolio[-1] == pytest.approx(suma_instrumentos)

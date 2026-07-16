@@ -1,4 +1,5 @@
-import { formatPorcentaje } from '@/lib/format'
+import { formatFecha, formatPorcentaje } from '@/lib/format'
+import { PRECIO_VN_TOOLTIP } from '@/lib/tooltips'
 import type {
   AccionCatalogo,
   BonoCatalogo,
@@ -18,9 +19,6 @@ export interface CampoPreview {
 export function tasaTexto(tipo: string, tasa: number): string {
   return `${tipo} ${formatPorcentaje(tasa * 100)}`
 }
-
-const PRECIO_VN_TOOLTIP =
-  'El precio cotiza cada 100 de valor nominal (VN). Por ejemplo, $105 significa que pagás $105 por cada $100 de VN que comprás — no es el precio de "una unidad".'
 
 function precioVnField(precioActual?: number): CampoPreview {
   return {
@@ -122,6 +120,49 @@ export function letraHeldPreview(l: PortfolioLetra, catalogo: Map<number, LetraC
       tasa: l.tasa,
       precioActual: l.precioActual ?? c?.precioActual,
     }),
+  ]
+}
+
+// ─── Filas de tenencia ya cargada (detalle de portfolio y resumen de nueva simulación) ──────
+export interface TenenciaRowCore {
+  titulo:        string
+  subtitulo:     string
+  previewFields: CampoPreview[]
+}
+
+export function accionRow(a: PortfolioAccion, catalogo: Map<number, AccionCatalogo>): TenenciaRowCore {
+  return {
+    titulo: `${a.ticker} · ${a.nombre}`,
+    subtitulo: accionSubtitulo({ sector: a.sector }),
+    previewFields: accionHeldPreview(a, catalogo),
+  }
+}
+
+export function bonoRow(b: PortfolioBono, catalogo: Map<number, BonoCatalogo>): TenenciaRowCore {
+  const c = catalogo.get(b.idBono)
+  return {
+    titulo: `${b.ticker} · ${b.nombre}`,
+    subtitulo: c ? bonoSubtitulo(c) : (b.emisor ?? ''),
+    previewFields: bonoHeldPreview(b, catalogo),
+  }
+}
+
+export function letraRow(l: PortfolioLetra, catalogo: Map<number, LetraCatalogo>): TenenciaRowCore {
+  return {
+    titulo: `${l.ticker} · ${l.nombre}`,
+    subtitulo: letraSubtitulo({ fechaVencimiento: l.fechaVencimiento }),
+    previewFields: letraHeldPreview(l, catalogo),
+  }
+}
+
+export function plazoFijoPreview(pf: PortfolioPlazoFijo): CampoPreview[] {
+  const tasaLabel = pf.nombreTipoPlazoFijo === 'Plazo fijo UVA' ? 'Tasa real' : 'TNA'
+  return [
+    { label: 'Monto', value: `${pf.codigoMoneda} ${pf.montoInvertido}` },
+    { label: tasaLabel, value: formatPorcentaje(pf.tnaPactada * 100) },
+    { label: 'Plazo', value: `${pf.duracionDias} días` },
+    { label: 'Inicio', value: formatFecha(pf.fechaInicio) },
+    { label: 'Reinversión', value: pf.reinvertirAlVencimiento ? 'Sí' : 'No' },
   ]
 }
 

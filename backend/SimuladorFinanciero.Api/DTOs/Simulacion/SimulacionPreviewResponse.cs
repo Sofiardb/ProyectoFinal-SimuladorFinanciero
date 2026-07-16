@@ -5,6 +5,7 @@ public sealed record SimulacionPreviewResponse(
     decimal   TotalInvertidoOriginal,
     decimal?  TotalInvertidoMercado,   // null si algún instrumento no tiene precio_actual
     bool      PuedeSimular,
+    bool      TieneActualizaciones,    // true si algún instrumento tiene precio y/o tasa/GBM desactualizado (docs/09)
     IReadOnlyList<InstrumentoPreviewItem> Instrumentos
 );
 
@@ -37,5 +38,15 @@ public sealed record InstrumentoPreviewItem(
     int?      FlujosVencidos,
     // Específico de letras / bonos / plazos fijos
     DateOnly? FechaVencimiento,
-    int?      MesesRestantes            // > 0: vigente | <= 0: vencido
+    int?      MesesRestantes,           // > 0: vigente | <= 0: vencido
+    // Tasa/parámetros GBM: snapshot de la tenencia (_compra) vs. catálogo actual (docs/09)
+    string?   EstadoTasa,               // mismos valores que Estado; null si no aplica (plazo_fijo)
+    decimal?  TasaOriginal,             // bono/letra: snapshot tasa_descuento_compra/tasa_compra
+    decimal?  TasaMercado,              // bono/letra: valor vivo del catálogo
+    decimal?  MuOriginal,               // accion: snapshot mu_retorno_esperado_compra
+    decimal?  MuMercado,                // accion: valor vivo del catálogo
+    decimal?  SigmaOriginal,            // accion: snapshot sigma_volatilidad_compra
+    decimal?  SigmaMercado,             // accion: valor vivo del catálogo
+    decimal?  RhoOriginal,              // accion: snapshot rho_correlacion_indice_compra
+    decimal?  RhoMercado                // accion: valor vivo del catálogo
 );

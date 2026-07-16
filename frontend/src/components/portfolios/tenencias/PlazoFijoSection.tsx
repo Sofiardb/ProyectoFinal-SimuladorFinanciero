@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import InfoTooltip from '@/components/portfolios/InfoTooltip'
+import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
+import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
+import SectionShell from '@/components/portfolios/tenencias/SectionShell'
+import { useEditableSectionState } from '@/hooks/useEditableSectionState'
 import { formatFecha, formatPorcentaje, hoyISO } from '@/lib/format'
-import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
 import type { PortfolioPlazoFijo, TipoPlazoFijo } from '@/types'
 
 export interface NuevoPlazoFijo {
@@ -36,7 +38,7 @@ interface Props {
   onDelete: (idPortfolioPlazoFijo: number) => void
 }
 
-function tasaLabelPara(codigoTipo: string | undefined): string {
+export function tasaLabelPara(codigoTipo: string | undefined): string {
   return codigoTipo === 'UVA' ? 'Tasa real' : 'TNA'
 }
 
@@ -52,78 +54,57 @@ export default function PlazoFijoSection({
   onUpdate,
   onDelete,
 }: Props) {
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [isAdding, setIsAdding] = useState(false)
+  const {
+    editingId,
+    isAdding,
+    editar,
+    cancelarEdicion,
+    empezarAgregar,
+    cancelarAgregar,
+    guardarEdicionYCerrar,
+    guardarAltaYCerrar,
+  } = useEditableSectionState()
 
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-1.5">
-        <h3 className="font-display text-sm font-semibold text-navy-950">{titulo}</h3>
-        <InfoTooltip term={titulo} definition={tooltip} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {tenencias.map((t) =>
-          editingId === t.idPortfolioPlazoFijo ? (
-            <EditRow
-              key={t.idPortfolioPlazoFijo}
-              tenencia={t}
-              moneda={moneda}
-              tipos={tipos}
-              isMutating={isMutating}
-              onCancel={() => setEditingId(null)}
-              onSave={async (payload) => {
-                try {
-                  await onUpdate(t.idPortfolioPlazoFijo, payload)
-                  setEditingId(null)
-                } catch {
-                  // Mantener la fila abierta: el error ya se muestra debajo de la sección.
-                }
-              }}
-            />
-          ) : (
-            <ViewRow
-              key={t.idPortfolioPlazoFijo}
-              tenencia={t}
-              moneda={moneda}
-              onEdit={() => setEditingId(t.idPortfolioPlazoFijo)}
-              onDelete={() => onDelete(t.idPortfolioPlazoFijo)}
-            />
-          ),
-        )}
-
-        {isAdding ? (
-          <AddRow
+    <SectionShell
+      titulo={titulo}
+      tooltip={tooltip}
+      addLabel="+ Agregar plazo fijo"
+      isAdding={isAdding}
+      onStartAdd={empezarAgregar}
+      error={error}
+      addRow={
+        <AddRow
+          moneda={moneda}
+          tipos={tipos}
+          isMutating={isMutating}
+          onCancel={cancelarAgregar}
+          onSave={(payload) => guardarAltaYCerrar(() => onAdd(payload))}
+        />
+      }
+    >
+      {tenencias.map((t) =>
+        editingId === t.idPortfolioPlazoFijo ? (
+          <EditRow
+            key={t.idPortfolioPlazoFijo}
+            tenencia={t}
             moneda={moneda}
             tipos={tipos}
             isMutating={isMutating}
-            onCancel={() => setIsAdding(false)}
-            onSave={async (payload) => {
-              try {
-                await onAdd(payload)
-                setIsAdding(false)
-              } catch {
-                // Mantener la fila abierta: el error ya se muestra debajo de la sección.
-              }
-            }}
+            onCancel={cancelarEdicion}
+            onSave={(payload) => guardarEdicionYCerrar(() => onUpdate(t.idPortfolioPlazoFijo, payload))}
           />
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsAdding(true)}
-            className="mt-1 rounded-[9px] border-[1.5px] border-dashed border-line-dashed p-2.5 text-center text-xs font-semibold text-ink-soft transition-colors hover:border-navy-950 hover:text-navy-950"
-          >
-            + Agregar plazo fijo
-          </button>
-        )}
-
-        {error && (
-          <div className="banner-danger">
-            <FormattedErrorMessage text={error} />
-          </div>
-        )}
-      </div>
-    </div>
+          <ViewRow
+            key={t.idPortfolioPlazoFijo}
+            tenencia={t}
+            moneda={moneda}
+            onEdit={() => editar(t.idPortfolioPlazoFijo)}
+            onDelete={() => onDelete(t.idPortfolioPlazoFijo)}
+          />
+        ),
+      )}
+    </SectionShell>
   )
 }
 
@@ -148,58 +129,20 @@ function ViewRow({
   ]
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-[9px] bg-chip px-3.5 py-3">
+    <div className="tenencia-row">
       <div className="min-w-0 flex-1 basis-32">
-        <p className="truncate text-[13.5px] leading-tight font-semibold text-navy-950">
-          {tenencia.entidadFinanciera}
-        </p>
-        <p className="mt-[3px] truncate text-[11.5px] leading-tight text-ink-soft">
-          {tenencia.nombreTipoPlazoFijo}
-        </p>
+        <p className="tenencia-row-title">{tenencia.entidadFinanciera}</p>
+        <p className="tenencia-row-subtitle">{tenencia.nombreTipoPlazoFijo}</p>
       </div>
-      <div className="flex shrink-0 gap-[18px]">
+      <div className="tenencia-row-stats">
         {stats.map((s) => (
           <div key={s.label} className="text-right">
-            <p className="text-[9.5px] tracking-[0.3px] text-ink-soft uppercase">{s.label}</p>
-            <p className="mt-0.5 text-[12.5px] font-semibold text-navy-950">{s.value}</p>
+            <p className="stat-label">{s.label}</p>
+            <p className="mt-0.5 stat-value">{s.value}</p>
           </div>
         ))}
       </div>
-      <div className="flex shrink-0 gap-0.5">
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label="Modificar"
-          className="flex items-center justify-center rounded-md p-[5px] text-ink-muted transition-colors hover:bg-line-soft"
-        >
-          <svg viewBox="0 0 24 24" className="size-4">
-            <path
-              d="M4 20l3.5-1L18 8.5a1.8 1.8 0 000-2.5l-.5-.5a1.8 1.8 0 00-2.5 0L4.5 16 4 20z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="Eliminar"
-          className="flex items-center justify-center rounded-md p-[5px] text-danger transition-colors hover:bg-line-soft"
-        >
-          <svg viewBox="0 0 24 24" className="size-4">
-            <path
-              d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0l-1 13a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
+      <RowIconActions onEdit={onEdit} onDelete={onDelete} />
     </div>
   )
 }
@@ -368,28 +311,22 @@ function EditRow({
         fields={fields}
         setFields={setFields}
       />
-      <div className="mt-0.5 flex justify-end gap-2">
-        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button
-          type="button"
-          disabled={!isValid || isMutating}
-          onClick={() =>
-            onSave({
-              entidadFinanciera: fields.entidadFinanciera,
-              montoInvertido: montoNum,
-              tnaPactada: tnaNum,
-              fechaInicio: fields.fechaInicio,
-              duracionDias: duracionNum,
-              reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
-            })
-          }
-          className={isValid ? 'btn-save-sm' : 'btn-save-sm-disabled'}
-        >
-          Guardar
-        </button>
-      </div>
+      <RowFormFooter
+        className="mt-0.5 flex justify-end gap-2"
+        onCancel={onCancel}
+        isMutating={isMutating}
+        canSave={isValid}
+        onSave={() =>
+          onSave({
+            entidadFinanciera: fields.entidadFinanciera,
+            montoInvertido: montoNum,
+            tnaPactada: tnaNum,
+            fechaInicio: fields.fechaInicio,
+            duracionDias: duracionNum,
+            reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
+          })
+        }
+      />
     </div>
   )
 }
@@ -430,29 +367,23 @@ function AddRow({
         fields={fields}
         setFields={setFields}
       />
-      <div className="mt-0.5 flex justify-end gap-2">
-        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button
-          type="button"
-          disabled={!isValid || isMutating}
-          onClick={() =>
-            onSave({
-              idTipoPlazoFijo: Number(idTipoPlazoFijo),
-              entidadFinanciera: fields.entidadFinanciera,
-              montoInvertido: montoNum,
-              tnaPactada: tnaNum,
-              fechaInicio: fields.fechaInicio,
-              duracionDias: duracionNum,
-              reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
-            })
-          }
-          className={isValid ? 'btn-save-sm' : 'btn-save-sm-disabled'}
-        >
-          Guardar
-        </button>
-      </div>
+      <RowFormFooter
+        className="mt-0.5 flex justify-end gap-2"
+        onCancel={onCancel}
+        isMutating={isMutating}
+        canSave={isValid}
+        onSave={() =>
+          onSave({
+            idTipoPlazoFijo: Number(idTipoPlazoFijo),
+            entidadFinanciera: fields.entidadFinanciera,
+            montoInvertido: montoNum,
+            tnaPactada: tnaNum,
+            fechaInicio: fields.fechaInicio,
+            duracionDias: duracionNum,
+            reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
+          })
+        }
+      />
     </div>
   )
 }

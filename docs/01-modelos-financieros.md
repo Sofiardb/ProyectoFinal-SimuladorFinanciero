@@ -113,11 +113,14 @@ V(t) = monto × factor_acum[t_venc] × (1+r_m)^t_venc   si t > t_venc y reinvert
 
 Las siguientes restricciones fueron definidas antes de implementar los modelos para acotar el alcance del simulador.
 
-### Vencimiento dentro del horizonte (`t_venc ≤ T`)
+### Vencimiento fuera del horizonte (`t_venc > T`)
 
-Solo se incluyen en el portfolio letras y bonos cuyo vencimiento cae dentro del horizonte de simulación `T`. El backend filtra los instrumentos disponibles al construir el portfolio.
-
-**Consecuencia en el motor:** las funciones de instrumento no necesitan manejar el caso `t_venc > T`. Las trayectorias siempre alcanzan su vencimiento natural dentro de los `T` meses.
+El vencimiento de un bono o letra es independiente del horizonte de simulación `T`: no hay ninguna
+restricción al agregar el instrumento al portfolio, y `T` se elige recién al correr cada simulación
+(ver `docs/07-portfolio-reglas-negocio.md`). Cuando `t_venc > T`, el motor trunca la trayectoria en `T`
+sin proyectar el instrumento hasta su vencimiento real — ver Decisión 7 en
+`docs/02-orquestador-montecarlo.md`. Las funciones de instrumento siempre calculan contra el vencimiento
+real (para descontar correctamente "cuánto falta"), pero el orquestador decide hasta qué mes emitir.
 
 ### Compra en licitación primaria
 
@@ -133,8 +136,7 @@ Esta suposición simplifica el modelo y es coherente con el perfil de usuario ob
 
 Las funciones del motor reciben los flujos de caja como parámetros. El backend es responsable de:
 1. Consultar la API de mercado para obtener el calendario de pagos.
-2. Filtrar instrumentos que vencen después de `T`.
-3. Convertir fechas de pago a índices de mes relativos al inicio de la simulación.
+2. Convertir fechas de pago a índices de mes relativos al inicio de la simulación.
 
 Esto mantiene el motor como función pura (sin I/O), más simple de testear e independiente de fuentes de datos externas.
 
@@ -169,7 +171,7 @@ V(t) = VN / (1 + tna × (t_venc - t) / 12)     para t ∈ [0, t_venc]
 
 **Interés simple en lugar de capitalización compuesta.** La propuesta cita a Hull (2014) para instrumentos de corto plazo: la convención del mercado para cupones cero de corto plazo es interés simple (`1 + r × T`) y no capitalización compuesta (`(1+r)^T`). Para plazos de hasta 12 meses la diferencia numérica es mínima, pero la fórmula de interés simple es la que usan los participantes del mercado argentino para pricear LECAPs.
 
-**La trayectoria termina en `t_venc`.** La función devuelve un vector de largo `t_venc + 1`, no de largo `T + 1`. Si el instrumento vence antes del horizonte de simulación, el orquestador aplica padding. Esta separación de responsabilidades evita que la función de la letra necesite conocer el horizonte total de la simulación.
+**La trayectoria termina en `t_venc`.** La función devuelve un vector de largo `t_venc + 1`, no de largo `T + 1`. Si el instrumento vence antes del horizonte de simulación, el orquestador aplica padding; si vence después, el orquestador trunca la salida a `T + 1`. Esta separación de responsabilidades evita que la función de la letra necesite conocer el horizonte total de la simulación.
 
 **Sin opción de reinversión.** A diferencia del plazo fijo, la LECAP no tiene flag `reinvertir`. Al vencer, el nominal cobrado queda disponible como efectivo en el portfolio. La reinversión en otro instrumento es una decisión del usuario que excede el alcance de esta función.
 

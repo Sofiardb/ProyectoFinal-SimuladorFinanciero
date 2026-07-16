@@ -23,7 +23,19 @@ public sealed class MotorClientService : IMotorClientService
         var json    = JsonSerializer.Serialize(payload, _opts);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _http.PostAsync("/simular", content, ct);
+        HttpResponseMessage response;
+        try
+        {
+            response = await _http.PostAsync("/simular", content, ct);
+        }
+        catch (HttpRequestException)
+        {
+            throw new ExternalApiException("No se pudo conectar con el motor de simulación. Verificá que esté corriendo.");
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            throw new ExternalApiException("El motor de simulación no respondió a tiempo.");
+        }
 
         if (!response.IsSuccessStatusCode)
             throw new ExternalApiException(

@@ -53,4 +53,22 @@ public class GlobalExceptionHandlerTests
         var (status, _) = GlobalExceptionHandler.MapException(new Exception("genérica"));
         status.Should().Be(StatusCodes.Status500InternalServerError);
     }
+
+    [Fact]
+    public void ResolverDetail_ExcepcionNoControlada_DevuelveMensajeGenerico()
+    {
+        var detail = GlobalExceptionHandler.ResolverDetail(
+            new InvalidOperationException("Sequence contains no elements"), StatusCodes.Status500InternalServerError);
+
+        detail.Should().Be("Ocurrió un error inesperado. Intentá de nuevo en unos segundos.");
+    }
+
+    [Fact]
+    public void ResolverDetail_ExcepcionDefinida_DevuelveMensajeOriginal()
+    {
+        var detail = GlobalExceptionHandler.ResolverDetail(
+            new NotFoundException("Portfolio 1 no encontrado."), StatusCodes.Status404NotFound);
+
+        detail.Should().Be("Portfolio 1 no encontrado.");
+    }
 }

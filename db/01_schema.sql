@@ -263,7 +263,6 @@ CREATE TABLE portfolio (
     nombre             VARCHAR(100) NOT NULL,
     descripcion        TEXT,
     capital_inicial    NUMERIC(20,6) CHECK (capital_inicial IS NULL OR capital_inicial > 0),
-    horizonte_meses    SMALLINT      NOT NULL CHECK (horizonte_meses BETWEEN 1 AND 360),
     fecha_creacion     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     fecha_modificacion TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     estado             VARCHAR(20)   NOT NULL DEFAULT 'ACTIVO'
@@ -279,29 +278,37 @@ COMMENT ON TABLE portfolio IS 'Portfolio de inversión asociado a un usuario y u
 -- 4.1 Tenencia de ACCIONES en portfolio
 -- Una fila por acción: representa la posición total, no lotes independientes.
 CREATE TABLE portfolio_accion (
-    id_portfolio_accion BIGSERIAL PRIMARY KEY,
-    id_portfolio        BIGINT        NOT NULL REFERENCES portfolio(id_portfolio) ON DELETE CASCADE,
-    id_accion           BIGINT        NOT NULL REFERENCES accion(id_accion),
-    cantidad            NUMERIC(20,6) NOT NULL CHECK (cantidad > 0),
-    precio_compra       NUMERIC(20,6) NOT NULL,
+    id_portfolio_accion           BIGSERIAL     PRIMARY KEY,
+    id_portfolio                  BIGINT        NOT NULL REFERENCES portfolio(id_portfolio) ON DELETE CASCADE,
+    id_accion                     BIGINT        NOT NULL REFERENCES accion(id_accion),
+    cantidad                      NUMERIC(20,6) NOT NULL CHECK (cantidad > 0 AND cantidad = TRUNC(cantidad)),
+    precio_compra                 NUMERIC(20,6) NOT NULL,
+    mu_retorno_esperado_compra    NUMERIC(14,10),
+    sigma_volatilidad_compra      NUMERIC(14,10),
+    rho_correlacion_indice_compra NUMERIC(8,6) CHECK (rho_correlacion_indice_compra BETWEEN -1 AND 1),
     UNIQUE (id_portfolio, id_accion)
 );
 
-COMMENT ON COLUMN portfolio_accion.precio_compra IS 'Precio de referencia al incorporar la posición (base de costo). No interviene en el cálculo del GBM.';
+COMMENT ON COLUMN portfolio_accion.precio_compra IS 'Precio de referencia al incorporar la posición (base de costo). Se fija al alta/edición y solo se refresca mediante la acción explícita "Actualizar" en Vista Comparativa (nunca en silencio).';
+COMMENT ON COLUMN portfolio_accion.mu_retorno_esperado_compra    IS 'Snapshot de accion.mu_retorno_esperado al alta/edición o al último refresco explícito. Es el valor que alimenta al motor (ver docs/09).';
+COMMENT ON COLUMN portfolio_accion.sigma_volatilidad_compra      IS 'Snapshot de accion.sigma_volatilidad al alta/edición o al último refresco explícito.';
+COMMENT ON COLUMN portfolio_accion.rho_correlacion_indice_compra IS 'Snapshot de accion.rho_correlacion_indice al alta/edición o al último refresco explícito.';
 
 
 -- 4.2 Tenencia de BONOS en portfolio
 -- Una fila por bono: representa la posición total.
 CREATE TABLE portfolio_bono (
-    id_portfolio_bono BIGSERIAL PRIMARY KEY,
-    id_portfolio      BIGINT        NOT NULL REFERENCES portfolio(id_portfolio) ON DELETE CASCADE,
-    id_bono           BIGINT        NOT NULL REFERENCES bono(id_bono),
-    cantidad          NUMERIC(20,6) NOT NULL CHECK (cantidad > 0),
-    precio_compra     NUMERIC(20,6) NOT NULL,
+    id_portfolio_bono     BIGSERIAL PRIMARY KEY,
+    id_portfolio          BIGINT        NOT NULL REFERENCES portfolio(id_portfolio) ON DELETE CASCADE,
+    id_bono               BIGINT        NOT NULL REFERENCES bono(id_bono),
+    cantidad              NUMERIC(20,6) NOT NULL CHECK (cantidad > 0 AND cantidad = TRUNC(cantidad)),
+    precio_compra         NUMERIC(20,6) NOT NULL,
+    tasa_descuento_compra NUMERIC(10,8) NOT NULL,
     UNIQUE (id_portfolio, id_bono)
 );
 
-COMMENT ON COLUMN portfolio_bono.precio_compra IS 'Precio de referencia al incorporar la posición (base de costo). No interviene en la valuación por flujos descontados.';
+COMMENT ON COLUMN portfolio_bono.precio_compra IS 'Precio de referencia al incorporar la posición (base de costo). Se fija al alta/edición y solo se refresca mediante la acción explícita "Actualizar" en Vista Comparativa (nunca en silencio).';
+COMMENT ON COLUMN portfolio_bono.tasa_descuento_compra IS 'Snapshot de bono.tasa_descuento al alta/edición o al último refresco explícito. Es el valor que alimenta la valuación por flujos descontados (ver docs/09).';
 
 
 -- 4.3 Tenencia de LETRAS en portfolio
@@ -310,12 +317,14 @@ CREATE TABLE portfolio_letra (
     id_portfolio_letra BIGSERIAL PRIMARY KEY,
     id_portfolio       BIGINT        NOT NULL REFERENCES portfolio(id_portfolio) ON DELETE CASCADE,
     id_letra           BIGINT        NOT NULL REFERENCES letra(id_letra),
-    cantidad           NUMERIC(20,6) NOT NULL CHECK (cantidad > 0),
+    cantidad           NUMERIC(20,6) NOT NULL CHECK (cantidad > 0 AND cantidad = TRUNC(cantidad)),
     precio_compra      NUMERIC(20,6) NOT NULL,
+    tasa_compra        NUMERIC(10,8) NOT NULL,
     UNIQUE (id_portfolio, id_letra)
 );
 
-COMMENT ON COLUMN portfolio_letra.precio_compra IS 'Precio de referencia al incorporar la posición (base de costo). No interviene en la valuación por descuento.';
+COMMENT ON COLUMN portfolio_letra.precio_compra IS 'Precio de referencia al incorporar la posición (base de costo). Se fija al alta/edición y solo se refresca mediante la acción explícita "Actualizar" en Vista Comparativa (nunca en silencio).';
+COMMENT ON COLUMN portfolio_letra.tasa_compra IS 'Snapshot de letra.tasa al alta/edición o al último refresco explícito. Es el valor que alimenta la valuación por descuento (ver docs/09).';
 
 
 -- 4.4 Depósitos a plazo fijo en portfolio

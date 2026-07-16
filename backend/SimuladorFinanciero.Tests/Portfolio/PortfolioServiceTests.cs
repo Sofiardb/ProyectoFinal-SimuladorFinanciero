@@ -46,7 +46,6 @@ public class PortfolioServiceTests
         CodigoMonedaBase  = codigoMonedaBase,
         Nombre            = "Mi Portfolio",
         CapitalInicial    = capitalInicial,
-        HorizonteMeses    = 12,
         FechaCreacion     = DateTimeOffset.UtcNow,
         FechaModificacion = DateTimeOffset.UtcNow,
         Estado            = "ACTIVO"
@@ -61,7 +60,6 @@ public class PortfolioServiceTests
         CodigoMonedaBase  = "ARS",
         Nombre            = "Mi Portfolio",
         CapitalInicial    = null,
-        HorizonteMeses    = 12,
         FechaCreacion     = DateTimeOffset.UtcNow,
         FechaModificacion = DateTimeOffset.UtcNow,
         Estado            = "ARCHIVADO"
@@ -69,24 +67,25 @@ public class PortfolioServiceTests
 
     private static PortfolioResumenResponse ResumenEjemplo(string nombre = "Mi Portfolio") => new(
         IdPortfolio, nombre, null, 2, "Moderado",
-        1, "ARS", 100_000m, 12, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "ACTIVO");
+        1, "ARS", 100_000m, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "ACTIVO");
 
     private static PortfolioDetalleResponse DetalleEjemplo() => new(
         IdPortfolio, "Mi Portfolio", null, 2, "Moderado",
-        1, "ARS", 100_000m, 12, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "ACTIVO",
+        1, "ARS", 100_000m, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "ACTIVO",
         [], [], [], []);
 
     private static PortfolioAccionResponse AccionEjemplo() => new(
         101, IdAccion, "AAPL", "Apple Inc.", "Tecnología",
-        0.005m, 0.04m, 195m, 10m, 180m);
+        0.005m, 0.04m, 195m, 10m, 180m,
+        0.005m, 0.04m, 0.6m);
 
     private static PortfolioBonoResponse BonoEjemplo() => new(
         201, IdBono, "AL30", "BONAR 2030", "Ministerio",
-        95m, 100m, 92m);
+        95m, 100m, 92m, 0.14m);
 
     private static PortfolioLetraResponse LetraEjemplo() => new(
         301, IdLetra, "LECAP2025", "LECAP Dic 2025", 0.035m,
-        new DateOnly(2025, 12, 31), 98m, 50m, 97m);
+        new DateOnly(2025, 12, 31), 98m, 50m, 97m, 0.035m);
 
     private static PortfolioPlazoFijoResponse PlazoFijoEjemplo() => new(
         IdPlazoFijo, 1, "TRADICIONAL", 1, "ARS",
@@ -97,8 +96,7 @@ public class PortfolioServiceTests
         Nombre         = "Nuevo Portfolio",
         IdPerfilRiesgo = 2,
         IdMonedaBase   = 1,
-        CapitalInicial = 50_000m,
-        HorizonteMeses = 24
+        CapitalInicial = 50_000m
     };
 
     // ── CrearAsync ────────────────────────────────────────────────────────────
@@ -190,7 +188,7 @@ public class PortfolioServiceTests
              .Returns(false);
         _repo.ActualizarAsync(IdPortfolio, IdUsuario,
              Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<int>(), Arg.Any<int>(),
-             Arg.Any<decimal?>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+             Arg.Any<decimal?>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
              .Returns(resumen);
 
         var result = await _svc.ActualizarAsync(IdPortfolio, IdUsuario, req);
@@ -341,6 +339,18 @@ public class PortfolioServiceTests
     }
 
     [Fact]
+    public async Task AgregarAccion_CantidadNoEntera_LanzaValidationException()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo());
+        var req = new AgregarAccionRequest { IdAccion = IdAccion, Cantidad = 10.5m, PrecioCompra = 180m };
+
+        var act = () => _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*entero*");
+    }
+
+    [Fact]
     public async Task AgregarAccion_AccionNoExiste_LanzaNotFoundException()
     {
         _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
@@ -439,6 +449,20 @@ public class PortfolioServiceTests
     }
 
     [Fact]
+    public async Task ActualizarAccion_CantidadNoEntera_LanzaValidationException()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo());
+        _repo.ObtenerAccionTenenciaAsync(IdPortfolio, IdAccion, Arg.Any<CancellationToken>())
+             .Returns(AccionEjemplo());
+        var req = new ActualizarAccionRequest { Cantidad = 20.5m };
+
+        var act = () => _svc.ActualizarAccionAsync(IdPortfolio, IdUsuario, IdAccion, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*entero*");
+    }
+
+    [Fact]
     public async Task ActualizarAccion_PortfolioNoEncontrado_LanzaNotFoundException()
     {
         _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>()).ReturnsNull();
@@ -517,6 +541,18 @@ public class PortfolioServiceTests
         var result = await _svc.AgregarBonoAsync(IdPortfolio, IdUsuario, req);
 
         result.Should().Be(bono);
+    }
+
+    [Fact]
+    public async Task AgregarBono_CantidadNoEntera_LanzaValidationException()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo());
+        var req = new AgregarBonoRequest { IdBono = IdBono, Cantidad = 100.25m, PrecioCompra = 92m };
+
+        var act = () => _svc.AgregarBonoAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*entero*");
     }
 
     [Fact]
@@ -602,6 +638,18 @@ public class PortfolioServiceTests
         var result = await _svc.AgregarLetraAsync(IdPortfolio, IdUsuario, req);
 
         result.Should().Be(letra);
+    }
+
+    [Fact]
+    public async Task AgregarLetra_CantidadNoEntera_LanzaValidationException()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo());
+        var req = new AgregarLetraRequest { IdLetra = IdLetra, Cantidad = 50.1m, PrecioCompra = 97m };
+
+        var act = () => _svc.AgregarLetraAsync(IdPortfolio, IdUsuario, req);
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage("*entero*");
     }
 
     [Fact]
@@ -921,6 +969,43 @@ public class PortfolioServiceTests
         var act = () => _svc.AgregarAccionAsync(IdPortfolio, IdUsuario, req);
 
         await act.Should().ThrowAsync<ExternalApiException>();
+    }
+
+    // ── RefrescarTenenciasMercadoAsync ────────────────────────────────────────
+
+    [Fact]
+    public async Task RefrescarTenenciasMercado_HappyPath_LlamaRepositorio()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioActivo());
+
+        await _svc.RefrescarTenenciasMercadoAsync(IdPortfolio, IdUsuario);
+
+        await _repo.Received(1).RefrescarTenenciasMercadoAsync(IdPortfolio, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RefrescarTenenciasMercado_PortfolioNoExiste_LanzaNotFoundException()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .ReturnsNull();
+
+        var act = () => _svc.RefrescarTenenciasMercadoAsync(IdPortfolio, IdUsuario);
+
+        await act.Should().ThrowAsync<NotFoundException>().WithMessage($"*Portfolio {IdPortfolio}*");
+        await _repo.DidNotReceive().RefrescarTenenciasMercadoAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RefrescarTenenciasMercado_PortfolioArchivado_LanzaValidationException()
+    {
+        _repo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, Arg.Any<CancellationToken>())
+             .Returns(PortfolioArchivado());
+
+        var act = () => _svc.RefrescarTenenciasMercadoAsync(IdPortfolio, IdUsuario);
+
+        await act.Should().ThrowAsync<ValidationException>();
+        await _repo.DidNotReceive().RefrescarTenenciasMercadoAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
     }
 
     // ── Setup helpers ─────────────────────────────────────────────────────────

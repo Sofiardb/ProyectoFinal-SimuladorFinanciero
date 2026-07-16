@@ -7,4 +7,5 @@ public class PortfolioLetra
     public long    IdLetra          { get; set; }
     public decimal Cantidad         { get; set; }
     public decimal PrecioCompra     { get; set; }
+    public decimal TasaCompra       { get; set; }
 }

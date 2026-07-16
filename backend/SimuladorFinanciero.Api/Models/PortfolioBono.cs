@@ -7,4 +7,5 @@ public class PortfolioBono
     public long    IdBono          { get; set; }
     public decimal Cantidad        { get; set; }
     public decimal PrecioCompra    { get; set; }
+    public decimal TasaDescuentoCompra { get; set; }
 }

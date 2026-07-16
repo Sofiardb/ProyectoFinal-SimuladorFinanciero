@@ -3,17 +3,10 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
 import { useRegister } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -37,6 +30,10 @@ const registerSchema = z
   })
 
 type RegisterValues = z.infer<typeof registerSchema>
+
+const fieldClass = 'h-11 rounded-[9px]'
+const itemClass = 'space-y-1.5'
+const labelClass = 'text-navy-950'
 
 export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const { login } = useAuth()
@@ -77,101 +74,69 @@ export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        <FormField
+        <TextFormField
           control={form.control}
           name="email"
-          render={({ field }) => (
-            <FormItem className="space-y-1.5">
-              <FormLabel className="text-navy-950">Email</FormLabel>
-              <FormControl>
-                <Input className="h-11 rounded-[9px]" placeholder="vos@ejemplo.com" autoComplete="email" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Email"
+          itemClassName={itemClass}
+          labelClassName={labelClass}
+          inputProps={{ className: fieldClass, placeholder: 'vos@ejemplo.com', autoComplete: 'email' }}
         />
 
-        <FormField
+        <TextFormField
           control={form.control}
           name="username"
-          render={({ field }) => (
-            <FormItem className="space-y-1.5">
-              <FormLabel className="text-navy-950">Nombre de usuario</FormLabel>
-              <FormControl>
-                <Input className="h-11 rounded-[9px]" placeholder="Elegí un usuario" autoComplete="username" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Nombre de usuario"
+          itemClassName={itemClass}
+          labelClassName={labelClass}
+          inputProps={{ className: fieldClass, placeholder: 'Elegí un usuario', autoComplete: 'username' }}
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <FormField
+          <TextFormField
             control={form.control}
             name="nombre"
-            render={({ field }) => (
-              <FormItem className="space-y-1.5">
-                <FormLabel className="text-navy-950">Nombre</FormLabel>
-                <FormControl>
-                  <Input className="h-11 rounded-[9px]" placeholder="Opcional" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Nombre"
+            itemClassName={itemClass}
+            labelClassName={labelClass}
+            inputProps={{ className: fieldClass, placeholder: 'Opcional' }}
           />
-          <FormField
+          <TextFormField
             control={form.control}
             name="apellido"
-            render={({ field }) => (
-              <FormItem className="space-y-1.5">
-                <FormLabel className="text-navy-950">Apellido</FormLabel>
-                <FormControl>
-                  <Input className="h-11 rounded-[9px]" placeholder="Opcional" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Apellido"
+            itemClassName={itemClass}
+            labelClassName={labelClass}
+            inputProps={{ className: fieldClass, placeholder: 'Opcional' }}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <FormField
+          <TextFormField
             control={form.control}
             name="password"
-            render={({ field }) => (
-              <FormItem className="space-y-1.5">
-                <FormLabel className="text-navy-950">Contraseña</FormLabel>
-                <FormControl>
-                  <Input
-                    className="h-11 rounded-[9px]"
-                    type="password"
-                    placeholder="Mín. 8 caracteres"
-                    autoComplete="new-password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Contraseña"
+            itemClassName={itemClass}
+            labelClassName={labelClass}
+            inputProps={{
+              className: fieldClass,
+              type: 'password',
+              placeholder: 'Mín. 8 caracteres',
+              autoComplete: 'new-password',
+            }}
           />
-          <FormField
+          <TextFormField
             control={form.control}
             name="confirmPassword"
-            render={({ field }) => (
-              <FormItem className="space-y-1.5">
-                <FormLabel className="text-navy-950">Confirmar</FormLabel>
-                <FormControl>
-                  <Input
-                    className="h-11 rounded-[9px]"
-                    type="password"
-                    placeholder="Repetir"
-                    autoComplete="new-password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Confirmar"
+            itemClassName={itemClass}
+            labelClassName={labelClass}
+            inputProps={{
+              className: fieldClass,
+              type: 'password',
+              placeholder: 'Repetir',
+              autoComplete: 'new-password',
+            }}
           />
         </div>
 
@@ -207,7 +172,7 @@ export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () 
         <Button
           type="submit"
           size="lg"
-          className="h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900"
+          className="btn-auth-submit"
           disabled={registerMutation.isPending}
         >
           {registerMutation.isPending ? 'Creando cuenta…' : 'Crear cuenta'}

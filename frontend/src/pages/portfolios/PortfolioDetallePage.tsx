@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
-import PreviewBanner from '@/components/portfolios/PreviewBanner'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import DeletePortfolioDialog from '@/components/portfolios/DeletePortfolioDialog'
 import CatalogoTenenciaSection, {
@@ -35,19 +34,18 @@ import {
 } from '@/api/hooks'
 import {
   accionPreview,
-  accionSubtitulo,
-  accionHeldPreview,
   accionCatalogoPorId,
+  accionRow,
   bonoPreview,
-  bonoSubtitulo,
-  bonoHeldPreview,
   bonoCatalogoPorId,
+  bonoRow,
   letraPreview,
-  letraSubtitulo,
-  letraHeldPreview,
   letraCatalogoPorId,
+  letraRow,
 } from '@/lib/tenenciaDisplay'
 import { formatFecha } from '@/lib/format'
+import { onErrorToast } from '@/lib/toast'
+import { SECCION_TOOLTIPS, CANTIDAD_LOTES_TOOLTIP_BONO, CANTIDAD_LOTES_TOOLTIP_LETRA } from '@/lib/tooltips'
 
 /** Limpia el error previo, ejecuta la mutación y, si falla, guarda el mensaje y relanza (para que el formulario que llama quede abierto). */
 async function conCaptura(setError: (mensaje: string | null) => void, fn: () => Promise<unknown>): Promise<void> {
@@ -98,7 +96,7 @@ export default function PortfolioDetallePage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1080px] space-y-4 px-4 pt-8 pb-16 sm:px-6 lg:px-8 lg:pt-9">
+      <div className="page-shell max-w-[1080px] space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-40 w-full" />
         <Skeleton className="h-40 w-full" />
@@ -108,7 +106,7 @@ export default function PortfolioDetallePage() {
 
   if (!detalle) {
     return (
-      <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-16 text-center sm:px-6 lg:px-8 lg:pt-9">
+      <div className="page-shell max-w-[1080px] text-center">
         <p className="text-ink-muted">No se encontró el portfolio.</p>
         <Link to="/portfolios" className="mt-2 inline-block text-sm font-medium text-navy-950 underline">
           Volver a mis portfolios
@@ -135,7 +133,7 @@ export default function PortfolioDetallePage() {
       { estado: archivado ? 'ACTIVO' : 'ARCHIVADO' },
       {
         onSuccess: () => toast.success(archivado ? 'Portfolio reactivado.' : 'Portfolio archivado.'),
-        onError: (error) => toast.error(error.message),
+        onError: onErrorToast,
       },
     )
   }
@@ -143,10 +141,8 @@ export default function PortfolioDetallePage() {
   // ─── Acciones ────────────────────────────────────────────────────────────
   const accionesTenencias: TenenciaItem[] = detalle.acciones.map((a) => ({
     idCatalogo: a.idAccion,
-    titulo: `${a.ticker} · ${a.nombre}`,
-    subtitulo: accionSubtitulo({ sector: a.sector }),
-    previewFields: accionHeldPreview(a, accionesPorId),
     cantidadActual: a.cantidad,
+    ...accionRow(a, accionesPorId),
   }))
   const accionesOpciones: CatalogoOpcion[] = (accionesCatalogo ?? [])
     .filter((a) => !detalle.acciones.some((existing) => existing.idAccion === a.idAccion))
@@ -161,10 +157,8 @@ export default function PortfolioDetallePage() {
   // ─── Bonos ───────────────────────────────────────────────────────────────
   const bonosTenencias: TenenciaItem[] = detalle.bonos.map((b) => ({
     idCatalogo: b.idBono,
-    titulo: `${b.ticker} · ${b.nombre}`,
-    subtitulo: bonosPorId.get(b.idBono) ? bonoSubtitulo(bonosPorId.get(b.idBono)!) : (b.emisor ?? ''),
-    previewFields: bonoHeldPreview(b, bonosPorId),
     cantidadActual: b.cantidad,
+    ...bonoRow(b, bonosPorId),
   }))
   const bonosOpciones: CatalogoOpcion[] = (bonosCatalogo ?? [])
     .filter((b) => !detalle.bonos.some((existing) => existing.idBono === b.idBono))
@@ -178,10 +172,8 @@ export default function PortfolioDetallePage() {
   // ─── Letras ──────────────────────────────────────────────────────────────
   const letrasTenencias: TenenciaItem[] = detalle.letras.map((l) => ({
     idCatalogo: l.idLetra,
-    titulo: `${l.ticker} · ${l.nombre}`,
-    subtitulo: letraSubtitulo({ fechaVencimiento: l.fechaVencimiento }),
-    previewFields: letraHeldPreview(l, letrasPorId),
     cantidadActual: l.cantidad,
+    ...letraRow(l, letrasPorId),
   }))
   const letrasOpciones: CatalogoOpcion[] = (letrasCatalogo ?? [])
     .filter((l) => !detalle.letras.some((existing) => existing.idLetra === l.idLetra))
@@ -193,8 +185,8 @@ export default function PortfolioDetallePage() {
     }))
 
   return (
-    <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-16 sm:px-6 lg:px-8 lg:pt-9">
-      <div className="mb-[18px] flex flex-wrap items-center gap-1.5 text-[12.5px] text-ink-soft">
+    <div className="page-shell max-w-[1080px]">
+      <div className="breadcrumb-nav">
         <Link to={`/portfolios?perfil=${detalle.idPerfilRiesgo}`} className="hover:text-navy-950">
           Portfolios
         </Link>
@@ -205,6 +197,9 @@ export default function PortfolioDetallePage() {
         <span>/</span>
         <span className="font-semibold text-navy-950">{detalle.nombre}</span>
       </div>
+      <button onClick={() => navigate(-1)} className="btn-back">
+        ← Volver
+      </button>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-5">
         <div>
@@ -250,8 +245,6 @@ export default function PortfolioDetallePage() {
         </div>
       )}
 
-      <PreviewBanner idPortfolio={idPortfolio} fechaModificacion={detalle.fechaModificacion} />
-
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-5">
           <p className="text-[11px] font-bold tracking-[0.6px] text-blue-brand">USD</p>
@@ -260,7 +253,7 @@ export default function PortfolioDetallePage() {
             <TypeSectionCard>
               <CatalogoTenenciaSection
                 titulo="Acciones"
-                tooltip="Participaciones de una empresa cotizante. Su valor sube o baja con el mercado; sin vencimiento."
+                tooltip={SECCION_TOOLTIPS.acciones}
                 pickLabel="Elegí una acción"
                 addLabel="+ Agregar acción"
                 emptyMessage={`No hay acciones disponibles para el perfil ${perfilLower} en este momento.`}
@@ -274,12 +267,10 @@ export default function PortfolioDetallePage() {
                 onUpdate={(idAccion, cantidad) => {
                   const precioCompra = detalle.acciones.find((a) => a.idAccion === idAccion)?.precioCompra ?? 0
                   return conCaptura(setErrorAcciones, () =>
-                    updateAccion.mutateAsync({ idAccion, cantidad, precioCompra }),
+                    updateAccion.mutateAsync({ id: idAccion, cantidad, precioCompra }),
                   )
                 }}
-                onDelete={(idAccion) =>
-                  deleteAccion.mutate(idAccion, { onError: (error) => toast.error(error.message) })
-                }
+                onDelete={(idAccion) => deleteAccion.mutate(idAccion, { onError: onErrorToast })}
               />
             </TypeSectionCard>
           )}
@@ -288,7 +279,7 @@ export default function PortfolioDetallePage() {
             <TypeSectionCard>
               <PlazoFijoSection
                 titulo="Plazo fijo (USD)"
-                tooltip="Depósito a plazo en dólares con tasa fija (TNA) pactada de antemano, a devolver al vencimiento."
+                tooltip={SECCION_TOOLTIPS.plazoFijoUsd}
                 moneda="USD"
                 tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === 'USD')}
                 tipos={tiposPfUsd}
@@ -301,13 +292,11 @@ export default function PortfolioDetallePage() {
                 }
                 onUpdate={(idPortfolioPlazoFijo, payload) =>
                   conCaptura(setErrorPlazoFijoUsd, () =>
-                    updatePlazoFijo.mutateAsync({ idPortfolioPlazoFijo, ...payload }),
+                    updatePlazoFijo.mutateAsync({ id: idPortfolioPlazoFijo, ...payload }),
                   )
                 }
                 onDelete={(idPortfolioPlazoFijo) =>
-                  deletePlazoFijo.mutate(idPortfolioPlazoFijo, {
-                    onError: (error) => toast.error(error.message),
-                  })
+                  deletePlazoFijo.mutate(idPortfolioPlazoFijo, { onError: onErrorToast })
                 }
               />
             </TypeSectionCard>
@@ -321,12 +310,11 @@ export default function PortfolioDetallePage() {
             <TypeSectionCard>
               <CatalogoTenenciaSection
                 titulo="Bonos"
-                tooltip="Deuda emitida por el Estado o una empresa. Puede tener tasa fija o ajustar por CER (inflación)."
+                tooltip={SECCION_TOOLTIPS.bonos}
                 pickLabel="Elegí un bono"
                 addLabel="+ Agregar bono"
-                cantidadLabel="Valor nominal ($)"
-                cantidadTooltip="El monto en pesos que compraste de este bono, no la cantidad de unidades. Por ejemplo, si invertiste $500.000, ingresá 500000."
-                cantidadEscala={100}
+                cantidadLabel="Cantidad de lotes"
+                cantidadTooltip={CANTIDAD_LOTES_TOOLTIP_BONO}
                 emptyMessage={`No hay bonos disponibles para el perfil ${perfilLower} en este momento.`}
                 tenencias={bonosTenencias}
                 catalogo={bonosOpciones}
@@ -337,11 +325,11 @@ export default function PortfolioDetallePage() {
                 }
                 onUpdate={(idBono, cantidad) => {
                   const precioCompra = detalle.bonos.find((b) => b.idBono === idBono)?.precioCompra ?? 0
-                  return conCaptura(setErrorBonos, () => updateBono.mutateAsync({ idBono, cantidad, precioCompra }))
+                  return conCaptura(setErrorBonos, () =>
+                    updateBono.mutateAsync({ id: idBono, cantidad, precioCompra }),
+                  )
                 }}
-                onDelete={(idBono) =>
-                  deleteBono.mutate(idBono, { onError: (error) => toast.error(error.message) })
-                }
+                onDelete={(idBono) => deleteBono.mutate(idBono, { onError: onErrorToast })}
               />
             </TypeSectionCard>
           )}
@@ -350,12 +338,11 @@ export default function PortfolioDetallePage() {
             <TypeSectionCard>
               <CatalogoTenenciaSection
                 titulo="Letras"
-                tooltip="Deuda de corto plazo emitida por el Tesoro. Puede tener tasa fija o ajustar por CER (inflación)."
+                tooltip={SECCION_TOOLTIPS.letras}
                 pickLabel="Elegí una letra"
                 addLabel="+ Agregar letra"
-                cantidadLabel="Valor nominal ($)"
-                cantidadTooltip="El monto en pesos que compraste de esta letra, no la cantidad de unidades. Por ejemplo, si invertiste $500.000, ingresá 500000."
-                cantidadEscala={100}
+                cantidadLabel="Cantidad de lotes"
+                cantidadTooltip={CANTIDAD_LOTES_TOOLTIP_LETRA}
                 emptyMessage={`No hay letras disponibles para el perfil ${perfilLower} en este momento.`}
                 tenencias={letrasTenencias}
                 catalogo={letrasOpciones}
@@ -367,12 +354,10 @@ export default function PortfolioDetallePage() {
                 onUpdate={(idLetra, cantidad) => {
                   const precioCompra = detalle.letras.find((l) => l.idLetra === idLetra)?.precioCompra ?? 0
                   return conCaptura(setErrorLetras, () =>
-                    updateLetra.mutateAsync({ idLetra, cantidad, precioCompra }),
+                    updateLetra.mutateAsync({ id: idLetra, cantidad, precioCompra }),
                   )
                 }}
-                onDelete={(idLetra) =>
-                  deleteLetra.mutate(idLetra, { onError: (error) => toast.error(error.message) })
-                }
+                onDelete={(idLetra) => deleteLetra.mutate(idLetra, { onError: onErrorToast })}
               />
             </TypeSectionCard>
           )}
@@ -381,7 +366,7 @@ export default function PortfolioDetallePage() {
             <TypeSectionCard>
               <PlazoFijoSection
                 titulo="Plazo fijo (ARS)"
-                tooltip="Depósito a plazo en pesos. Puede ser a tasa fija (monto conocido de antemano) o UVA (ajusta por inflación más una tasa real)."
+                tooltip={SECCION_TOOLTIPS.plazoFijoArs}
                 moneda="ARS"
                 tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === 'ARS')}
                 tipos={tiposPfArs}
@@ -394,13 +379,11 @@ export default function PortfolioDetallePage() {
                 }
                 onUpdate={(idPortfolioPlazoFijo, payload) =>
                   conCaptura(setErrorPlazoFijoArs, () =>
-                    updatePlazoFijo.mutateAsync({ idPortfolioPlazoFijo, ...payload }),
+                    updatePlazoFijo.mutateAsync({ id: idPortfolioPlazoFijo, ...payload }),
                   )
                 }
                 onDelete={(idPortfolioPlazoFijo) =>
-                  deletePlazoFijo.mutate(idPortfolioPlazoFijo, {
-                    onError: (error) => toast.error(error.message),
-                  })
+                  deletePlazoFijo.mutate(idPortfolioPlazoFijo, { onError: onErrorToast })
                 }
               />
             </TypeSectionCard>

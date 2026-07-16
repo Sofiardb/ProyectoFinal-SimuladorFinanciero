@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
-import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
+import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
+import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
+import SectionShell from '@/components/portfolios/tenencias/SectionShell'
+import { useEditableSectionState } from '@/hooks/useEditableSectionState'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
 
 export interface CatalogoOpcion {
@@ -31,9 +34,6 @@ interface Props {
   error?:           string | null
   cantidadLabel?:   string
   cantidadTooltip?: string
-  /** Factor de conversión entre lo que el usuario escribe y el "cantidad" que se envía al backend
-   *  (p. ej. 100 para que el usuario ingrese valor nominal en $ y se envíe la cantidad de lotes de VN100). */
-  cantidadEscala?:  number
   onAdd:    (idCatalogo: number, cantidad: number, precioCompra: number) => Promise<void>
   onUpdate: (idCatalogo: number, cantidad: number) => Promise<void>
   onDelete: (idCatalogo: number) => void
@@ -51,87 +51,65 @@ export default function CatalogoTenenciaSection({
   error,
   cantidadLabel = 'Cantidad',
   cantidadTooltip,
-  cantidadEscala = 1,
   onAdd,
   onUpdate,
   onDelete,
 }: Props) {
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [isAdding, setIsAdding] = useState(false)
+  const {
+    editingId,
+    isAdding,
+    editar,
+    cancelarEdicion,
+    empezarAgregar,
+    cancelarAgregar,
+    guardarEdicionYCerrar,
+    guardarAltaYCerrar,
+  } = useEditableSectionState()
 
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-1.5">
-        <h3 className="font-display text-sm font-semibold text-navy-950">{titulo}</h3>
-        <InfoTooltip term={titulo} definition={tooltip} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {tenencias.map((t) =>
-          editingId === t.idCatalogo ? (
-            <EditExistingRow
-              key={t.idCatalogo}
-              tenencia={t}
-              isMutating={isMutating}
-              onCancel={() => setEditingId(null)}
-              cantidadLabel={cantidadLabel}
-              cantidadTooltip={cantidadTooltip}
-              cantidadEscala={cantidadEscala}
-              onSave={async (cantidad) => {
-                try {
-                  await onUpdate(t.idCatalogo, cantidad)
-                  setEditingId(null)
-                } catch {
-                  // Mantener la fila abierta: el error ya se muestra debajo de la sección.
-                }
-              }}
-            />
-          ) : (
-            <ViewRow
-              key={t.idCatalogo}
-              tenencia={t}
-              onEdit={() => setEditingId(t.idCatalogo)}
-              onDelete={() => onDelete(t.idCatalogo)}
-            />
-          ),
-        )}
-
-        {isAdding ? (
-          <AddRow
-            pickLabel={pickLabel}
-            emptyMessage={emptyMessage}
-            catalogo={catalogo}
+    <SectionShell
+      titulo={titulo}
+      tooltip={tooltip}
+      addLabel={addLabel}
+      isAdding={isAdding}
+      onStartAdd={empezarAgregar}
+      error={error}
+      addRow={
+        <AddRow
+          pickLabel={pickLabel}
+          emptyMessage={emptyMessage}
+          catalogo={catalogo}
+          isMutating={isMutating}
+          onCancel={cancelarAgregar}
+          cantidadLabel={cantidadLabel}
+          cantidadTooltip={cantidadTooltip}
+          onSave={(idCatalogo, cantidad, precioCompra) =>
+            guardarAltaYCerrar(() => onAdd(idCatalogo, cantidad, precioCompra))
+          }
+        />
+      }
+    >
+      {tenencias.map((t) =>
+        editingId === t.idCatalogo ? (
+          <EditExistingRow
+            key={t.idCatalogo}
+            tenencia={t}
             isMutating={isMutating}
-            onCancel={() => setIsAdding(false)}
+            onCancel={cancelarEdicion}
             cantidadLabel={cantidadLabel}
             cantidadTooltip={cantidadTooltip}
-            cantidadEscala={cantidadEscala}
-            onSave={async (idCatalogo, cantidad, precioCompra) => {
-              try {
-                await onAdd(idCatalogo, cantidad, precioCompra)
-                setIsAdding(false)
-              } catch {
-                // Mantener la fila abierta: el error ya se muestra debajo de la sección.
-              }
-            }}
+            onSave={(cantidad) => guardarEdicionYCerrar(() => onUpdate(t.idCatalogo, cantidad))}
           />
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsAdding(true)}
-            className="mt-1 rounded-[9px] border-[1.5px] border-dashed border-line-dashed p-2.5 text-center text-xs font-semibold text-ink-soft transition-colors hover:border-navy-950 hover:text-navy-950"
-          >
-            {addLabel}
-          </button>
-        )}
-
-        {error && (
-          <div className="banner-danger">
-            <FormattedErrorMessage text={error} />
-          </div>
-        )}
-      </div>
-    </div>
+          <ViewRow
+            key={t.idCatalogo}
+            tenencia={t}
+            onEdit={() => editar(t.idCatalogo)}
+            onDelete={() => onDelete(t.idCatalogo)}
+          />
+        ),
+      )}
+    </SectionShell>
   )
 }
 
@@ -145,57 +123,23 @@ function ViewRow({
   onDelete: () => void
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-[9px] bg-chip px-3.5 py-3">
+    <div className="tenencia-row">
       <div className="min-w-0 flex-1 basis-32">
-        <p className="truncate text-[13.5px] leading-tight font-semibold text-navy-950">{tenencia.titulo}</p>
-        <p className="mt-[3px] truncate text-[11.5px] leading-tight text-ink-soft">{tenencia.subtitulo}</p>
+        <p className="tenencia-row-title">{tenencia.titulo}</p>
+        <p className="tenencia-row-subtitle">{tenencia.subtitulo}</p>
       </div>
-      <div className="flex shrink-0 gap-[18px]">
+      <div className="tenencia-row-stats">
         {tenencia.previewFields.map((f) => (
           <div key={f.label} className="text-right">
-            <p className="flex items-center justify-end gap-1 text-[9.5px] tracking-[0.3px] text-ink-soft uppercase">
+            <p className="stat-label flex items-center justify-end gap-1">
               {f.label}
               {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
             </p>
-            <p className="mt-0.5 text-[12.5px] font-semibold text-navy-950">{f.value}</p>
+            <p className="mt-0.5 stat-value">{f.value}</p>
           </div>
         ))}
       </div>
-      <div className="flex shrink-0 gap-0.5">
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label="Modificar"
-          className="flex items-center justify-center rounded-md p-[5px] text-ink-muted transition-colors hover:bg-line-soft"
-        >
-          <svg viewBox="0 0 24 24" className="size-4">
-            <path
-              d="M4 20l3.5-1L18 8.5a1.8 1.8 0 000-2.5l-.5-.5a1.8 1.8 0 00-2.5 0L4.5 16 4 20z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="Eliminar"
-          className="flex items-center justify-center rounded-md p-[5px] text-danger transition-colors hover:bg-line-soft"
-        >
-          <svg viewBox="0 0 24 24" className="size-4">
-            <path
-              d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0l-1 13a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
+      <RowIconActions onEdit={onEdit} onDelete={onDelete} />
     </div>
   )
 }
@@ -206,7 +150,6 @@ function EditExistingRow({
   onCancel,
   cantidadLabel,
   cantidadTooltip,
-  cantidadEscala,
   onSave,
 }: {
   tenencia: TenenciaItem
@@ -214,12 +157,11 @@ function EditExistingRow({
   onCancel: () => void
   cantidadLabel: string
   cantidadTooltip?: string
-  cantidadEscala: number
   onSave: (cantidad: number) => void
 }) {
-  const [cantidad, setCantidad] = useState(() => String(tenencia.cantidadActual * cantidadEscala))
-  const cantidadNum = Number(cantidad) / cantidadEscala
-  const canSave = cantidadNum > 0
+  const [cantidad, setCantidad] = useState(() => String(tenencia.cantidadActual))
+  const cantidadNum = Number(cantidad)
+  const canSave = cantidadNum > 0 && Number.isInteger(cantidadNum)
 
   return (
     <div className="flex flex-col gap-2.5 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
@@ -240,29 +182,18 @@ function EditExistingRow({
           </span>
           <input
             type="number"
+            step="1"
             className="field-input"
             value={cantidad}
             placeholder="0"
             onChange={(e) => setCantidad(e.target.value)}
           />
-          {cantidadEscala !== 1 && canSave && (
-            <p className="mt-1 text-[11px] text-ink-soft">= {cantidadNum.toLocaleString('es-AR')} lotes de VN 100</p>
+          {cantidadNum > 0 && !Number.isInteger(cantidadNum) && (
+            <p className="mt-1 text-[11px] text-danger">Tiene que ser un número entero.</p>
           )}
         </div>
       </div>
-      <div className="flex justify-end gap-2">
-        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button
-          type="button"
-          disabled={!canSave || isMutating}
-          onClick={() => onSave(cantidadNum)}
-          className={canSave ? 'btn-save-sm' : 'btn-save-sm-disabled'}
-        >
-          Guardar
-        </button>
-      </div>
+      <RowFormFooter onCancel={onCancel} isMutating={isMutating} canSave={canSave} onSave={() => onSave(cantidadNum)} />
     </div>
   )
 }
@@ -275,7 +206,6 @@ function AddRow({
   onCancel,
   cantidadLabel,
   cantidadTooltip,
-  cantidadEscala,
   onSave,
 }: {
   pickLabel: string
@@ -285,14 +215,13 @@ function AddRow({
   onCancel: () => void
   cantidadLabel: string
   cantidadTooltip?: string
-  cantidadEscala: number
   onSave: (idCatalogo: number, cantidad: number, precioCompra: number) => void
 }) {
   const [selectedId, setSelectedId] = useState('')
   const [cantidad, setCantidad] = useState('')
   const selected = catalogo.find((c) => String(c.id) === selectedId)
-  const cantidadNum = Number(cantidad) / cantidadEscala
-  const canSave = !!selected && cantidadNum > 0
+  const cantidadNum = Number(cantidad)
+  const canSave = !!selected && cantidadNum > 0 && Number.isInteger(cantidadNum)
 
   return (
     <div className="flex flex-col gap-2.5 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
@@ -339,31 +268,25 @@ function AddRow({
             </span>
             <input
               type="number"
+              step="1"
               className="field-input"
               value={cantidad}
               placeholder="0"
               onChange={(e) => setCantidad(e.target.value)}
             />
-            {cantidadEscala !== 1 && canSave && (
-              <p className="mt-1 text-[11px] text-ink-soft">= {cantidadNum.toLocaleString('es-AR')} lotes de VN 100</p>
+            {cantidadNum > 0 && !Number.isInteger(cantidadNum) && (
+              <p className="mt-1 text-[11px] text-danger">Tiene que ser un número entero.</p>
             )}
           </div>
         </div>
       )}
 
-      <div className="flex justify-end gap-2">
-        <button type="button" className="btn-cancel-sm" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button
-          type="button"
-          disabled={!canSave || isMutating}
-          onClick={() => selected && onSave(selected.id, cantidadNum, selected.precioActual)}
-          className={canSave ? 'btn-save-sm' : 'btn-save-sm-disabled'}
-        >
-          Guardar
-        </button>
-      </div>
+      <RowFormFooter
+        onCancel={onCancel}
+        isMutating={isMutating}
+        canSave={canSave}
+        onSave={() => selected && onSave(selected.id, cantidadNum, selected.precioActual)}
+      />
     </div>
   )
 }

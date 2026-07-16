@@ -52,6 +52,19 @@ def test_mayor_inflacion_mayor_valor_final():
     assert np.all(np.diff(resultado[:, -1]) > 0)
 
 
+def test_no_crashea_cuando_flujo_excede_ancho_del_slice():
+    # El orquestador pasa un factor_acum_slice más angosto que el vencimiento real cuando el bono
+    # vence después del horizonte simulado — antes esto lanzaba IndexError al indexar
+    # factor_acum_slice[:, meses] con un mes fuera de rango.
+    flujos_base = [{"mes": 12, "capital_adj": 1000.0, "interest_adj": 100.0}]
+    t_emit = 6
+    resultado = simular_bono_indexado_vectorizado(1000.0, flujos_base, 0.10, _factor_acum(0.05, t_emit))
+
+    assert resultado.shape == (N, t_emit + 1)
+    assert resultado[:, 0] == pytest.approx(np.full(N, 1000.0))
+    assert np.all(np.isfinite(resultado))
+
+
 def test_v0_es_monto_multiples_flujos():
     flujos_base = [
         {"mes": 6,  "capital_adj": 0.0,    "interest_adj": 50.0},

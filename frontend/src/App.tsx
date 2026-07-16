@@ -11,6 +11,7 @@ import BienvenidaPage from '@/pages/dashboard/BienvenidaPage'
 import PortfoliosPage from '@/pages/portfolios/PortfoliosPage'
 import PortfolioDetallePage from '@/pages/portfolios/PortfolioDetallePage'
 import NuevaSimulacionPage from '@/pages/simulaciones/NuevaSimulacionPage'
+import ComparacionMercadoPage from '@/pages/simulaciones/ComparacionMercadoPage'
 import ResultadosPage from '@/pages/simulaciones/ResultadosPage'
 import HistorialPage from '@/pages/simulaciones/HistorialPage'
 import CompararPage from '@/pages/simulaciones/CompararPage'
@@ -39,6 +40,7 @@ export default function App() {
               path="/portfolios/:id/simular"
               element={<NuevaSimulacionPage />}
             />
+            <Route path="/portfolios/:id/comparar-mercado" element={<ComparacionMercadoPage />} />
             <Route path="/simulaciones" element={<HistorialPage />} />
             <Route path="/simulaciones/nueva" element={<NuevaSimulacionPage />} />
             <Route path="/simulaciones/:id" element={<ResultadosPage />} />

@@ -5,14 +5,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
 import { useLogin } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -45,23 +39,13 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        <FormField
+        <TextFormField
           control={form.control}
           name="identificador"
-          render={({ field }) => (
-            <FormItem className="space-y-1.5">
-              <FormLabel className="text-navy-950">Email o usuario</FormLabel>
-              <FormControl>
-                <Input
-                  className="h-11 rounded-[9px]"
-                  placeholder="vos@ejemplo.com"
-                  autoComplete="username"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Email o usuario"
+          itemClassName="space-y-1.5"
+          labelClassName="text-navy-950"
+          inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'vos@ejemplo.com', autoComplete: 'username' }}
         />
 
         <FormField
@@ -98,7 +82,7 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
         <Button
           type="submit"
           size="lg"
-          className="h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900"
+          className="btn-auth-submit"
           disabled={loginMutation.isPending}
         >
           {loginMutation.isPending ? 'Ingresando…' : 'Iniciar sesión'}

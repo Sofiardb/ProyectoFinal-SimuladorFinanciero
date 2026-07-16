@@ -16,39 +16,52 @@ function useInvalidatePortfolio(idPortfolio: number) {
   }
 }
 
+/**
+ * Fábrica de los hooks add/update/delete de un tipo de tenencia del portfolio (acciones, bonos,
+ * letras, plazos fijos). Los cuatro tipos comparten la misma forma de endpoint REST anidado
+ * (`/portfolios/:id/{resource}[/:id]`) y de invalidación de cache; solo cambian los tipos.
+ */
+function createTenenciaCrudHooks<TEntity, TAddPayload, TUpdatePayload extends object>(resource: string) {
+  function useAdd(idPortfolio: number) {
+    const invalidate = useInvalidatePortfolio(idPortfolio)
+    return useMutation({
+      mutationFn: (payload: TAddPayload) => api.post<TEntity>(`/portfolios/${idPortfolio}/${resource}`, payload),
+      onSuccess: invalidate,
+    })
+  }
+
+  function useUpdate(idPortfolio: number) {
+    const invalidate = useInvalidatePortfolio(idPortfolio)
+    return useMutation({
+      mutationFn: ({ id, ...payload }: { id: number } & TUpdatePayload) =>
+        api.put<TEntity>(`/portfolios/${idPortfolio}/${resource}/${id}`, payload),
+      onSuccess: invalidate,
+    })
+  }
+
+  function useDelete(idPortfolio: number) {
+    const invalidate = useInvalidatePortfolio(idPortfolio)
+    return useMutation({
+      mutationFn: (id: number) => api.delete<void>(`/portfolios/${idPortfolio}/${resource}/${id}`),
+      onSuccess: invalidate,
+    })
+  }
+
+  return { useAdd, useUpdate, useDelete }
+}
+
 // ─── Acciones ──────────────────────────────────────────────────────────────────
 export interface AccionPayload {
   idAccion:     number
   cantidad:     number
   precioCompra: number
 }
+type AccionUpdatePayload = { cantidad: number; precioCompra: number }
 
-export function useAddAccion(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (payload: AccionPayload) =>
-      api.post<PortfolioAccion>(`/portfolios/${idPortfolio}/acciones`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useUpdateAccion(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: ({ idAccion, ...payload }: { idAccion: number; cantidad: number; precioCompra: number }) =>
-      api.put<PortfolioAccion>(`/portfolios/${idPortfolio}/acciones/${idAccion}`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useDeleteAccion(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (idAccion: number) =>
-      api.delete<void>(`/portfolios/${idPortfolio}/acciones/${idAccion}`),
-    onSuccess: invalidate,
-  })
-}
+const accionCrud = createTenenciaCrudHooks<PortfolioAccion, AccionPayload, AccionUpdatePayload>('acciones')
+export const useAddAccion = accionCrud.useAdd
+export const useUpdateAccion = accionCrud.useUpdate
+export const useDeleteAccion = accionCrud.useDelete
 
 // ─── Bonos ─────────────────────────────────────────────────────────────────────
 export interface BonoPayload {
@@ -56,33 +69,12 @@ export interface BonoPayload {
   cantidad:     number
   precioCompra: number
 }
+type BonoUpdatePayload = { cantidad: number; precioCompra: number }
 
-export function useAddBono(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (payload: BonoPayload) =>
-      api.post<PortfolioBono>(`/portfolios/${idPortfolio}/bonos`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useUpdateBono(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: ({ idBono, ...payload }: { idBono: number; cantidad: number; precioCompra: number }) =>
-      api.put<PortfolioBono>(`/portfolios/${idPortfolio}/bonos/${idBono}`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useDeleteBono(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (idBono: number) =>
-      api.delete<void>(`/portfolios/${idPortfolio}/bonos/${idBono}`),
-    onSuccess: invalidate,
-  })
-}
+const bonoCrud = createTenenciaCrudHooks<PortfolioBono, BonoPayload, BonoUpdatePayload>('bonos')
+export const useAddBono = bonoCrud.useAdd
+export const useUpdateBono = bonoCrud.useUpdate
+export const useDeleteBono = bonoCrud.useDelete
 
 // ─── Letras ────────────────────────────────────────────────────────────────────
 export interface LetraPayload {
@@ -90,33 +82,12 @@ export interface LetraPayload {
   cantidad:     number
   precioCompra: number
 }
+type LetraUpdatePayload = { cantidad: number; precioCompra: number }
 
-export function useAddLetra(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (payload: LetraPayload) =>
-      api.post<PortfolioLetra>(`/portfolios/${idPortfolio}/letras`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useUpdateLetra(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: ({ idLetra, ...payload }: { idLetra: number; cantidad: number; precioCompra: number }) =>
-      api.put<PortfolioLetra>(`/portfolios/${idPortfolio}/letras/${idLetra}`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useDeleteLetra(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (idLetra: number) =>
-      api.delete<void>(`/portfolios/${idPortfolio}/letras/${idLetra}`),
-    onSuccess: invalidate,
-  })
-}
+const letraCrud = createTenenciaCrudHooks<PortfolioLetra, LetraPayload, LetraUpdatePayload>('letras')
+export const useAddLetra = letraCrud.useAdd
+export const useUpdateLetra = letraCrud.useUpdate
+export const useDeleteLetra = letraCrud.useDelete
 
 // ─── Plazos fijos ────────────────────────────────────────────────────────────────
 export interface PlazoFijoPayload {
@@ -130,29 +101,9 @@ export interface PlazoFijoPayload {
   reinvertirAlVencimiento:  boolean
 }
 
-export function useAddPlazoFijo(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (payload: PlazoFijoPayload) =>
-      api.post<PortfolioPlazoFijo>(`/portfolios/${idPortfolio}/plazos-fijos`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useUpdatePlazoFijo(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: ({ idPortfolioPlazoFijo, ...payload }: { idPortfolioPlazoFijo: number } & Partial<PlazoFijoPayload>) =>
-      api.put<PortfolioPlazoFijo>(`/portfolios/${idPortfolio}/plazos-fijos/${idPortfolioPlazoFijo}`, payload),
-    onSuccess: invalidate,
-  })
-}
-
-export function useDeletePlazoFijo(idPortfolio: number) {
-  const invalidate = useInvalidatePortfolio(idPortfolio)
-  return useMutation({
-    mutationFn: (idPortfolioPlazoFijo: number) =>
-      api.delete<void>(`/portfolios/${idPortfolio}/plazos-fijos/${idPortfolioPlazoFijo}`),
-    onSuccess: invalidate,
-  })
-}
+const plazoFijoCrud = createTenenciaCrudHooks<PortfolioPlazoFijo, PlazoFijoPayload, Partial<PlazoFijoPayload>>(
+  'plazos-fijos',
+)
+export const useAddPlazoFijo = plazoFijoCrud.useAdd
+export const useUpdatePlazoFijo = plazoFijoCrud.useUpdate
+export const useDeletePlazoFijo = plazoFijoCrud.useDelete

@@ -3,17 +3,10 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Form } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
 import { useUpdatePerfil } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -73,60 +66,32 @@ export default function PerfilPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+              <TextFormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input className="h-11 rounded-[9px]" autoComplete="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Email"
+                inputProps={{ className: 'h-11 rounded-[9px]', autoComplete: 'email' }}
               />
 
-              <FormField
+              <TextFormField
                 control={form.control}
                 name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre de usuario</FormLabel>
-                    <FormControl>
-                      <Input className="h-11 rounded-[9px]" autoComplete="username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Nombre de usuario"
+                inputProps={{ className: 'h-11 rounded-[9px]', autoComplete: 'username' }}
               />
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField
+                <TextFormField
                   control={form.control}
                   name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre</FormLabel>
-                      <FormControl>
-                        <Input className="h-11 rounded-[9px]" placeholder="Opcional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Nombre"
+                  inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'Opcional' }}
                 />
-                <FormField
+                <TextFormField
                   control={form.control}
                   name="apellido"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Apellido</FormLabel>
-                      <FormControl>
-                        <Input className="h-11 rounded-[9px]" placeholder="Opcional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Apellido"
+                  inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'Opcional' }}
                 />
               </div>
 

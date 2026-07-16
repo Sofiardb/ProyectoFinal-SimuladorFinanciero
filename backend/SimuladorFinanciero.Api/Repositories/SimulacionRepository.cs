@@ -75,6 +75,12 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public decimal  Cantidad      { get; set; }
         public decimal  PrecioCompra  { get; set; }
         public decimal? PrecioActual  { get; set; }
+        public decimal? MuOriginal    { get; set; }
+        public decimal? MuMercado     { get; set; }
+        public decimal? SigmaOriginal { get; set; }
+        public decimal? SigmaMercado  { get; set; }
+        public decimal? RhoOriginal   { get; set; }
+        public decimal? RhoMercado    { get; set; }
     }
 
     private sealed class PreviewBonoRow
@@ -89,6 +95,8 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public int      FlujosTotales   { get; set; }
         public int      FlujosVigentes  { get; set; }
         public int      FlujosVencidos  { get; set; }
+        public decimal  TasaOriginal    { get; set; }
+        public decimal  TasaMercado     { get; set; }
     }
 
     private sealed class PreviewLetraRow
@@ -100,6 +108,8 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public decimal  PrecioCompra     { get; set; }
         public decimal? PrecioActual     { get; set; }
         public DateOnly FechaVencimiento { get; set; }
+        public decimal  TasaOriginal     { get; set; }
+        public decimal  TasaMercado      { get; set; }
     }
 
     private sealed class PreviewPlazoFijoRow
@@ -271,7 +281,13 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    a.nombre,
                    pa.cantidad,
                    pa.precio_compra,
-                   a.precio_actual
+                   a.precio_actual,
+                   pa.mu_retorno_esperado_compra    AS mu_original,
+                   a.mu_retorno_esperado            AS mu_mercado,
+                   pa.sigma_volatilidad_compra      AS sigma_original,
+                   a.sigma_volatilidad              AS sigma_mercado,
+                   pa.rho_correlacion_indice_compra AS rho_original,
+                   a.rho_correlacion_indice         AS rho_mercado
             FROM portfolio_accion pa
             JOIN accion a ON a.id_accion = pa.id_accion
             WHERE pa.id_portfolio = @idPortfolio
@@ -288,13 +304,15 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    b.fecha_vencimiento,
                    COUNT(fb.id_flujo_bono)::int                                  AS flujos_totales,
                    COUNT(*) FILTER (WHERE fb.fecha_pago > CURRENT_DATE)::int     AS flujos_vigentes,
-                   COUNT(*) FILTER (WHERE fb.fecha_pago <= CURRENT_DATE)::int    AS flujos_vencidos
+                   COUNT(*) FILTER (WHERE fb.fecha_pago <= CURRENT_DATE)::int    AS flujos_vencidos,
+                   pb.tasa_descuento_compra AS tasa_original,
+                   b.tasa_descuento         AS tasa_mercado
             FROM portfolio_bono pb
             JOIN bono b ON b.id_bono = pb.id_bono
             LEFT JOIN flujo_bono fb ON fb.id_bono = b.id_bono
             WHERE pb.id_portfolio = @idPortfolio
             GROUP BY b.id_bono, b.ticker, b.nombre, pb.cantidad, pb.precio_compra,
-                     b.precio_actual, b.fecha_vencimiento
+                     b.precio_actual, b.fecha_vencimiento, pb.tasa_descuento_compra, b.tasa_descuento
             ORDER BY b.ticker
             """;
 
@@ -305,7 +323,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    pl.cantidad,
                    pl.precio_compra,
                    l.precio_actual,
-                   l.fecha_vencimiento
+                   l.fecha_vencimiento,
+                   pl.tasa_compra AS tasa_original,
+                   l.tasa         AS tasa_mercado
             FROM portfolio_letra pl
             JOIN letra l ON l.id_letra = pl.id_letra
             WHERE pl.id_portfolio = @idPortfolio
@@ -340,6 +360,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
         foreach (var r in accionesTask.Result)
         {
             var (estado, esValido) = EstadoPrecio(r.PrecioActual, r.PrecioCompra);
+            var estadoGbm     = EstadoGbm(r.MuOriginal, r.MuMercado, r.SigmaOriginal, r.SigmaMercado, r.RhoOriginal, r.RhoMercado);
             var montoOriginal = r.Cantidad * r.PrecioCompra;
             var montoMercado  = r.PrecioActual.HasValue ? r.Cantidad * r.PrecioActual.Value : (decimal?)null;
             instrumentos.Add(new InstrumentoPreviewItem(
@@ -360,7 +381,16 @@ public sealed class SimulacionRepository : ISimulacionRepository
                 FlujosVigentes:     null,
                 FlujosVencidos:     null,
                 FechaVencimiento:   null,
-                MesesRestantes:     null));
+                MesesRestantes:     null,
+                EstadoTasa:         estadoGbm,
+                TasaOriginal:       null,
+                TasaMercado:        null,
+                MuOriginal:         r.MuOriginal,
+                MuMercado:          r.MuMercado,
+                SigmaOriginal:      r.SigmaOriginal,
+                SigmaMercado:       r.SigmaMercado,
+                RhoOriginal:        r.RhoOriginal,
+                RhoMercado:         r.RhoMercado));
         }
 
         foreach (var r in bonosTask.Result)
@@ -385,6 +415,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
             var montoOriginal = r.Cantidad * r.PrecioCompra;
             var montoMercado  = r.PrecioActual.HasValue ? r.Cantidad * r.PrecioActual.Value : (decimal?)null;
             var mesesRestantes = MesesEntre(today, r.FechaVencimiento);
+            var (estadoTasa, _) = EstadoPrecio(r.TasaMercado, r.TasaOriginal);
             instrumentos.Add(new InstrumentoPreviewItem(
                 Id:                 $"bono_{r.IdBono}",
                 Tipo:               "bono",
@@ -403,7 +434,16 @@ public sealed class SimulacionRepository : ISimulacionRepository
                 FlujosVigentes:     r.FlujosVigentes,
                 FlujosVencidos:     r.FlujosVencidos,
                 FechaVencimiento:   r.FechaVencimiento,
-                MesesRestantes:     mesesRestantes));
+                MesesRestantes:     mesesRestantes,
+                EstadoTasa:         estadoTasa,
+                TasaOriginal:       r.TasaOriginal,
+                TasaMercado:        r.TasaMercado,
+                MuOriginal:         null,
+                MuMercado:          null,
+                SigmaOriginal:      null,
+                SigmaMercado:       null,
+                RhoOriginal:        null,
+                RhoMercado:         null));
         }
 
         foreach (var r in letrasTask.Result)
@@ -423,6 +463,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
             var montoOriginal  = r.Cantidad * r.PrecioCompra;
             var montoMercado   = r.PrecioActual.HasValue ? r.Cantidad * r.PrecioActual.Value : (decimal?)null;
             var mesesRestantes = MesesEntre(today, r.FechaVencimiento);
+            var (estadoTasa, _) = EstadoPrecio(r.TasaMercado, r.TasaOriginal);
             instrumentos.Add(new InstrumentoPreviewItem(
                 Id:                 $"letra_{r.IdLetra}",
                 Tipo:               "letra",
@@ -441,7 +482,16 @@ public sealed class SimulacionRepository : ISimulacionRepository
                 FlujosVigentes:     null,
                 FlujosVencidos:     null,
                 FechaVencimiento:   r.FechaVencimiento,
-                MesesRestantes:     mesesRestantes));
+                MesesRestantes:     mesesRestantes,
+                EstadoTasa:         estadoTasa,
+                TasaOriginal:       r.TasaOriginal,
+                TasaMercado:        r.TasaMercado,
+                MuOriginal:         null,
+                MuMercado:          null,
+                SigmaOriginal:      null,
+                SigmaMercado:       null,
+                RhoOriginal:        null,
+                RhoMercado:         null));
         }
 
         foreach (var r in plazosFijosTask.Result)
@@ -468,7 +518,16 @@ public sealed class SimulacionRepository : ISimulacionRepository
                 FlujosVigentes:     null,
                 FlujosVencidos:     null,
                 FechaVencimiento:   fechaVencimiento,
-                MesesRestantes:     mesesRestantes));
+                MesesRestantes:     mesesRestantes,
+                EstadoTasa:         null,
+                TasaOriginal:       null,
+                TasaMercado:        null,
+                MuOriginal:         null,
+                MuMercado:          null,
+                SigmaOriginal:      null,
+                SigmaMercado:       null,
+                RhoOriginal:        null,
+                RhoMercado:         null));
         }
 
         var totalOriginal = instrumentos.Sum(i => i.MontoOriginal);
@@ -477,12 +536,14 @@ public sealed class SimulacionRepository : ISimulacionRepository
             ? null
             : instrumentos.Sum(i => i.MontoMercado ?? i.MontoOriginal);
         var puedeSimular = instrumentos.All(i => i.EsValidoParaSimular);
+        var tieneActualizaciones = instrumentos.Any(i => i.Estado == "ACTUALIZADO" || i.EstadoTasa == "ACTUALIZADO");
 
         return new SimulacionPreviewResponse(
             CapitalInicial:          portfolioRow.CapitalInicial,
             TotalInvertidoOriginal:  totalOriginal,
             TotalInvertidoMercado:   totalMercado,
             PuedeSimular:            puedeSimular,
+            TieneActualizaciones:    tieneActualizaciones,
             Instrumentos:            instrumentos);
     }
 
@@ -500,6 +561,26 @@ public sealed class SimulacionRepository : ISimulacionRepository
         return diffPct < 0.001m
             ? ("IGUAL", true)
             : ("ACTUALIZADO", true);
+    }
+
+    private static string EstadoGbm(
+        decimal? muOriginal, decimal? muMercado,
+        decimal? sigmaOriginal, decimal? sigmaMercado,
+        decimal? rhoOriginal, decimal? rhoMercado)
+    {
+        if (!muMercado.HasValue && !sigmaMercado.HasValue && !rhoMercado.HasValue)
+            return "SIN_PRECIO";
+
+        bool Difiere(decimal? original, decimal? mercado)
+        {
+            if (!original.HasValue || !mercado.HasValue) return original.HasValue != mercado.HasValue;
+            if (original.Value == 0m) return mercado.Value != 0m;
+            return Math.Abs((mercado.Value - original.Value) / original.Value) >= 0.001m;
+        }
+
+        return Difiere(muOriginal, muMercado) || Difiere(sigmaOriginal, sigmaMercado) || Difiere(rhoOriginal, rhoMercado)
+            ? "ACTUALIZADO"
+            : "IGUAL";
     }
 
     private static int MesesEntre(DateOnly desde, DateOnly hasta)
@@ -542,9 +623,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    a.ticker,
                    pa.cantidad,
                    pa.precio_compra,
-                   a.mu_retorno_esperado  AS mu,
-                   a.sigma_volatilidad    AS sigma,
-                   a.rho_correlacion_indice AS rho
+                   pa.mu_retorno_esperado_compra    AS mu,
+                   pa.sigma_volatilidad_compra      AS sigma,
+                   pa.rho_correlacion_indice_compra AS rho
             FROM portfolio_accion pa
             JOIN accion a ON a.id_accion = pa.id_accion
             WHERE pa.id_portfolio = @idPortfolio
@@ -557,7 +638,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    tbo.codigo             AS tipo,
                    pb.cantidad,
                    pb.precio_compra,
-                   b.tasa_descuento
+                   pb.tasa_descuento_compra AS tasa_descuento
             FROM portfolio_bono pb
             JOIN bono b       ON b.id_bono        = pb.id_bono
             JOIN tipo_bono tbo ON tbo.id_tipo_bono = b.id_tipo_bono
@@ -584,7 +665,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    tl.codigo               AS tipo,
                    pl.cantidad,
                    pl.precio_compra,
-                   l.tasa                  AS tna,
+                   pl.tasa_compra          AS tna,
                    l.fecha_vencimiento
             FROM portfolio_letra pl
             JOIN letra l       ON l.id_letra       = pl.id_letra

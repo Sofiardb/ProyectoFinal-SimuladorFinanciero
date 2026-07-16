@@ -36,7 +36,6 @@ public class SimulacionServiceTests
     {
         IdPortfolio       = IdPortfolio,
         IdUsuario         = IdUsuario,
-        HorizonteMeses    = 12,
         FechaCreacion     = DateTimeOffset.UtcNow,
         FechaModificacion = DateTimeOffset.UtcNow,
         Estado            = "ACTIVO"
@@ -201,7 +200,7 @@ public class SimulacionServiceTests
             .Returns(MotorResponseValido());
         ConfigurarTransaccionMock();
 
-        var result = await _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest(), default);
+        var result = await _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest { HorizonteMeses = 12 }, default);
 
         result.Should().NotBeNull();
         result.IdSimulacion.Should().Be(99L);
@@ -222,5 +221,30 @@ public class SimulacionServiceTests
             Arg.Any<IDbConnection>(),
             Arg.Any<IDbTransaction>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Simular_BonoVenceDespuesDelHorizonte_NoLanzaExcepcion()
+    {
+        // El motor trunca la trayectoria del bono al horizonte elegido — ya no se bloquea la simulación.
+        var bonoLargoPlazo = new BonoTenenciaSimulacion(
+            3, "AL30", "bono_tasa_fija", 100m, 92m, 0.15m,
+            [new FlujoSimulacion(DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(18)), 0m, 110m)]);
+
+        var tenencias = new TenenciasSimulacionData([], [bonoLargoPlazo], [], []);
+
+        _portfolioRepo.ObtenerCabeceraAsync(IdPortfolio, IdUsuario, default)
+            .Returns(PortfolioActivo());
+        _simRepo.ObtenerTenenciasParaSimulacionAsync(IdPortfolio, default)
+            .Returns(tenencias);
+        _simRepo.ObtenerEscenariosVigentesAsync(default)
+            .Returns(EscenariosVigentes());
+        _motor.SimularAsync(Arg.Any<object>(), Arg.Any<CancellationToken>())
+            .Returns(MotorResponseValido());
+        ConfigurarTransaccionMock();
+
+        var act = () => _svc.SimularAsync(IdPortfolio, IdUsuario, new SimularRequest { HorizonteMeses = 6 }, default);
+
+        await act.Should().NotThrowAsync();
     }
 }

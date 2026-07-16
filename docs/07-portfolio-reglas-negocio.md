@@ -19,7 +19,6 @@ Un portfolio tiene dos capas:
 | `id_perfil_riesgo` | SMALLINT | Perfil de riesgo asociado (conservador / moderado / agresivo) |
 | `id_moneda_base` | SMALLINT | Moneda base del portfolio (ARS, USD) |
 | `capital_inicial` | NUMERIC | Capital total del portfolio al momento de la creación |
-| `horizonte_meses` | SMALLINT | Horizonte por defecto para las simulaciones |
 | `estado` | VARCHAR | `ACTIVO` o `ARCHIVADO` |
 | `fecha_creacion` | TIMESTAMPTZ | Fecha de creación (inmutable) |
 | `fecha_modificacion` | TIMESTAMPTZ | Última modificación (actualizado por cada mutación de tenencia) |
@@ -36,6 +35,13 @@ La composición es **mutable**: se pueden agregar, modificar y eliminar instrume
 | `portfolio_plazo_fijo` | Plazos fijos (contratos libres) | Sin restricción UNIQUE |
 
 Las mutaciones de tenencias actualizan `portfolio.fecha_modificacion` en la misma transacción de base de datos.
+
+**El horizonte de simulación no es un campo del portfolio.** `horizonte_meses` se pide como parámetro
+requerido de cada corrida (`SimularRequest.HorizonteMeses`), no al crear o editar el portfolio — el mismo
+portfolio puede simularse con distintos horizontes en distintas corridas. El vencimiento de cada bono/letra
+es independiente de ese horizonte; si un instrumento vence después del horizonte elegido, el motor trunca
+su valuación en el horizonte en vez de proyectarlo hasta el vencimiento real (ver
+`docs/02-orquestador-montecarlo.md`, Decisión 7).
 
 ---
 

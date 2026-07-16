@@ -23,7 +23,6 @@ export interface CrearPortfolioPayload {
   idPerfilRiesgo:  number
   idMonedaBase:    number
   capitalInicial?: number
-  horizonteMeses:  number
 }
 
 export function useCreatePortfolio() {
@@ -43,7 +42,6 @@ export interface ActualizarPortfolioPayload {
   idPerfilRiesgo?:  number
   idMonedaBase?:    number
   capitalInicial?:  number
-  horizonteMeses?:  number
   estado?:          'ACTIVO' | 'ARCHIVADO'
 }
 

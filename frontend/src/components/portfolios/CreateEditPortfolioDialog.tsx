@@ -28,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
 import { useCreatePortfolio, useUpdatePortfolio, useMonedas, usePerfilesRiesgo } from '@/api/hooks'
 import type { PortfolioResumen } from '@/types'
 
@@ -43,7 +44,6 @@ const schema = z.object({
       (v) => !v || (!Number.isNaN(Number(v)) && Number(v) > 0),
       'Debe ser un valor positivo.',
     ),
-  horizonteMeses: z.number().int().min(1, 'Mínimo 1 mes.').max(60, 'Máximo 60 meses.'),
 })
 
 type Values = z.infer<typeof schema>
@@ -101,7 +101,6 @@ function PortfolioForm({
       idPerfilRiesgo: portfolio?.idPerfilRiesgo ?? defaultPerfilId ?? 0,
       idMonedaBase: portfolio?.idMonedaBase ?? 0,
       capitalInicial: portfolio?.capitalInicial ? String(portfolio.capitalInicial) : '',
-      horizonteMeses: portfolio?.horizonteMeses ?? 12,
     },
   })
 
@@ -112,7 +111,6 @@ function PortfolioForm({
       idPerfilRiesgo: values.idPerfilRiesgo,
       idMonedaBase: values.idMonedaBase,
       capitalInicial: values.capitalInicial ? Number(values.capitalInicial) : undefined,
-      horizonteMeses: values.horizonteMeses,
     }
     mutation.mutate(payload, {
       onSuccess: () => {
@@ -135,32 +133,18 @@ function PortfolioForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-          <FormField
+          <TextFormField
             control={form.control}
             name="nombre"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Mi portfolio moderado" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Nombre"
+            inputProps={{ placeholder: 'Ej: Mi portfolio moderado' }}
           />
 
-          <FormField
+          <TextFormField
             control={form.control}
             name="descripcion"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descripción (opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Notas sobre esta estrategia" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Descripción (opcional)"
+            inputProps={{ placeholder: 'Notas sobre esta estrategia' }}
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -232,41 +216,12 @@ function PortfolioForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              control={form.control}
-              name="capitalInicial"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Presupuesto (opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="Sin límite" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="horizonteMeses"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Horizonte (meses)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={60}
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <TextFormField
+            control={form.control}
+            name="capitalInicial"
+            label="Presupuesto (opcional)"
+            inputProps={{ type: 'number', step: '0.01', placeholder: 'Sin límite' }}
+          />
 
           {mutation.isError && (
             <Alert variant="destructive">

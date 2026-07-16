@@ -146,4 +146,41 @@
   .banner-warning {
     @apply rounded-lg border border-warning-border bg-warning-bg px-3 py-2.5 text-[12.5px] leading-normal text-warning-title;
   }
+
+  /* Layout de página (breadcrumb + volver + contenedor centrado) — usar junto con un max-w-[...] */
+  .page-shell {
+    @apply mx-auto px-4 pt-8 pb-16 sm:px-6 lg:px-8 lg:pt-9;
+  }
+  .breadcrumb-nav {
+    @apply mb-[18px] flex flex-wrap items-center gap-1.5 text-[12.5px] text-ink-soft;
+  }
+  .btn-back {
+    @apply mb-[18px] flex items-center gap-1 text-[12.5px] font-semibold text-navy-950 hover:underline;
+  }
+
+  /* Fila de tenencia (chip con título/subtítulo + stats a la derecha), compartida entre
+     las secciones de acciones/bonos/letras/plazo fijo y el resumen de nueva simulación. */
+  .tenencia-row {
+    @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-[9px] bg-chip px-3.5 py-3;
+  }
+  .tenencia-row-title {
+    @apply truncate text-[13.5px] leading-tight font-semibold text-navy-950;
+  }
+  .tenencia-row-subtitle {
+    @apply mt-[3px] truncate text-[11.5px] leading-tight text-ink-soft;
+  }
+  .tenencia-row-stats {
+    @apply flex shrink-0 gap-[18px];
+  }
+  .stat-label {
+    @apply text-[9.5px] tracking-[0.3px] text-ink-soft uppercase;
+  }
+  .stat-value {
+    @apply text-[12.5px] font-semibold text-navy-950;
+  }
+
+  /* Botón de submit de los formularios de auth (login/registro/reset) */
+  .btn-auth-submit {
+    @apply h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900;
+  }
 }

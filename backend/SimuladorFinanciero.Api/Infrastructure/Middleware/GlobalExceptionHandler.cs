@@ -6,6 +6,8 @@ namespace SimuladorFinanciero.Api.Infrastructure.Middleware;
 
 public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) : IExceptionHandler
 {
+    private const string MensajeGenerico = "Ocurrió un error inesperado. Intentá de nuevo en unos segundos.";
+
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception   exception,
@@ -20,7 +22,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) 
         {
             Status = status,
             Title  = title,
-            Detail = exception.Message
+            Detail = ResolverDetail(exception, status)
         };
 
         httpContext.Response.StatusCode = status;
@@ -36,4 +38,11 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) 
         ValidationException  => (StatusCodes.Status422UnprocessableEntity, "Error de validación"),
         _                    => (StatusCodes.Status500InternalServerError,  "Error interno del servidor")
     };
+
+    /// <summary>
+    /// El mensaje de las excepciones "definidas" (404/409/422/502) es seguro de mostrar al usuario.
+    /// Una excepción no controlada (500) nunca expone su mensaje interno — solo un texto genérico.
+    /// </summary>
+    internal static string ResolverDetail(Exception exception, int status) =>
+        status == StatusCodes.Status500InternalServerError ? MensajeGenerico : exception.Message;
 }

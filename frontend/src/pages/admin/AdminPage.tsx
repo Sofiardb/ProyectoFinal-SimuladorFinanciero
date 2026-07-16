@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import {
   useAdminCheck,
@@ -13,6 +13,7 @@ import {
 } from '@/api/hooks'
 import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
+import { onErrorToast, onSuccessToastMensaje } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
 const resultText = 'text-[12.5px] leading-normal text-ink-muted'
@@ -49,6 +50,35 @@ function CardHeader({ titulo, descripcion }: { titulo: string; descripcion: stri
   )
 }
 
+/** Fila de acción de una card de administración: botón que dispara una mutación + texto de resultado opcional. */
+function ActionRow({
+  onClick,
+  isPending,
+  label,
+  pendingLabel,
+  helperText,
+  result,
+}: {
+  onClick: () => void
+  isPending: boolean
+  label: string
+  pendingLabel: string
+  helperText?: string
+  result?: ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onClick} disabled={isPending} className="btn-primary w-fit">
+          {isPending ? pendingLabel : label}
+        </button>
+        {helperText && <span className="text-[11.5px] text-ink-soft">{helperText}</span>}
+      </div>
+      {result}
+    </div>
+  )
+}
+
 function EstadoBadge({ label, estado }: { label: string; estado: EstadoConexion }) {
   return (
     <div className="flex items-start gap-2">
@@ -77,7 +107,7 @@ function ConectividadCard() {
             ? 'Ambas APIs externas responden correctamente.'
             : 'Verificación completa: alguna API externa no responde.',
         ),
-      onError: (error) => toast.error(error.message),
+      onError: onErrorToast,
     })
   }
 
@@ -107,8 +137,8 @@ function LetrasCard() {
 
   const handleClick = () => {
     refresh.mutate(undefined, {
-      onSuccess: (data) => toast.success(data.mensaje),
-      onError: (error) => toast.error(error.message),
+      onSuccess: onSuccessToastMensaje,
+      onError: onErrorToast,
     })
   }
 
@@ -118,12 +148,13 @@ function LetrasCard() {
         titulo="Letras"
         descripcion="Actualiza precios y TNA de LECAP/LECER consultando BYMA Open Data."
       />
-      <div className="flex flex-col gap-2">
-        <button type="button" onClick={handleClick} disabled={refresh.isPending} className="btn-primary w-fit">
-          {refresh.isPending ? 'Actualizando…' : 'Actualizar letras'}
-        </button>
-        {refresh.data && <p className={resultText}>{refresh.data.mensaje}</p>}
-      </div>
+      <ActionRow
+        onClick={handleClick}
+        isPending={refresh.isPending}
+        label="Actualizar letras"
+        pendingLabel="Actualizando…"
+        result={refresh.data && <p className={resultText}>{refresh.data.mensaje}</p>}
+      />
     </div>
   )
 }
@@ -134,15 +165,15 @@ function BonosCard() {
 
   const handleYields = () => {
     yields_.mutate(undefined, {
-      onSuccess: (data) => toast.success(data.mensaje),
-      onError: (error) => toast.error(error.message),
+      onSuccess: onSuccessToastMensaje,
+      onError: onErrorToast,
     })
   }
 
   const handleFlujos = () => {
     flujos.mutate(undefined, {
-      onSuccess: (data) => toast.success(data.mensaje),
-      onError: (error) => toast.error(error.message),
+      onSuccess: onSuccessToastMensaje,
+      onError: onErrorToast,
     })
   }
 
@@ -150,31 +181,21 @@ function BonosCard() {
     <div className="card">
       <CardHeader titulo="Bonos" descripcion="Actualiza TIR y flujos de caja consultando Docta Capital." />
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleYields}
-            disabled={yields_.isPending}
-            className="btn-primary w-fit"
-          >
-            {yields_.isPending ? 'Actualizando…' : 'Actualizar TIR (yields)'}
-          </button>
-          {yields_.data && <p className={resultText}>{yields_.data.mensaje}</p>}
-        </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleFlujos}
-              disabled={flujos.isPending}
-              className="btn-primary w-fit"
-            >
-              {flujos.isPending ? 'Actualizando…' : 'Actualizar flujos de caja'}
-            </button>
-            <span className="text-[11.5px] text-ink-soft">Operación lenta — puede tardar varios segundos.</span>
-          </div>
-          {flujos.data && <p className={resultText}>{flujos.data.mensaje}</p>}
-        </div>
+        <ActionRow
+          onClick={handleYields}
+          isPending={yields_.isPending}
+          label="Actualizar TIR (yields)"
+          pendingLabel="Actualizando…"
+          result={yields_.data && <p className={resultText}>{yields_.data.mensaje}</p>}
+        />
+        <ActionRow
+          onClick={handleFlujos}
+          isPending={flujos.isPending}
+          label="Actualizar flujos de caja"
+          pendingLabel="Actualizando…"
+          helperText="Operación lenta — puede tardar varios segundos."
+          result={flujos.data && <p className={resultText}>{flujos.data.mensaje}</p>}
+        />
       </div>
     </div>
   )
@@ -196,8 +217,8 @@ function GbmResultado({ resultado }: { resultado: GbmRefreshResult }) {
     <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
       {gbmResultadoCampos(resultado).map((c) => (
         <div key={c.label}>
-          <p className="text-[9.5px] tracking-[0.3px] text-ink-soft uppercase">{c.label}</p>
-          <p className="text-[12.5px] font-semibold text-navy-950">{c.value}</p>
+          <p className="stat-label">{c.label}</p>
+          <p className="stat-value">{c.value}</p>
         </div>
       ))}
     </div>
@@ -212,7 +233,7 @@ function AccionesCard() {
   const handleTodas = () => {
     refreshTodas.mutate(undefined, {
       onSuccess: (data) => toast.success(`Se recalcularon ${data.actualizadas} acciones.`),
-      onError: (error) => toast.error(error.message),
+      onError: onErrorToast,
     })
   }
 
@@ -230,24 +251,18 @@ function AccionesCard() {
         descripcion="Recalcula los parámetros GBM (μ, σ, ρ, S₀) usando 10 años de historia de Alpha Vantage."
       />
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleTodas}
-              disabled={refreshTodas.isPending}
-              className="btn-primary w-fit"
-            >
-              {refreshTodas.isPending ? 'Recalculando…' : 'Recalcular todas'}
-            </button>
-            <span className="text-[11.5px] text-ink-soft">
-              Operación lenta — puede tardar varios minutos por el rate limit de Alpha Vantage.
-            </span>
-          </div>
-          {refreshTodas.data && (
-            <p className={resultText}>Última corrida: {refreshTodas.data.actualizadas} acciones actualizadas.</p>
-          )}
-        </div>
+        <ActionRow
+          onClick={handleTodas}
+          isPending={refreshTodas.isPending}
+          label="Recalcular todas"
+          pendingLabel="Recalculando…"
+          helperText="Operación lenta — puede tardar varios minutos por el rate limit de Alpha Vantage."
+          result={
+            refreshTodas.data && (
+              <p className={resultText}>Última corrida: {refreshTodas.data.actualizadas} acciones actualizadas.</p>
+            )
+          }
+        />
 
         <div className="flex flex-col gap-2 border-t border-line pt-4">
           <span className="field-label">Recalcular un ticker específico</span>
@@ -285,8 +300,8 @@ function TipoCambioCard() {
 
   const handleClick = () => {
     refresh.mutate(undefined, {
-      onSuccess: (data) => toast.success(data.mensaje),
-      onError: (error) => toast.error(error.message),
+      onSuccess: onSuccessToastMensaje,
+      onError: onErrorToast,
     })
   }
 
@@ -296,19 +311,22 @@ function TipoCambioCard() {
         titulo="Tipo de cambio (BCRA)"
         descripcion="Fuerza una consulta live al BCRA de la cotización USD/ARS, ignorando el valor cacheado del día."
       />
-      <div className="flex flex-col gap-2">
-        <button type="button" onClick={handleClick} disabled={refresh.isPending} className="btn-primary w-fit">
-          {refresh.isPending ? 'Actualizando…' : 'Actualizar cotización'}
-        </button>
-        {refresh.data && (
-          <p className={resultText}>
-            {refresh.data.mensaje}{' '}
-            <span className="font-semibold text-navy-950">
-              (1 USD = {refresh.data.cotizacionUsdArs.toFixed(2)} ARS)
-            </span>
-          </p>
-        )}
-      </div>
+      <ActionRow
+        onClick={handleClick}
+        isPending={refresh.isPending}
+        label="Actualizar cotización"
+        pendingLabel="Actualizando…"
+        result={
+          refresh.data && (
+            <p className={resultText}>
+              {refresh.data.mensaje}{' '}
+              <span className="font-semibold text-navy-950">
+                (1 USD = {refresh.data.cotizacionUsdArs.toFixed(2)} ARS)
+              </span>
+            </p>
+          )
+        }
+      />
     </div>
   )
 }

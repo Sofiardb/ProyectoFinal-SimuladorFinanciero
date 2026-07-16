@@ -18,9 +18,6 @@ public sealed class CrearPortfolioRequest
 
     [Range(0.000001, double.MaxValue, ErrorMessage = "El capital inicial debe ser un valor positivo.")]
     public decimal? CapitalInicial { get; init; }
-
-    [Range(1, 60, ErrorMessage = "El horizonte debe estar entre 1 y 60 meses.")]
-    public int HorizonteMeses { get; init; }
 }
 
 public sealed class ActualizarPortfolioRequest
@@ -38,9 +35,6 @@ public sealed class ActualizarPortfolioRequest
 
     [Range(0.000001, double.MaxValue)]
     public decimal? CapitalInicial { get; init; }
-
-    [Range(1, 60)]
-    public int? HorizonteMeses { get; init; }
 
     [RegularExpression("^(ACTIVO|ARCHIVADO)$", ErrorMessage = "Estado debe ser 'ACTIVO' o 'ARCHIVADO'.")]
     public string? Estado { get; init; }

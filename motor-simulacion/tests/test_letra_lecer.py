@@ -50,3 +50,16 @@ def test_simulaciones_independientes():
     fac = np.array([(1 + pi) ** t for pi in pis])
     resultado = simular_letra_lecer_vectorizado(1000.0, 0.10, t_venc, fac)
     assert len(set(resultado[:, -1].round(6))) == N
+
+
+def test_emite_solo_hasta_ancho_del_slice_cuando_vence_despues_del_horizonte():
+    # El orquestador pasa un factor_acum_slice más angosto que t_venc_meses cuando la letra
+    # vence después del horizonte simulado — la función debe emitir solo ese ancho (sin crashear)
+    # y seguir descontando contra el vencimiento real, sin llegar artificialmente a la par.
+    monto, tna, t_venc = 1000.0, 0.12, 6
+    t_emit = 3
+    resultado = simular_letra_lecer_vectorizado(monto, tna, t_venc, _factor_acum(0.0, t_emit))
+
+    assert resultado.shape == (N, t_emit + 1)
+    vn0 = monto * (1 + tna * t_venc / 12)
+    assert np.all(resultado[:, -1] < vn0)

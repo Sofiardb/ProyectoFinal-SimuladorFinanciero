@@ -4,16 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Form } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout'
 import { useResetPassword } from '@/api/hooks'
 
@@ -76,7 +69,7 @@ export default function ResetPasswordPage() {
           </Alert>
           <Button
             size="lg"
-            className="h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900"
+            className="btn-auth-submit"
             onClick={() => navigate('/login')}
           >
             Iniciar sesión
@@ -85,44 +78,32 @@ export default function ResetPasswordPage() {
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-            <FormField
+            <TextFormField
               control={form.control}
               name="password"
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <FormLabel className="text-navy-950">Nueva contraseña</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="h-11 rounded-[9px]"
-                      type="password"
-                      placeholder="Mínimo 8 caracteres"
-                      autoComplete="new-password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Nueva contraseña"
+              itemClassName="space-y-1.5"
+              labelClassName="text-navy-950"
+              inputProps={{
+                className: 'h-11 rounded-[9px]',
+                type: 'password',
+                placeholder: 'Mínimo 8 caracteres',
+                autoComplete: 'new-password',
+              }}
             />
 
-            <FormField
+            <TextFormField
               control={form.control}
               name="confirmPassword"
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <FormLabel className="text-navy-950">Confirmar contraseña</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="h-11 rounded-[9px]"
-                      type="password"
-                      placeholder="Repetí tu contraseña"
-                      autoComplete="new-password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Confirmar contraseña"
+              itemClassName="space-y-1.5"
+              labelClassName="text-navy-950"
+              inputProps={{
+                className: 'h-11 rounded-[9px]',
+                type: 'password',
+                placeholder: 'Repetí tu contraseña',
+                autoComplete: 'new-password',
+              }}
             />
 
             {resetPassword.isError && (
@@ -134,7 +115,7 @@ export default function ResetPasswordPage() {
             <Button
               type="submit"
               size="lg"
-              className="h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900"
+              className="btn-auth-submit"
               disabled={resetPassword.isPending}
             >
               {resetPassword.isPending ? 'Actualizando…' : 'Actualizar contraseña'}

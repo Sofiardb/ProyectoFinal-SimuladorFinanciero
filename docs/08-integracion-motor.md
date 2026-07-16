@@ -16,8 +16,7 @@ POST /portfolios/{id}/simular
 ├── [3] Validaciones previas a la llamada al motor
 │       ├── Portfolio no vacío
 │       ├── Todas las acciones tienen GBM (mu, sigma, rho)
-│       ├── No hay instrumentos vencidos
-│       └── El horizonte cubre los flujos de todos los bonos
+│       └── No hay instrumentos vencidos
 │
 ├── [4] Construir payload del motor (MotorPayloadBuilder.Build)
 │
@@ -204,7 +203,6 @@ El servicio realiza estas validaciones antes de llamar al motor:
 | Letra con `fecha_vencimiento <= hoy` | `422` — "Los siguientes instrumentos están vencidos y bloquean la simulación: [letra_3]." |
 | Bono cuyos flujos futuros terminaron | `422` — igual que letra |
 | Plazo fijo vencido sin reinversión | `422` — igual que letra |
-| Horizonte < máximo mes de flujo de algún bono | `422` — "El horizonte (X meses) no cubre todos los flujos del bono AL30 (vence en Y meses)." |
 | Menos de 3 escenarios vigentes configurados | `422` — "No hay escenarios económicos vigentes configurados." |
 
 ---

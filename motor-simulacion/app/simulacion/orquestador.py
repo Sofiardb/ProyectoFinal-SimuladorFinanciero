@@ -87,35 +87,41 @@ def simular_portfolio(parametros: dict) -> dict:
 
         elif tipo == "lecap":
             tray_1d = simular_letra_lecap(inst["monto"], inst["tna"], inst["t_venc_meses"])
-            if len(tray_1d) < T_meses + 1:
+            if len(tray_1d) > T_meses + 1:
+                tray_1d = tray_1d[:T_meses + 1]
+            elif len(tray_1d) < T_meses + 1:
                 tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
 
         elif tipo == "lecer":
             meses_venc = inst["t_venc_meses"]
+            t_emit = min(meses_venc, T_meses)
             tray_2d = simular_letra_lecer_vectorizado(
                 inst["monto"], inst["tna"], meses_venc,
-                factor_cer_matrix[:, :meses_venc + 1]
+                factor_cer_matrix[:, :t_emit + 1]
             )
-            if meses_venc < T_meses:
-                padding = np.repeat(tray_2d[:, -1:], T_meses - meses_venc, axis=1)
+            if t_emit < T_meses:
+                padding = np.repeat(tray_2d[:, -1:], T_meses - t_emit, axis=1)
                 tray_2d = np.hstack([tray_2d, padding])
             matrices_trayectorias[id_inst] = tray_2d
 
         elif tipo == "bono_tasa_fija":
             tray_1d = simular_bono_tasa_fija(inst["monto"], inst["flujos"], inst["tir"])
-            if len(tray_1d) < T_meses + 1:
+            if len(tray_1d) > T_meses + 1:
+                tray_1d = tray_1d[:T_meses + 1]
+            elif len(tray_1d) < T_meses + 1:
                 tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
 
         elif tipo == "bono_indexado":
             meses_venc = max(f["mes"] for f in inst["flujos_base"])
+            t_emit = min(meses_venc, T_meses)
             tray_2d = simular_bono_indexado_vectorizado(
                 inst["monto"], inst["flujos_base"], inst["tir_real"],
-                factor_cer_matrix[:, :meses_venc + 1]
+                factor_cer_matrix[:, :t_emit + 1]
             )
-            if meses_venc < T_meses:
-                padding = np.repeat(tray_2d[:, -1:], T_meses - meses_venc, axis=1)
+            if t_emit < T_meses:
+                padding = np.repeat(tray_2d[:, -1:], T_meses - t_emit, axis=1)
                 tray_2d = np.hstack([tray_2d, padding])
             matrices_trayectorias[id_inst] = tray_2d
 

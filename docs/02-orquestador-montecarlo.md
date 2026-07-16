@@ -155,18 +155,36 @@ z_accion = rho * z_indice + np.sqrt(1 - rho**2) * z_propio
 
 ---
 
-## Decisión 7: Padding de trayectorias post-vencimiento
+## Decisión 7: Padding/truncado de trayectorias cuando el vencimiento no coincide con el horizonte
 
 ```python
-if len(trayectoria) < T_meses + 1:
+if len(trayectoria) > T_meses + 1:
+    trayectoria = trayectoria[:T_meses + 1]
+elif len(trayectoria) < T_meses + 1:
     trayectoria = trayectoria + [trayectoria[-1]] * (T_meses + 1 - len(trayectoria))
 ```
 
-**Contexto:** letras y bonos devuelven trayectorias de largo `t_venc + 1`. Si `t_venc < T`, la trayectoria es más corta que el horizonte de simulación.
+**Contexto:** letras y bonos devuelven trayectorias de largo `t_venc + 1`, calculado contra el
+vencimiento **real** del instrumento — independiente del horizonte de simulación `T` (el horizonte se
+elige por simulación, no al armar el portfolio; ver `docs/07-portfolio-reglas-negocio.md`). El vencimiento
+real puede caer antes o después de `T`.
 
-**Decisión:** repetir el último valor (`V(t_venc)`) desde `t_venc + 1` hasta `T_meses`. El capital cobrado al vencimiento queda disponible como efectivo para el resto del período, sin rendimiento adicional.
+**Decisión — vence antes (`t_venc < T`):** repetir el último valor (`V(t_venc)`) desde `t_venc + 1` hasta
+`T_meses`. El capital cobrado al vencimiento queda disponible como efectivo para el resto del período,
+sin rendimiento adicional.
 
-**Justificación:** la reinversión al vencimiento implicaría elegir en qué instrumento reinvertir y a qué condiciones. Esa decisión es del usuario, no del simulador. El simulador muestra qué pasó con el capital invertido en los instrumentos elegidos; la asignación post-vencimiento es una decisión financiera futura fuera del alcance de la simulación.
+**Decisión — vence después (`t_venc > T`):** truncar la trayectoria a `T_meses + 1`. El motor sigue
+calculando la valuación contra el vencimiento real (para descontar correctamente "cuánto falta"), pero
+solo emite los valores hasta `T`, sin proyectar el instrumento como si hubiera llegado a vencimiento. Para
+los instrumentos indexados por CER (`lecer`, `bono_indexado`) esto además es necesario estructuralmente:
+`factor_cer_matrix` solo tiene inflación simulada hasta `T_meses + 1`, así que no hay forma de calcular
+más allá de ese punto.
+
+**Justificación (ambos casos):** la reinversión al vencimiento implicaría elegir en qué instrumento
+reinvertir y a qué condiciones, y proyectar más allá del horizonte implicaría asumir que el instrumento
+efectivamente llega a cobrarse. Ambas son decisiones del usuario, no del simulador. El simulador muestra
+qué pasó con el capital invertido en los instrumentos elegidos, tal como están, hasta el horizonte
+elegido — ni más allá, ni asumiendo qué pasa después.
 
 **Alternativa descartada:** modelar el cash post-vencimiento como un plazo fijo a tasa de referencia del mercado. Requeriría un parámetro adicional (tasa vigente en el período de reinversión) y haría implícita una decisión financiera que debería ser explícita del usuario.
 
@@ -279,7 +297,7 @@ def simular():
 
 **Decisión:** el endpoint no valida la estructura ni la semántica del request.
 
-**Justificación:** el backend .NET valida el request antes de llamar al motor (tipos, rangos, que `t_venc ≤ T`, que los flujos de bonos estén correctamente priced). El motor confía en ese contrato. Agregar validación doble duplica código sin agregar valor en el flujo normal y sin mejorar la seguridad (el motor solo escucha en localhost, no está expuesto a internet).
+**Justificación:** el backend .NET valida el request antes de llamar al motor (tipos, rangos, que los flujos de bonos estén correctamente priced). El motor confía en ese contrato. Agregar validación doble duplica código sin agregar valor en el flujo normal y sin mejorar la seguridad (el motor solo escucha en localhost, no está expuesto a internet). El motor no asume `t_venc ≤ T` — ver Decisión 7.
 
 ---
 
