@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
+import TruncatedText from '@/components/portfolios/TruncatedText'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
 
 export default function TenenciaResumenRow({
@@ -16,7 +17,7 @@ export default function TenenciaResumenRow({
   return (
     <div className="tenencia-row">
       <div className="min-w-0 flex-1 basis-32">
-        <p className="tenencia-row-title">{titulo}</p>
+        <TruncatedText text={titulo} className="tenencia-row-title" />
         <p className="tenencia-row-subtitle">{subtitulo}</p>
       </div>
       <div className="tenencia-row-stats">
@@ -32,7 +33,7 @@ export default function TenenciaResumenRow({
       </div>
       <Link
         to={editHref}
-        className="shrink-0 text-[12px] font-semibold whitespace-nowrap text-navy-950 hover:underline"
+        className="ml-auto shrink-0 text-[12px] font-semibold whitespace-nowrap text-navy-950 hover:underline"
       >
         Editar →
       </Link>

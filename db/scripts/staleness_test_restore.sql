@@ -53,4 +53,3 @@ UNION ALL
 SELECT 'bono', ticker, tasa_descuento, NULL, NULL, precio_actual FROM bono WHERE ticker = 'X30N6'
 UNION ALL
 SELECT 'letra', ticker, tasa, NULL, NULL, precio_actual FROM letra WHERE ticker = 'S30O6';
-i

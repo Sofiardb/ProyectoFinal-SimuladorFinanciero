@@ -7,6 +7,8 @@ public record EscenarioEconomicoResponse(
     string    NombreEscenario,
     decimal   InflacionMensualMin,
     decimal   InflacionMensualMax,
+    decimal   InflacionMensualMinUsd,
+    decimal   InflacionMensualMaxUsd,
     DateOnly  VigenteDesde,
     DateOnly? VigenteHasta
 );

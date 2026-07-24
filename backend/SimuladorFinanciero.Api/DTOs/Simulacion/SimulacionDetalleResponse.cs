@@ -4,7 +4,9 @@ public sealed record SimulacionParametroEscenarioResponse(
     int     IdTipoEscenario,
     string  NombreTipoEscenario,
     decimal InflacionMensualMin,
-    decimal InflacionMensualMax
+    decimal InflacionMensualMax,
+    decimal InflacionMensualMinUsd,
+    decimal InflacionMensualMaxUsd
 );
 
 public sealed record SimulacionDetalleResponse(
@@ -22,5 +24,17 @@ public sealed record SimulacionDetalleResponse(
     decimal?       RendimientoRealPct,
     decimal?       DesvioEstandar,
     string?        Observaciones,
+    decimal?       ValorInicialArs,
+    decimal?       ValorInicialUsd,
+    decimal?       ValorEsperadoArs,
+    decimal?       ValorEsperadoUsd,
+    decimal?       ValorMinimoArs,
+    decimal?       ValorMinimoUsd,
+    decimal?       ValorMaximoArs,
+    decimal?       ValorMaximoUsd,
+    decimal?       RetornoEsperadoPctArs,
+    decimal?       RetornoEsperadoPctUsd,
+    decimal?       RendimientoRealPctArs,
+    decimal?       RendimientoRealPctUsd,
     IReadOnlyList<SimulacionParametroEscenarioResponse> ParametrosEscenario
 );

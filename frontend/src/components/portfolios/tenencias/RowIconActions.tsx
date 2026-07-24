@@ -6,7 +6,7 @@ interface Props {
 /** Botones de editar/eliminar de una fila de tenencia, compartidos entre las secciones de catálogo y plazo fijo. */
 export default function RowIconActions({ onEdit, onDelete }: Props) {
   return (
-    <div className="flex shrink-0 gap-0.5">
+    <div className="ml-auto flex shrink-0 gap-0.5">
       <button
         type="button"
         onClick={onEdit}

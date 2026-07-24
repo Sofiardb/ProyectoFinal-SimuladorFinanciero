@@ -14,8 +14,12 @@ public interface IAccionCatalogoService
 
 public sealed class AccionCatalogoService : IAccionCatalogoService
 {
-    private const int TradingDaysPerMonth = 21;
-    private const int LookbackYears       = 10;
+    // El motor (acciones.py) espera μ/σ ANUALIZADOS y los convierte a paso mensual internamente
+    // (/12, /√12 — Euler-Maruyama estándar, docs/01 §7); anualizar con menos de 252 días
+    // sobrestimaría el ajuste que ya hace el motor y dejaría el drift/volatilidad efectivos muy
+    // por debajo de lo real.
+    private const int TradingDaysPerYear = 252;
+    private const int LookbackYears      = 10;
 
     private readonly IAlphaVantageApiClient _av;
     private readonly IAccionRepository      _repo;
@@ -93,9 +97,9 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
         double varianza    = aligned.Select(r => Math.Pow(r - muDiario, 2)).Average();
         double sigmaDiario = Math.Sqrt(varianza);
 
-        double muMensual    = muDiario    * TradingDaysPerMonth;
-        double sigmaMensual = sigmaDiario * Math.Sqrt(TradingDaysPerMonth);
-        double rho          = Correlacion(aligned, alignedSpy);
+        double muAnual    = muDiario    * TradingDaysPerYear;
+        double sigmaAnual = sigmaDiario * Math.Sqrt(TradingDaysPerYear);
+        double rho        = Correlacion(aligned, alignedSpy);
 
         var precioActual = serie[^1].PrecioAjustado;
         var mesesDeDatos = GbmMath.CalcularMesesDeDatos(serie[0].Fecha, serie[^1].Fecha);
@@ -105,20 +109,20 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
             Ticker               = ticker,
             Nombre               = nombre,
             Sector               = sector,
-            MuRetornoEsperado    = (decimal)muMensual,
-            SigmaVolatilidad     = (decimal)sigmaMensual,
+            MuRetornoEsperado    = (decimal)muAnual,
+            SigmaVolatilidad     = (decimal)sigmaAnual,
             RhoCorrelacionIndice = (decimal)Math.Clamp(rho, -1.0, 1.0),
             PrecioActual         = precioActual
         }, ct);
 
         _log.LogInformation(
             "{Ticker}: μ={Mu:F4} σ={Sigma:F4} ρ={Rho:F4} S₀={S0:F2} ({Meses} meses de datos)",
-            ticker, muMensual, sigmaMensual, rho, precioActual, mesesDeDatos);
+            ticker, muAnual, sigmaAnual, rho, precioActual, mesesDeDatos);
 
         return new GbmRefreshResult(
             ticker,
-            (decimal)muMensual,
-            (decimal)sigmaMensual,
+            (decimal)muAnual,
+            (decimal)sigmaAnual,
             (decimal)Math.Clamp(rho, -1.0, 1.0),
             precioActual,
             mesesDeDatos);

@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import GrupoMonedaList from '@/components/portfolios/GrupoMonedaList'
+import PerfilBadge from '@/components/portfolios/PerfilBadge'
+import PresupuestoBoxes from '@/components/portfolios/PresupuestoBoxes'
 import { usePortfolio, useBonosCatalogo, useLetrasCatalogo } from '@/api/hooks'
 import {
   accionCardDisplay,
@@ -18,7 +20,13 @@ import type { PortfolioResumen } from '@/types'
 
 const BUDGET = 5
 
-export default function PortfolioCard({ portfolio }: { portfolio: PortfolioResumen }) {
+export default function PortfolioCard({
+  portfolio,
+  mostrarPerfil = false,
+}: {
+  portfolio: PortfolioResumen
+  mostrarPerfil?: boolean
+}) {
   const navigate = useNavigate()
   const { data: detalle, isLoading } = usePortfolio(portfolio.idPortfolio)
   const { data: bonosCatalogo } = useBonosCatalogo()
@@ -49,12 +57,15 @@ export default function PortfolioCard({ portfolio }: { portfolio: PortfolioResum
   const hiddenCount = totalCount - (visibleUsd.length + visibleArs.length)
 
   return (
-    <Card className={cn('gap-4 border-line p-6', archivado && 'opacity-60')}>
+    <Card className={cn('h-full gap-4 border-line p-6', archivado && 'opacity-60')}>
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="truncate font-display text-base font-semibold text-navy-950">
-            {portfolio.nombre}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate font-display text-base font-semibold text-navy-950">
+              {portfolio.nombre}
+            </p>
+            {mostrarPerfil && <PerfilBadge nombre={portfolio.nombrePerfilRiesgo} />}
+          </div>
           <p className="mt-[3px] text-xs text-ink-soft">
             Creado el {formatFecha(portfolio.fechaCreacion)}
             {archivado ? ' · Archivado' : ''}
@@ -75,6 +86,8 @@ export default function PortfolioCard({ portfolio }: { portfolio: PortfolioResum
         </div>
       )}
 
+      {detalle && <PresupuestoBoxes detalle={detalle} />}
+
       {visibleUsd.length > 0 && (
         <GrupoMonedaList titulo="USD · ACCIONES Y PLAZO FIJO" tituloClassName="text-blue-brand" items={visibleUsd} />
       )}
@@ -90,7 +103,7 @@ export default function PortfolioCard({ portfolio }: { portfolio: PortfolioResum
         </div>
       )}
 
-      <div className="flex justify-end border-t border-line-soft pt-1">
+      <div className="mt-auto flex justify-end border-t border-line-soft pt-1">
         <button
           onClick={() => navigate(`/portfolios/${portfolio.idPortfolio}`)}
           className="text-[13px] font-semibold text-navy-950 hover:underline"

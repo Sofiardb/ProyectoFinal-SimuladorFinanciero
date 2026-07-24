@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/api/client'
-import type { Moneda, PerfilRiesgo, TipoCambio } from '@/types'
+import type { EscenarioEconomico, Moneda, PerfilRiesgo, TipoCambio, TipoEscenario } from '@/types'
 
 export function useMonedas() {
   return useQuery({
@@ -23,5 +23,22 @@ export function useTipoCambio() {
     queryKey: ['referencia', 'tipo-cambio'],
     queryFn: () => api.get<TipoCambio>('/referencia/tipo-cambio'),
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useTiposEscenario() {
+  return useQuery({
+    queryKey: ['referencia', 'tipos-escenario'],
+    queryFn: () => api.get<TipoEscenario[]>('/referencia/tipos-escenario'),
+    staleTime: Infinity,
+  })
+}
+
+/** Rangos de inflación mensual vigentes por escenario — config de admin, de solo lectura para el usuario (docs/09 §4). */
+export function useEscenariosEconomicos() {
+  return useQuery({
+    queryKey: ['referencia', 'escenarios-economicos'],
+    queryFn: () => api.get<EscenarioEconomico[]>('/referencia/escenarios-economicos'),
+    staleTime: Infinity,
   })
 }

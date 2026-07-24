@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import TipoCambioIndicator from '@/components/portfolios/TipoCambioIndicator'
+import PresupuestoBoxes from '@/components/portfolios/PresupuestoBoxes'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import DeletePortfolioDialog from '@/components/portfolios/DeletePortfolioDialog'
 import CatalogoTenenciaSection, {
@@ -11,6 +12,7 @@ import CatalogoTenenciaSection, {
   type TenenciaItem,
 } from '@/components/portfolios/tenencias/CatalogoTenenciaSection'
 import PlazoFijoSection from '@/components/portfolios/tenencias/PlazoFijoSection'
+import ValorPorMoneda from '@/components/simulaciones/ValorPorMoneda'
 import {
   usePortfolio,
   usePerfilesRiesgo,
@@ -32,6 +34,7 @@ import {
   useUpdatePlazoFijo,
   useDeletePlazoFijo,
   useUpdatePortfolio,
+  useSimulacionesPortfolio,
 } from '@/api/hooks'
 import {
   accionPreview,
@@ -44,7 +47,7 @@ import {
   letraCatalogoPorId,
   letraRow,
 } from '@/lib/tenenciaDisplay'
-import { formatFecha } from '@/lib/format'
+import { formatFecha, formatMoneda } from '@/lib/format'
 import { onErrorToast } from '@/lib/toast'
 import { SECCION_TOOLTIPS, CANTIDAD_LOTES_TOOLTIP_BONO, CANTIDAD_LOTES_TOOLTIP_LETRA } from '@/lib/tooltips'
 
@@ -65,6 +68,7 @@ export default function PortfolioDetallePage() {
   const navigate = useNavigate()
 
   const { data: detalle, isLoading } = usePortfolio(idPortfolio)
+  const { data: simulaciones } = useSimulacionesPortfolio(idPortfolio)
   const { data: perfiles } = usePerfilesRiesgo()
   const { data: monedas } = useMonedas()
   const { data: accionesCatalogo } = useAccionesCatalogo()
@@ -151,7 +155,13 @@ export default function PortfolioDetallePage() {
     .map((a) => ({
       id: a.idAccion,
       etiqueta: `${a.ticker} - ${a.nombre}`,
-      previewFields: accionPreview(a),
+      previewFields: accionPreview({
+        sector: a.sector,
+        precioActual: a.precioActual,
+        mu: a.muRetornoEsperado,
+        sigma: a.sigmaVolatilidad,
+        rho: a.rhoCorrelacionIndice,
+      }),
       precioActual: a.precioActual ?? 0,
     }))
 
@@ -246,6 +256,8 @@ export default function PortfolioDetallePage() {
           Portfolio archivado — reactivalo para poder agregar, editar o eliminar instrumentos.
         </div>
       )}
+
+      <PresupuestoBoxes detalle={detalle} />
 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-5">
@@ -403,7 +415,41 @@ export default function PortfolioDetallePage() {
             Ver todo el historial
           </Link>
         </div>
-        <p className="text-[13px] text-ink-soft">Todavía no corriste simulaciones para este portfolio.</p>
+        {!simulaciones || simulaciones.length === 0 ? (
+          <p className="text-[13px] text-ink-soft">Todavía no corriste simulaciones para este portfolio.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {simulaciones.slice(0, 5).map((s) => (
+              <div key={s.idSimulacion} className="tenencia-row">
+                <div className="min-w-0 flex-1 basis-32">
+                  <p className="tenencia-row-title">{formatFecha(s.fechaEjecucion)}</p>
+                  <p className="tenencia-row-subtitle">{s.horizonteMeses} meses</p>
+                </div>
+                <div className="tenencia-row-stats">
+                  <div className="text-right">
+                    <p className="stat-label">Valor esperado</p>
+                    <p className="mt-0.5 stat-value">
+                      <ValorPorMoneda
+                        combinado={s.valorEsperado}
+                        ars={s.valorEsperadoArs}
+                        usd={s.valorEsperadoUsd}
+                        formatCombinado={(v) => formatMoneda(v, detalle.codigoMonedaBase)}
+                        formatArs={(v) => formatMoneda(v, 'ARS')}
+                        formatUsd={(v) => formatMoneda(v, 'USD')}
+                      />
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to={`/simulaciones/${s.idSimulacion}`}
+                  className="shrink-0 text-[12px] font-semibold whitespace-nowrap text-navy-950 hover:underline"
+                >
+                  Ver →
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <CreateEditPortfolioDialog open={editOpen} onOpenChange={setEditOpen} portfolio={detalle} />

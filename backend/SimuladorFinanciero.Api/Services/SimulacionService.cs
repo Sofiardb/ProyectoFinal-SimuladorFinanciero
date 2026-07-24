@@ -92,13 +92,7 @@ public sealed class SimulacionService : ISimulacionService
 
         // 6. Extraer métricas agregadas
         var valorInicial = snapshots.Sum(s => s.Monto);
-        var (valorEsperado, valorMinimo, valorMaximo) = ExtraerAgregados(motorResponse);
-        decimal? retornoEsperadoPct = valorInicial != 0
-            ? (valorEsperado - valorInicial) / valorInicial
-            : null;
-        decimal? rendimientoRealPct = valorInicial != 0
-            ? ExtraerGananciasReales(motorResponse) / valorInicial
-            : null;
+        var m = ExtraerMetricas(motorResponse);
 
         var semillaUsada = motorResponse.TryGetProperty("semilla", out var semEl)
             ? semEl.GetInt64()
@@ -106,17 +100,29 @@ public sealed class SimulacionService : ISimulacionService
 
         // 7. Persistir (transacción)
         var insertData = new InsertSimulacionData(
-            IdPortfolio:        idPortfolio,
-            HorizonteMeses:     tMeses,
-            NumTrayectorias:    1000,
-            SeedAleatoria:      semillaUsada,
-            ValorInicial:       valorInicial,
-            ValorEsperado:      valorEsperado,
-            ValorMinimo:        valorMinimo,
-            ValorMaximo:        valorMaximo,
-            RetornoEsperadoPct: retornoEsperadoPct,
-            RendimientoRealPct: rendimientoRealPct,
-            DesvioEstandar:     null
+            IdPortfolio:            idPortfolio,
+            HorizonteMeses:         tMeses,
+            NumTrayectorias:        1000,
+            SeedAleatoria:          semillaUsada,
+            ValorInicial:           valorInicial,
+            ValorEsperado:          m.ValorEsperado,
+            ValorMinimo:            m.ValorMinimo,
+            ValorMaximo:            m.ValorMaximo,
+            RetornoEsperadoPct:     m.RetornoEsperadoPct,
+            RendimientoRealPct:     m.RendimientoRealPct,
+            DesvioEstandar:         null,
+            ValorInicialArs:        m.ValorInicialArs,
+            ValorInicialUsd:        m.ValorInicialUsd,
+            ValorEsperadoArs:       m.ValorEsperadoArs,
+            ValorEsperadoUsd:       m.ValorEsperadoUsd,
+            ValorMinimoArs:         m.ValorMinimoArs,
+            ValorMinimoUsd:         m.ValorMinimoUsd,
+            ValorMaximoArs:         m.ValorMaximoArs,
+            ValorMaximoUsd:         m.ValorMaximoUsd,
+            RetornoEsperadoPctArs:  m.RetornoEsperadoPctArs,
+            RetornoEsperadoPctUsd:  m.RetornoEsperadoPctUsd,
+            RendimientoRealPctArs:  m.RendimientoRealPctArs,
+            RendimientoRealPctUsd:  m.RendimientoRealPctUsd
         );
 
         long idSimulacion = 0;
@@ -129,63 +135,114 @@ public sealed class SimulacionService : ISimulacionService
         }, ct);
 
         return new SimulacionResumenResponse(
-            IdSimulacion:       idSimulacion,
-            IdPortfolio:        idPortfolio,
-            FechaEjecucion:     DateTimeOffset.UtcNow,
-            HorizonteMeses:     tMeses,
-            NumTrayectorias:    1000,
-            SeedAleatoria:      semillaUsada,
-            ValorInicial:       valorInicial,
-            ValorEsperado:      valorEsperado,
-            ValorMinimo:        valorMinimo,
-            ValorMaximo:        valorMaximo,
-            RetornoEsperadoPct: retornoEsperadoPct,
-            RendimientoRealPct: rendimientoRealPct,
-            DesvioEstandar:     null,
-            Observaciones:      null);
+            IdSimulacion:           idSimulacion,
+            IdPortfolio:            idPortfolio,
+            FechaEjecucion:         DateTimeOffset.UtcNow,
+            HorizonteMeses:         tMeses,
+            NumTrayectorias:        1000,
+            SeedAleatoria:          semillaUsada,
+            ValorInicial:           valorInicial,
+            ValorEsperado:          m.ValorEsperado,
+            ValorMinimo:            m.ValorMinimo,
+            ValorMaximo:            m.ValorMaximo,
+            RetornoEsperadoPct:     m.RetornoEsperadoPct,
+            RendimientoRealPct:     m.RendimientoRealPct,
+            DesvioEstandar:         null,
+            Observaciones:          null,
+            ValorInicialArs:        m.ValorInicialArs,
+            ValorInicialUsd:        m.ValorInicialUsd,
+            ValorEsperadoArs:       m.ValorEsperadoArs,
+            ValorEsperadoUsd:       m.ValorEsperadoUsd,
+            ValorMinimoArs:         m.ValorMinimoArs,
+            ValorMinimoUsd:         m.ValorMinimoUsd,
+            ValorMaximoArs:         m.ValorMaximoArs,
+            ValorMaximoUsd:         m.ValorMaximoUsd,
+            RetornoEsperadoPctArs:  m.RetornoEsperadoPctArs,
+            RetornoEsperadoPctUsd:  m.RetornoEsperadoPctUsd,
+            RendimientoRealPctArs:  m.RendimientoRealPctArs,
+            RendimientoRealPctUsd:  m.RendimientoRealPctUsd);
     }
 
-    private static (decimal? esperado, decimal? minimo, decimal? maximo) ExtraerAgregados(JsonElement r)
+    /// <summary>
+    /// Ambas monedas se mantienen siempre separadas (Ars/Usd, poblados siempre). Los campos combinados
+    /// (ValorEsperado, ValorMinimo, ValorMaximo, RetornoEsperadoPct, RendimientoRealPct) solo tienen valor
+    /// cuando el portfolio invierte en una sola moneda — combinarlos requeriría proyectar el tipo de
+    /// cambio a T meses, algo que el motor deliberadamente no hace (docs/02 Decisión 9).
+    /// </summary>
+    private readonly record struct MetricasAgregadas(
+        decimal? ValorEsperado, decimal? ValorMinimo, decimal? ValorMaximo,
+        decimal? RetornoEsperadoPct, decimal? RendimientoRealPct,
+        decimal  ValorInicialArs, decimal  ValorInicialUsd,
+        decimal  ValorEsperadoArs, decimal  ValorEsperadoUsd,
+        decimal  ValorMinimoArs, decimal  ValorMinimoUsd,
+        decimal  ValorMaximoArs, decimal  ValorMaximoUsd,
+        decimal? RetornoEsperadoPctArs, decimal? RetornoEsperadoPctUsd,
+        decimal? RendimientoRealPctArs, decimal? RendimientoRealPctUsd);
+
+    private static MetricasAgregadas ExtraerMetricas(JsonElement r)
     {
-        decimal arsEsp = 0, arsMin = 0, arsMax = 0;
-        decimal usdEsp = 0, usdMin = 0, usdMax = 0;
+        decimal arsIni = 0, arsEsp = 0, arsMin = 0, arsMax = 0, arsGr = 0;
+        decimal usdIni = 0, usdEsp = 0, usdMin = 0, usdMax = 0, usdGr = 0;
 
-        if (r.TryGetProperty("portfolio_ars", out var ars) &&
-            ars.TryGetProperty("patrimonio", out var arsP) &&
-            arsP.TryGetProperty("global", out var arsG))
+        if (r.TryGetProperty("portfolio_ars", out var ars))
         {
-            arsEsp = LastValue(arsG, "media");
-            arsMin = LastValue(arsG, "minimo");
-            arsMax = LastValue(arsG, "maximo");
+            if (ars.TryGetProperty("patrimonio", out var arsP) && arsP.TryGetProperty("global", out var arsG))
+            {
+                arsIni = FirstValue(arsG, "mediana");
+                arsEsp = LastValue(arsG, "mediana");
+                arsMin = LastValue(arsG, "minimo");
+                arsMax = LastValue(arsG, "maximo");
+            }
+            if (ars.TryGetProperty("ganancias_reales", out var arsGrM) && arsGrM.TryGetProperty("global", out var arsGrG))
+                arsGr = LastValue(arsGrG, "mediana");
         }
 
-        if (r.TryGetProperty("portfolio_usd", out var usd) &&
-            usd.TryGetProperty("patrimonio", out var usdP) &&
-            usdP.TryGetProperty("global", out var usdG))
+        if (r.TryGetProperty("portfolio_usd", out var usd))
         {
-            usdEsp = LastValue(usdG, "media");
-            usdMin = LastValue(usdG, "minimo");
-            usdMax = LastValue(usdG, "maximo");
+            if (usd.TryGetProperty("patrimonio", out var usdP) && usdP.TryGetProperty("global", out var usdG))
+            {
+                usdIni = FirstValue(usdG, "mediana");
+                usdEsp = LastValue(usdG, "mediana");
+                usdMin = LastValue(usdG, "minimo");
+                usdMax = LastValue(usdG, "maximo");
+            }
+            if (usd.TryGetProperty("ganancias_reales", out var usdGrM) && usdGrM.TryGetProperty("global", out var usdGrG))
+                usdGr = LastValue(usdGrG, "mediana");
         }
 
-        return (arsEsp + usdEsp, arsMin + usdMin, arsMax + usdMax);
+        var mixed = arsIni > 0 && usdIni > 0;
+
+        decimal? retornoArs = arsIni != 0 ? (arsEsp - arsIni) / arsIni : null;
+        decimal? retornoUsd = usdIni != 0 ? (usdEsp - usdIni) / usdIni : null;
+        decimal? realArs    = arsIni != 0 ? arsGr / arsIni : null;
+        decimal? realUsd    = usdIni != 0 ? usdGr / usdIni : null;
+
+        return new MetricasAgregadas(
+            ValorEsperado:      mixed ? null : arsEsp + usdEsp,
+            ValorMinimo:        mixed ? null : arsMin + usdMin,
+            ValorMaximo:        mixed ? null : arsMax + usdMax,
+            RetornoEsperadoPct: mixed ? null : retornoArs ?? retornoUsd,
+            RendimientoRealPct: mixed ? null : realArs ?? realUsd,
+            ValorInicialArs:        arsIni,
+            ValorInicialUsd:        usdIni,
+            ValorEsperadoArs:       arsEsp,
+            ValorEsperadoUsd:       usdEsp,
+            ValorMinimoArs:         arsMin,
+            ValorMinimoUsd:         usdMin,
+            ValorMaximoArs:         arsMax,
+            ValorMaximoUsd:         usdMax,
+            RetornoEsperadoPctArs:  retornoArs,
+            RetornoEsperadoPctUsd:  retornoUsd,
+            RendimientoRealPctArs:  realArs,
+            RendimientoRealPctUsd:  realUsd);
     }
 
-    private static decimal ExtraerGananciasReales(JsonElement r)
+    private static decimal FirstValue(JsonElement statsEl, string key)
     {
-        decimal ars = 0, usd = 0;
-
-        if (r.TryGetProperty("portfolio_ars", out var arsEl) &&
-            arsEl.TryGetProperty("ganancias_reales", out var arsGr) &&
-            arsGr.TryGetProperty("global", out var arsG))
-            ars = LastValue(arsG, "media");
-
-        if (r.TryGetProperty("portfolio_usd", out var usdEl) &&
-            usdEl.TryGetProperty("ganancias_reales", out var usdGr) &&
-            usdGr.TryGetProperty("global", out var usdG))
-            usd = LastValue(usdG, "media");
-
-        return ars + usd;
+        if (!statsEl.TryGetProperty(key, out var arr) || arr.ValueKind != JsonValueKind.Array)
+            return 0m;
+        var first = arr.EnumerateArray().FirstOrDefault();
+        return first.ValueKind == JsonValueKind.Undefined ? 0m : first.GetDecimal();
     }
 
     private static decimal LastValue(JsonElement statsEl, string key)
@@ -196,8 +253,11 @@ public sealed class SimulacionService : ISimulacionService
         return last.ValueKind == JsonValueKind.Undefined ? 0m : last.GetDecimal();
     }
 
+    // Redondea al mes calendario más cercano usando días reales (no resta de componentes Y/M — eso
+    // truncaba a 0 meses cualquier vencimiento dentro del mismo mes calendario que "hoy", aunque
+    // faltaran semanas reales, y el motor trataba eso como "ya vencido" sin devengar ningún interés.
     private static int MesesEntre(DateOnly desde, DateOnly hasta)
-        => (hasta.Year - desde.Year) * 12 + (hasta.Month - desde.Month);
+        => (int)Math.Round((hasta.DayNumber - desde.DayNumber) / 30.436875, MidpointRounding.AwayFromZero);
 }
 
 // ── Constructor del payload del motor ─────────────────────────────────────────
@@ -334,8 +394,10 @@ internal static class MotorPayloadBuilder
         {
             escenariosPayload[e.Codigo.ToLowerInvariant()] = new
             {
-                inflacion_mensual_min = (double)e.InflacionMensualMin,
-                inflacion_mensual_max = (double)e.InflacionMensualMax
+                inflacion_mensual_min     = (double)e.InflacionMensualMin,
+                inflacion_mensual_max     = (double)e.InflacionMensualMax,
+                inflacion_mensual_min_usd = (double)e.InflacionMensualMinUsd,
+                inflacion_mensual_max_usd = (double)e.InflacionMensualMaxUsd
             };
         }
 
@@ -356,8 +418,11 @@ internal static class MotorPayloadBuilder
             _            => "plazo_fijo_tradicional"
         };
 
+    // Redondea al mes calendario más cercano usando días reales (no resta de componentes Y/M — eso
+    // truncaba a 0 meses cualquier vencimiento dentro del mismo mes calendario que "hoy", aunque
+    // faltaran semanas reales, y el motor trataba eso como "ya vencido" sin devengar ningún interés.
     private static int MesesEntre(DateOnly desde, DateOnly hasta)
-        => (hasta.Year - desde.Year) * 12 + (hasta.Month - desde.Month);
+        => (int)Math.Round((hasta.DayNumber - desde.DayNumber) / 30.436875, MidpointRounding.AwayFromZero);
 
     /// Capitaliza mensualmente a la TNA/tasa pactada — misma convención que usa el motor (r_m = tasa/12)
     /// para llevar el capital hasta la fecha de corte (normalmente "hoy").

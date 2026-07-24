@@ -204,8 +204,8 @@ function BonosCard() {
 function gbmResultadoCampos(resultado: GbmRefreshResult): CampoPreview[] {
   return [
     { label: 'Ticker', value: resultado.ticker },
-    { label: 'μ (retorno esperado)', value: resultado.muRetornoEsperado.toFixed(4) },
-    { label: 'σ (volatilidad)', value: resultado.sigmaVolatilidad.toFixed(4) },
+    { label: 'μ (retorno esperado anual)', value: resultado.muRetornoEsperado.toFixed(4) },
+    { label: 'σ (volatilidad anual)', value: resultado.sigmaVolatilidad.toFixed(4) },
     { label: 'ρ (correlación índice)', value: resultado.rhoCorrelacionIndice.toFixed(4) },
     { label: 'Precio actual', value: resultado.precioActual.toFixed(2) },
     { label: 'Meses de datos', value: String(resultado.mesesDeDatos) },

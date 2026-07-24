@@ -59,6 +59,8 @@ public sealed class ReferenciaRepository : IReferenciaRepository
                    te.nombre  AS nombre_escenario,
                    ee.inflacion_mensual_min,
                    ee.inflacion_mensual_max,
+                   ee.inflacion_mensual_min_usd,
+                   ee.inflacion_mensual_max_usd,
                    ee.vigente_desde,
                    ee.vigente_hasta
             FROM escenario_economico ee

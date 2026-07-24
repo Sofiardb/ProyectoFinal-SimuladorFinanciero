@@ -95,4 +95,22 @@ public sealed class SimulacionController : ControllerBase
 
         return Ok(await _repo.ObtenerResultadosAsync(id, GetUserId(), ambito, ct));
     }
+
+    /// <summary>
+    /// Devuelve los instrumentos de una simulación con su mes de vencimiento dentro del horizonte
+    /// (si vence más allá del horizonte, o es una acción, o un plazo fijo con reinvertir=true, no
+    /// hay vencimiento que marcar y viene null). Se usa para marcar en los gráficos el mes en que
+    /// cada instrumento dejó de aportar crecimiento adicional.
+    /// </summary>
+    [HttpGet("{id:long}/instrumentos")]
+    [ProducesResponseType<IReadOnlyList<InstrumentoSimulacionResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetInstrumentos(long id, CancellationToken ct)
+    {
+        var existe = await _repo.ObtenerDetalleAsync(id, GetUserId(), ct);
+        if (existe is null)
+            throw new NotFoundException($"Simulación {id} no encontrada.");
+
+        return Ok(await _repo.ObtenerInstrumentosAsync(id, GetUserId(), ct));
+    }
 }

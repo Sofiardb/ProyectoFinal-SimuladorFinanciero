@@ -2,33 +2,14 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
+import PortfolioCard from '@/components/portfolios/PortfolioCard'
 import TenenciaResumenRow from '@/components/portfolios/tenencias/TenenciaResumenRow'
-import {
-  usePortfolio,
-  usePortfolioPreview,
-  usePortfolios,
-  useLanzarSimulacion,
-  useAccionesCatalogo,
-  useBonosCatalogo,
-  useLetrasCatalogo,
+import RangosInflacionCard from '@/components/simulaciones/RangosInflacionCard'
+import { usePortfolio, usePortfolioPreview, usePortfolios, usePerfilesRiesgo, useLanzarSimulacion, useAccionesCatalogo, useBonosCatalogo, useLetrasCatalogo,
 } from '@/api/hooks'
-import {
-  accionCatalogoPorId,
-  accionRow,
-  bonoCatalogoPorId,
-  bonoRow,
-  letraCatalogoPorId,
-  letraRow,
-  plazoFijoPreview,
-  type TenenciaRowCore,
+import { accionCatalogoPorId, accionRow, bonoCatalogoPorId, bonoRow, letraCatalogoPorId, letraRow, plazoFijoPreview, type TenenciaRowCore,
 } from '@/lib/tenenciaDisplay'
 import { onErrorToast } from '@/lib/toast'
 import type { SimulacionResumen, PortfolioPlazoFijo } from '@/types'
@@ -53,20 +34,41 @@ export default function NuevaSimulacionPage() {
   return <ConfigurarSimulacion idPortfolio={idFromUrl} navigate={navigate} />
 }
 
+const PORTFOLIOS_POR_PAGINA = 9
+
 function SeleccionarPortfolio() {
-  const { data: portfolios, isLoading } = usePortfolios()
-  const navigate = useNavigate()
+  const { data: perfiles, isLoading: loadingPerfiles } = usePerfilesRiesgo()
+  const { data: portfolios, isLoading: loadingPortfolios } = usePortfolios()
+  const [pagina, setPagina] = useState(1)
+
+  const isLoading = loadingPerfiles || loadingPortfolios
+
+  const ordenPerfil = new Map((perfiles ?? []).map((p, idx) => [p.idPerfilRiesgo, idx]))
+  const portfoliosOrdenados = [...(portfolios ?? [])].sort(
+    (a, b) => (ordenPerfil.get(a.idPerfilRiesgo) ?? 0) - (ordenPerfil.get(b.idPerfilRiesgo) ?? 0),
+  )
+
+  const totalPaginas = Math.max(1, Math.ceil(portfoliosOrdenados.length / PORTFOLIOS_POR_PAGINA))
+  const paginaActual = Math.min(pagina, totalPaginas)
+  const inicio = (paginaActual - 1) * PORTFOLIOS_POR_PAGINA
+  const visibles = portfoliosOrdenados.slice(inicio, inicio + PORTFOLIOS_POR_PAGINA)
 
   return (
-    <div className="page-shell max-w-[640px]">
-      <h1 className="mb-1.5 font-display text-2xl leading-tight font-bold text-navy-950 xl:text-[26px]">
-        Nueva simulación
-      </h1>
-      <p className="mb-6 text-[13.5px] text-ink-muted">Elegí para qué portfolio querés correr una simulación.</p>
+    <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-10 sm:px-6 lg:px-8 lg:pt-11 lg:pb-16">
+      <div className="mb-7">
+        <h1 className="mb-1.5 font-display text-2xl leading-tight font-bold text-navy-950 xl:text-[26px]">
+          Nueva simulación
+        </h1>
+        <p className="text-sm text-ink-muted">Elegí para qué portfolio querés correr una simulación.</p>
+      </div>
 
       {isLoading ? (
-        <Skeleton className="h-40 w-full" />
-      ) : !portfolios || portfolios.length === 0 ? (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <Skeleton className="h-52 w-full" />
+          <Skeleton className="h-52 w-full" />
+          <Skeleton className="h-52 w-full" />
+        </div>
+      ) : portfoliosOrdenados.length === 0 ? (
         <div className="card text-[13.5px] text-ink-muted">
           Todavía no tenés portfolios.{' '}
           <Link to="/portfolios" className="font-semibold text-navy-950 underline">
@@ -75,21 +77,35 @@ function SeleccionarPortfolio() {
           para poder simular.
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {portfolios.map((p) => (
-            <button
-              key={p.idPortfolio}
-              onClick={() => navigate(`/portfolios/${p.idPortfolio}/simular`)}
-              className="card flex items-center justify-between text-left hover:border-navy-950"
-            >
-              <div>
-                <p className="text-[13.5px] font-semibold text-navy-950">{p.nombre}</p>
-                <p className="mt-0.5 text-[11.5px] text-ink-soft">{p.nombrePerfilRiesgo}</p>
-              </div>
-              <span className="text-[12.5px] font-semibold text-navy-950">Elegir →</span>
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+            {visibles.map((portfolio) => (
+              <PortfolioCard key={portfolio.idPortfolio} portfolio={portfolio} mostrarPerfil />
+            ))}
+          </div>
+
+          {totalPaginas > 1 && (
+            <div className="mt-7 flex items-center justify-center gap-4">
+              <button
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              <span className="text-[13px] text-ink-muted">
+                Página {paginaActual} de {totalPaginas}
+              </span>
+              <button
+                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -142,12 +158,17 @@ function ConfigurarSimulacion({
           </div>
           <p className="mb-2 font-display text-xl font-semibold text-navy-950">Simulación en curso</p>
           <p className="mx-auto mb-6 max-w-[420px] text-sm leading-relaxed text-ink-muted">
-            Corriendo {resumen.numTrayectorias.toLocaleString('es-AR')} trayectorias Monte Carlo para {detalle.nombre}{' '}
-            a {resumen.horizonteMeses} meses. Vas a poder verla en el historial cuando esté lista.
+            Se corrieron {resumen.numTrayectorias.toLocaleString('es-AR')} trayectorias Monte Carlo para{' '}
+            {detalle.nombre} a {resumen.horizonteMeses} meses.
           </p>
-          <button onClick={() => navigate(`/portfolios/${idPortfolio}`)} className="btn-primary">
-            Volver al portfolio
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button onClick={() => navigate(`/portfolios/${idPortfolio}`)} className="btn-secondary">
+              Volver al portfolio
+            </button>
+            <button onClick={() => navigate(`/simulaciones/${resumen.idSimulacion}`)} className="btn-primary">
+              Ver resultados →
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -240,7 +261,7 @@ function ConfigurarSimulacion({
       )}
 
       <div className="card mb-5">
-        <p className="mb-3 text-[11px] font-bold tracking-[0.4px] text-ink-soft uppercase">
+        <p className="card-section-label mb-3">
           Horizonte: {horizonteMeses} {horizonteMeses === 1 ? 'mes' : 'meses'}
         </p>
         <input
@@ -253,10 +274,10 @@ function ConfigurarSimulacion({
         />
       </div>
 
+      <RangosInflacionCard />
+
       <div className="card mb-5 flex flex-col gap-5">
-        <p className="text-[11px] font-bold tracking-[0.4px] text-ink-soft uppercase">
-          Detalle del portfolio
-        </p>
+        <p className="card-section-label">Detalle del portfolio</p>
         {usdFilas.length > 0 && (
           <div>
             <p className="mb-2 text-[11px] font-bold tracking-[0.4px] text-blue-brand">

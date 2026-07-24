@@ -18,11 +18,16 @@ def calcular_estadisticas(matriz):
     }
 
 
-def calcular_prob_perdida(matriz, monto, factor_acum):
-    return {
-        "nominal": (matriz < monto).mean(axis=0).tolist(),
-        "real":    (matriz / factor_acum < monto).mean(axis=0).tolist(),
-    }
+def _factor_frozen(factor_base, t_congelamiento):
+    """factor_base tal cual hasta t_congelamiento; a partir de ahí, congelado en su valor en
+    t_congelamiento. Se usa para que 'ganancia real' de un instrumento no siga empeorando después
+    de su vencimiento solo porque el efectivo (ya cobrado) queda parado mientras la inflación
+    sigue corriendo — la ganancia real queda fija en lo que valía al momento de vencer."""
+    if t_congelamiento is None:
+        return factor_base
+    f = factor_base.copy()
+    f[:, t_congelamiento + 1:] = factor_base[:, t_congelamiento:t_congelamiento + 1]
+    return f
 
 
 N_SIMULACIONES = 1000
@@ -56,6 +61,25 @@ def simular_portfolio(parametros: dict) -> dict:
     factor_acum_matrix = np.ones((N_simulaciones, T_meses + 1))
     factor_acum_matrix[:, 1:] = np.cumprod(1 + inflacion, axis=1)
 
+    # (N, T_meses+1) — tasa mensual sin acumular, para graficar junto a la acumulada. t=0 no tuvo
+    # inflación todavía (recién arranca la simulación), por eso queda en 0.
+    inflacion_mensual_matrix = np.zeros((N_simulaciones, T_meses + 1))
+    inflacion_mensual_matrix[:, 1:] = inflacion
+
+    # Inflación USD, alineada al mismo escenario (misma partición de tercios que ARS, muestreo
+    # independiente dentro del rango USD de cada tercio) — no es un cross-product ARS×USD. Se usa
+    # para deflactar portfolio_usd y los instrumentos en dólares en vez de la inflación argentina.
+    inflacion_usd = np.vstack([
+        rng.uniform(esc_favorable["inflacion_mensual_min_usd"],    esc_favorable["inflacion_mensual_max_usd"],    (n_favorable,    T_meses)),
+        rng.uniform(esc_moderado["inflacion_mensual_min_usd"],     esc_moderado["inflacion_mensual_max_usd"],     (n_moderado,     T_meses)),
+        rng.uniform(esc_desfavorable["inflacion_mensual_min_usd"], esc_desfavorable["inflacion_mensual_max_usd"], (n_desfavorable, T_meses)),
+    ])
+    factor_acum_usd_matrix = np.ones((N_simulaciones, T_meses + 1))
+    factor_acum_usd_matrix[:, 1:] = np.cumprod(1 + inflacion_usd, axis=1)
+
+    inflacion_mensual_usd_matrix = np.zeros((N_simulaciones, T_meses + 1))
+    inflacion_mensual_usd_matrix[:, 1:] = inflacion_usd
+
     # CER/UVA incorpora inflación con ~2 meses de rezago (T-2):
     # factor_cer[t] = factor_acum[t-2] para t>=2; = 1 para t<2
     # (la inflación anterior a t=0 ya está incorporada en el precio de compra)
@@ -72,7 +96,11 @@ def simular_portfolio(parametros: dict) -> dict:
         if inst["tipo"] == "accion"
     }
 
+    def _es_usd(inst):
+        return inst["tipo"] in ("accion", "plazo_fijo_usd")
+
     matrices_trayectorias = {}
+    t_congelamiento = {}  # id_inst -> mes en que se congela el deflactor de "ganancia real" (None = nunca)
 
     for inst in instrumentos:
         tipo  = inst["tipo"]
@@ -84,6 +112,7 @@ def simular_portfolio(parametros: dict) -> dict:
             matrices_trayectorias[id_inst] = simular_accion_vectorizado(
                 inst["monto"], inst["mu"], inst["sigma"], T_meses, z_accion
             )
+            t_congelamiento[id_inst] = None
 
         elif tipo == "lecap":
             tray_1d = simular_letra_lecap(inst["monto"], inst["tna"], inst["t_venc_meses"])
@@ -92,6 +121,7 @@ def simular_portfolio(parametros: dict) -> dict:
             elif len(tray_1d) < T_meses + 1:
                 tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
+            t_congelamiento[id_inst] = inst["t_venc_meses"] if inst["t_venc_meses"] < T_meses else None
 
         elif tipo == "lecer":
             meses_venc = inst["t_venc_meses"]
@@ -104,6 +134,7 @@ def simular_portfolio(parametros: dict) -> dict:
                 padding = np.repeat(tray_2d[:, -1:], T_meses - t_emit, axis=1)
                 tray_2d = np.hstack([tray_2d, padding])
             matrices_trayectorias[id_inst] = tray_2d
+            t_congelamiento[id_inst] = meses_venc if meses_venc < T_meses else None
 
         elif tipo == "bono_tasa_fija":
             tray_1d = simular_bono_tasa_fija(inst["monto"], inst["flujos"], inst["tir"])
@@ -112,6 +143,8 @@ def simular_portfolio(parametros: dict) -> dict:
             elif len(tray_1d) < T_meses + 1:
                 tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
+            meses_venc = max(f["mes"] for f in inst["flujos"])
+            t_congelamiento[id_inst] = meses_venc if meses_venc < T_meses else None
 
         elif tipo == "bono_indexado":
             meses_venc = max(f["mes"] for f in inst["flujos_base"])
@@ -124,17 +157,24 @@ def simular_portfolio(parametros: dict) -> dict:
                 padding = np.repeat(tray_2d[:, -1:], T_meses - t_emit, axis=1)
                 tray_2d = np.hstack([tray_2d, padding])
             matrices_trayectorias[id_inst] = tray_2d
+            t_congelamiento[id_inst] = meses_venc if meses_venc < T_meses else None
 
         elif tipo == "plazo_fijo_tradicional":
             tray_1d = simular_plazo_fijo_tradicional(
                 inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
             )
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
+            t_congelamiento[id_inst] = (
+                inst["t_venc_meses"] if not inst["reinvertir"] and inst["t_venc_meses"] < T_meses else None
+            )
 
         elif tipo == "plazo_fijo_uva":
             matrices_trayectorias[id_inst] = simular_plazo_fijo_uva_vectorizado(
                 inst["monto"], inst["tasa_real_anual"], inst["t_venc_meses"],
                 inst["reinvertir"], T_meses, factor_cer_matrix
+            )
+            t_congelamiento[id_inst] = (
+                inst["t_venc_meses"] if not inst["reinvertir"] and inst["t_venc_meses"] < T_meses else None
             )
 
         elif tipo == "plazo_fijo_usd":
@@ -142,6 +182,9 @@ def simular_portfolio(parametros: dict) -> dict:
                 inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
             )
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
+            t_congelamiento[id_inst] = (
+                inst["t_venc_meses"] if not inst["reinvertir"] and inst["t_venc_meses"] < T_meses else None
+            )
 
     corte_favorable    = slice(0, n_favorable)
     corte_moderado     = slice(n_favorable, n_favorable + n_moderado)
@@ -155,30 +198,34 @@ def simular_portfolio(parametros: dict) -> dict:
             "desfavorable": calcular_estadisticas(matriz[corte_desfavorable]),
         }
 
-    def prob_perdida_por_escenario(matriz, monto):
-        return {
-            "global":       calcular_prob_perdida(matriz,                     monto, factor_acum_matrix),
-            "favorable":    calcular_prob_perdida(matriz[corte_favorable],    monto, factor_acum_matrix[corte_favorable]),
-            "moderado":     calcular_prob_perdida(matriz[corte_moderado],     monto, factor_acum_matrix[corte_moderado]),
-            "desfavorable": calcular_prob_perdida(matriz[corte_desfavorable], monto, factor_acum_matrix[corte_desfavorable]),
-        }
-
-    def metricas_completas(matriz, monto):
+    def metricas_completas(matriz, monto, matriz_real):
         return {
             "patrimonio":          estadisticas_por_escenario(matriz),
             "ganancias_nominales": estadisticas_por_escenario(matriz - monto),
-            "ganancias_reales":    estadisticas_por_escenario(matriz / factor_acum_matrix - monto),
-            "prob_perdida":        prob_perdida_por_escenario(matriz, monto),
+            "ganancias_reales":    estadisticas_por_escenario(matriz_real - monto),
         }
+
+    # factor de deflación por instrumento, congelado en su propio vencimiento (si vence antes de
+    # T_meses) — así "ganancia real" no sigue empeorando después de vencer solo por inflación
+    # corriendo sobre efectivo ya cobrado.
+    factor_frozen = {
+        inst["id"]: _factor_frozen(
+            factor_acum_usd_matrix if _es_usd(inst) else factor_acum_matrix,
+            t_congelamiento[inst["id"]],
+        )
+        for inst in instrumentos
+    }
+    matriz_real_por_instrumento = {
+        id_inst: matrices_trayectorias[id_inst] / factor_frozen[id_inst]
+        for id_inst in matrices_trayectorias
+    }
 
     estadisticas_instrumentos = {}
     for inst in instrumentos:
-        estadisticas_instrumentos[inst["id"]] = metricas_completas(
-            matrices_trayectorias[inst["id"]], inst["monto"]
+        id_inst = inst["id"]
+        estadisticas_instrumentos[id_inst] = metricas_completas(
+            matrices_trayectorias[id_inst], inst["monto"], matriz_real_por_instrumento[id_inst]
         )
-
-    def _es_usd(inst):
-        return inst["tipo"] in ("accion", "plazo_fijo_usd")
 
     def _agregar_portfolio(lista):
         if not lista:
@@ -194,11 +241,21 @@ def simular_portfolio(parametros: dict) -> dict:
     matriz_ars, monto_ars = _agregar_portfolio(insts_ars)
     matriz_usd, monto_usd = _agregar_portfolio(insts_usd)
 
+    # A nivel portfolio el deflactor NO se congela — el capital ocioso post-vencimiento sigue
+    # perdiendo poder adquisitivo de verdad, y el total del portfolio debe reflejarlo. El
+    # congelamiento por vencimiento es solo para aislar "qué tan bueno fue el instrumento" en la
+    # vista por instrumento; a nivel portfolio se ve el efecto completo, congelamiento incluido.
+    matriz_real_ars = matriz_ars / factor_acum_matrix
+    matriz_real_usd = matriz_usd / factor_acum_usd_matrix
+
     return {
-        "semilla":             semilla,
-        "inflacion_acumulada": estadisticas_por_escenario(factor_acum_matrix),
-        "cer_acumulado":       estadisticas_por_escenario(factor_cer_matrix),
-        "instrumentos":        estadisticas_instrumentos,
-        "portfolio_ars":       metricas_completas(matriz_ars, monto_ars),
-        "portfolio_usd":       metricas_completas(matriz_usd, monto_usd),
+        "semilla":                 semilla,
+        "inflacion_acumulada":     estadisticas_por_escenario(factor_acum_matrix),
+        "inflacion_acumulada_usd": estadisticas_por_escenario(factor_acum_usd_matrix),
+        "inflacion_mensual":       estadisticas_por_escenario(inflacion_mensual_matrix),
+        "inflacion_mensual_usd":   estadisticas_por_escenario(inflacion_mensual_usd_matrix),
+        "cer_acumulado":           estadisticas_por_escenario(factor_cer_matrix),
+        "instrumentos":            estadisticas_instrumentos,
+        "portfolio_ars":           metricas_completas(matriz_ars, monto_ars, matriz_real_ars),
+        "portfolio_usd":           metricas_completas(matriz_usd, monto_usd, matriz_real_usd),
     }

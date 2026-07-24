@@ -14,5 +14,17 @@ public sealed record SimulacionResumenResponse(
     decimal?       RetornoEsperadoPct,
     decimal?       RendimientoRealPct,
     decimal?       DesvioEstandar,
-    string?        Observaciones
+    string?        Observaciones,
+    decimal?       ValorInicialArs,
+    decimal?       ValorInicialUsd,
+    decimal?       ValorEsperadoArs,
+    decimal?       ValorEsperadoUsd,
+    decimal?       ValorMinimoArs,
+    decimal?       ValorMinimoUsd,
+    decimal?       ValorMaximoArs,
+    decimal?       ValorMaximoUsd,
+    decimal?       RetornoEsperadoPctArs,
+    decimal?       RetornoEsperadoPctUsd,
+    decimal?       RendimientoRealPctArs,
+    decimal?       RendimientoRealPctUsd
 );

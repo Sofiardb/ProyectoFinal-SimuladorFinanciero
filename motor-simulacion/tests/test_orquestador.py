@@ -19,9 +19,9 @@ _FLUJO_BASE_BONO_IDX = _MONTO_BONO_IDX * (1 + _TIR_REAL_BONO_IDX) ** (3 / 12)
 PARAMS_BASE = {
     "T_meses": 3,
     "escenarios": {
-        "favorable":    {"inflacion_mensual_min": 0.02, "inflacion_mensual_max": 0.03},
-        "moderado":     {"inflacion_mensual_min": 0.04, "inflacion_mensual_max": 0.06},
-        "desfavorable": {"inflacion_mensual_min": 0.08, "inflacion_mensual_max": 0.12},
+        "favorable":    {"inflacion_mensual_min": 0.02, "inflacion_mensual_max": 0.03, "inflacion_mensual_min_usd": 0.000, "inflacion_mensual_max_usd": 0.002},
+        "moderado":     {"inflacion_mensual_min": 0.04, "inflacion_mensual_max": 0.06, "inflacion_mensual_min_usd": 0.002, "inflacion_mensual_max_usd": 0.004},
+        "desfavorable": {"inflacion_mensual_min": 0.08, "inflacion_mensual_max": 0.12, "inflacion_mensual_min_usd": 0.004, "inflacion_mensual_max_usd": 0.008},
     },
     "instrumentos": [
         {
@@ -96,9 +96,9 @@ _FLUJO_BASE_BONO_IDX_LARGO = _MONTO_BONO_IDX_LARGO * (1 + _TIR_REAL_BONO_IDX_LAR
 PARAMS_VENCE_DESPUES_HORIZONTE = {
     "T_meses": 3,
     "escenarios": {
-        "favorable":    {"inflacion_mensual_min": 0.02, "inflacion_mensual_max": 0.03},
-        "moderado":     {"inflacion_mensual_min": 0.04, "inflacion_mensual_max": 0.06},
-        "desfavorable": {"inflacion_mensual_min": 0.08, "inflacion_mensual_max": 0.12},
+        "favorable":    {"inflacion_mensual_min": 0.02, "inflacion_mensual_max": 0.03, "inflacion_mensual_min_usd": 0.000, "inflacion_mensual_max_usd": 0.002},
+        "moderado":     {"inflacion_mensual_min": 0.04, "inflacion_mensual_max": 0.06, "inflacion_mensual_min_usd": 0.002, "inflacion_mensual_max_usd": 0.004},
+        "desfavorable": {"inflacion_mensual_min": 0.08, "inflacion_mensual_max": 0.12, "inflacion_mensual_min_usd": 0.004, "inflacion_mensual_max_usd": 0.008},
     },
     "instrumentos": [
         {
@@ -271,33 +271,6 @@ def test_ganancias_reales_menores_que_nominales_inflacion_positiva(params):
         gan_nom_p  = resultado["portfolio_ars"]["ganancias_nominales"][escenario]["media"][-1]
         gan_real_p = resultado["portfolio_ars"]["ganancias_reales"][escenario]["media"][-1]
         assert gan_real_p < gan_nom_p
-
-# Tests de prob_perdida 
-
-def test_prob_perdida_v0_es_cero(params):
-    resultado = simular_portfolio(params)
-    for inst in params["instrumentos"]:
-        pp = resultado["instrumentos"][inst["id"]]["prob_perdida"]["global"]
-        assert pp["nominal"][0] == pytest.approx(0.0)
-        assert pp["real"][0]    == pytest.approx(0.0)
-
-
-def test_prob_perdida_entre_0_y_1(params):
-    resultado = simular_portfolio(params)
-    for inst in params["instrumentos"]:
-        for escenario in ("global", "favorable", "moderado", "desfavorable"):
-            pp = resultado["instrumentos"][inst["id"]]["prob_perdida"][escenario]
-            assert all(0.0 <= v <= 1.0 for v in pp["nominal"])
-            assert all(0.0 <= v <= 1.0 for v in pp["real"])
-
-
-def test_prob_perdida_real_mayor_que_nominal(params):
-    # con inflación > 0, más simulaciones pierden en términos reales que nominales
-    resultado = simular_portfolio(params)
-    for id_inst in ("lecap_1", "pf_trad_1"):
-        for escenario in ("moderado", "desfavorable"):
-            pp = resultado["instrumentos"][id_inst]["prob_perdida"][escenario]
-            assert pp["real"][-1] >= pp["nominal"][-1]
 
 # Tests de inflacion_acumulada 
 

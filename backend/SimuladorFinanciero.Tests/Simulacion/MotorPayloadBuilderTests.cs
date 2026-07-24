@@ -11,9 +11,9 @@ public class MotorPayloadBuilderTests
 
     private static EscenarioSimulacion[] Escenarios() =>
     [
-        new(1, "FAVORABLE",    0.01m, 0.025m),
-        new(2, "MODERADO",     0.025m, 0.05m),
-        new(3, "DESFAVORABLE", 0.05m, 0.10m)
+        new(1, "FAVORABLE",    0.01m, 0.025m, 0.001m, 0.002m),
+        new(2, "MODERADO",     0.025m, 0.05m, 0.002m, 0.004m),
+        new(3, "DESFAVORABLE", 0.05m, 0.10m, 0.004m, 0.008m)
     ];
 
     private static JsonElement BuildPayload(TenenciasSimulacionData tenencias, int tMeses = 12)

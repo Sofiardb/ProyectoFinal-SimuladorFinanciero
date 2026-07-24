@@ -73,6 +73,22 @@ export interface PerfilRiesgo {
   sigmaMaxAccion: number
 }
 
+export interface TipoEscenario {
+  idTipoEscenario: number
+  nombre:          string
+}
+
+/** Rangos de inflación mensual vigentes por escenario económico (config global de admin, docs/09 §4 — sin override por corrida). */
+export interface EscenarioEconomico {
+  idEscenarioEconomico:  number
+  idTipoEscenario:       number
+  nombreEscenario:       string
+  inflacionMensualMin:   number
+  inflacionMensualMax:   number
+  inflacionMensualMinUsd: number
+  inflacionMensualMaxUsd: number
+}
+
 /** Cotización USD/ARS vigente y fecha del registro del que salió (docs/09, sección 6). */
 export interface TipoCambio {
   valor: number
@@ -282,4 +298,63 @@ export interface SimulacionResumen {
   rendimientoRealPct?: number
   desvioEstandar?:     number
   observaciones?:      string
+  /** Valor inicial/esperado/mínimo/máximo y retornos por moneda, siempre poblados por separado.
+   * Los campos combinados de arriba (valorEsperado, etc.) quedan undefined cuando el portfolio invierte
+   * en ARS y USD a la vez, porque combinarlos requeriría proyectar el tipo de cambio a T meses. */
+  valorInicialArs?:        number
+  valorInicialUsd?:        number
+  valorEsperadoArs?:       number
+  valorEsperadoUsd?:       number
+  valorMinimoArs?:         number
+  valorMinimoUsd?:         number
+  valorMaximoArs?:         number
+  valorMaximoUsd?:         number
+  retornoEsperadoPctArs?:  number
+  retornoEsperadoPctUsd?:  number
+  rendimientoRealPctArs?:  number
+  rendimientoRealPctUsd?:  number
+}
+
+/** Rango de inflación mensual efectivamente usado en una corrida puntual (snapshot histórico, no el vigente). */
+export interface SimulacionParametroEscenario {
+  idTipoEscenario:        number
+  nombreTipoEscenario:    string
+  inflacionMensualMin:    number
+  inflacionMensualMax:    number
+  inflacionMensualMinUsd: number
+  inflacionMensualMaxUsd: number
+}
+
+export interface SimulacionDetalle extends SimulacionResumen {
+  parametrosEscenario: SimulacionParametroEscenario[]
+}
+
+/** Instrumento de una simulación con su mes de vencimiento dentro del horizonte (GET /simulaciones/{id}/instrumentos).
+ * tVencMeses es null si no hay vencimiento que marcar: acciones, instrumentos que vencen después
+ * del horizonte, o plazo fijo con reinvertir=true. */
+export interface InstrumentoSimulacion {
+  ambito:     string
+  tipo:       string
+  monto:      number
+  tVencMeses: number | null
+}
+
+export type EscenarioNombre = 'global' | 'favorable' | 'moderado' | 'desfavorable'
+export type MetricaResultado =
+  | 'patrimonio'
+  | 'ganancias_nominales'
+  | 'ganancias_reales'
+  | 'inflacion_acumulada'
+  | 'inflacion_acumulada_usd'
+  | 'inflacion_mensual'
+  | 'inflacion_mensual_usd'
+
+/** Fila cruda de GET /simulaciones/{id}/resultados — ambito es "portfolio_ars"/"portfolio_usd"/id de instrumento/"global". */
+export interface ResultadoSimulacionRow {
+  idResultado:  number
+  idSimulacion: number
+  ambito:       string
+  escenario:    EscenarioNombre
+  metrica:      MetricaResultado
+  stats:        StatsVector
 }

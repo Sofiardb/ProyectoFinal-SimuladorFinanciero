@@ -12,6 +12,7 @@ public interface ISimulacionRepository
     Task<IReadOnlyList<SimulacionResumenResponse>> ObtenerPorPortfolioAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
     Task<SimulacionDetalleResponse?> ObtenerDetalleAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
     Task<IReadOnlyList<ResultadoSimulacionResponse>> ObtenerResultadosAsync(long idSimulacion, long idUsuario, string? ambito, CancellationToken ct = default);
+    Task<IReadOnlyList<InstrumentoSimulacionResponse>> ObtenerInstrumentosAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
     Task<SimulacionPreviewResponse?> ObtenerPreviewAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
 
     Task<TenenciasSimulacionData> ObtenerTenenciasParaSimulacionAsync(long idPortfolio, CancellationToken ct = default);
@@ -47,14 +48,28 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public decimal?       RendimientoRealPct { get; set; }
         public decimal?       DesvioEstandar     { get; set; }
         public string?        Observaciones      { get; set; }
+        public decimal?       ValorInicialArs        { get; set; }
+        public decimal?       ValorInicialUsd        { get; set; }
+        public decimal?       ValorEsperadoArs       { get; set; }
+        public decimal?       ValorEsperadoUsd       { get; set; }
+        public decimal?       ValorMinimoArs         { get; set; }
+        public decimal?       ValorMinimoUsd         { get; set; }
+        public decimal?       ValorMaximoArs         { get; set; }
+        public decimal?       ValorMaximoUsd         { get; set; }
+        public decimal?       RetornoEsperadoPctArs  { get; set; }
+        public decimal?       RetornoEsperadoPctUsd  { get; set; }
+        public decimal?       RendimientoRealPctArs  { get; set; }
+        public decimal?       RendimientoRealPctUsd  { get; set; }
     }
 
     private sealed class ParametroEscenarioRow
     {
-        public int     IdTipoEscenario     { get; set; }
-        public string  NombreTipoEscenario { get; set; } = "";
-        public decimal InflacionMensualMin { get; set; }
-        public decimal InflacionMensualMax { get; set; }
+        public int     IdTipoEscenario        { get; set; }
+        public string  NombreTipoEscenario    { get; set; } = "";
+        public decimal InflacionMensualMin    { get; set; }
+        public decimal InflacionMensualMax    { get; set; }
+        public decimal InflacionMensualMinUsd { get; set; }
+        public decimal InflacionMensualMaxUsd { get; set; }
     }
 
     private sealed class ResultadoRow
@@ -65,6 +80,15 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public string Escenario    { get; set; } = "";
         public string Metrica      { get; set; } = "";
         public string Stats        { get; set; } = "{}";
+    }
+
+    private sealed class InstrumentoRow
+    {
+        public string  Ambito         { get; set; } = "";
+        public string  Tipo           { get; set; } = "";
+        public decimal Monto          { get; set; }
+        public string  Parametros     { get; set; } = "{}";
+        public int     HorizonteMeses { get; set; }
     }
 
     private sealed class PreviewAccionRow
@@ -135,15 +159,43 @@ public sealed class SimulacionRepository : ISimulacionRepository
         r.NumTrayectorias, r.SeedAleatoria, r.ValorInicial,
         r.ValorEsperado, r.ValorMinimo, r.ValorMaximo,
         r.RetornoEsperadoPct, r.RendimientoRealPct, r.DesvioEstandar,
-        r.Observaciones);
+        r.Observaciones,
+        r.ValorInicialArs, r.ValorInicialUsd, r.ValorEsperadoArs, r.ValorEsperadoUsd,
+        r.ValorMinimoArs, r.ValorMinimoUsd, r.ValorMaximoArs, r.ValorMaximoUsd,
+        r.RetornoEsperadoPctArs, r.RetornoEsperadoPctUsd,
+        r.RendimientoRealPctArs, r.RendimientoRealPctUsd);
 
     private static SimulacionParametroEscenarioResponse ToParametro(ParametroEscenarioRow r) => new(
         r.IdTipoEscenario, r.NombreTipoEscenario,
-        r.InflacionMensualMin, r.InflacionMensualMax);
+        r.InflacionMensualMin, r.InflacionMensualMax,
+        r.InflacionMensualMinUsd, r.InflacionMensualMaxUsd);
 
     private static ResultadoSimulacionResponse ToResultado(ResultadoRow r) => new(
         r.IdResultado, r.IdSimulacion, r.Ambito, r.Escenario, r.Metrica,
         JsonSerializer.Deserialize<JsonElement>(r.Stats));
+
+    /// <summary>
+    /// Extrae el mes de vencimiento de <c>parametros</c> (mismo JSON enviado al motor) y lo expone
+    /// solo si efectivamente congela la "ganancia real" — misma condición que
+    /// <c>t_congelamiento</c> en orquestador.py: nunca para acciones, null si vence después del
+    /// horizonte, null si es plazo fijo con reinvertir=true.
+    /// </summary>
+    private static InstrumentoSimulacionResponse ToInstrumento(InstrumentoRow r)
+    {
+        var p = JsonSerializer.Deserialize<JsonElement>(r.Parametros);
+        int? tVenc = r.Tipo switch
+        {
+            "lecap" or "lecer" => p.GetProperty("t_venc_meses").GetInt32(),
+            "bono_tasa_fija"   => p.GetProperty("flujos").EnumerateArray().Max(f => f.GetProperty("mes").GetInt32()),
+            "bono_indexado"    => p.GetProperty("flujos_base").EnumerateArray().Max(f => f.GetProperty("mes").GetInt32()),
+            "plazo_fijo_tradicional" or "plazo_fijo_uva" or "plazo_fijo_usd"
+                => p.GetProperty("reinvertir").GetBoolean() ? null : p.GetProperty("t_venc_meses").GetInt32(),
+            _ => null,
+        };
+
+        var tVencDentroDelHorizonte = tVenc.HasValue && tVenc.Value < r.HorizonteMeses ? tVenc : null;
+        return new InstrumentoSimulacionResponse(r.Ambito, r.Tipo, r.Monto, tVencDentroDelHorizonte);
+    }
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -165,7 +217,19 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    s.retorno_esperado_pct,
                    s.rendimiento_real_pct,
                    s.desvio_estandar,
-                   s.observaciones
+                   s.observaciones,
+                   s.valor_inicial_ars,
+                   s.valor_inicial_usd,
+                   s.valor_esperado_ars,
+                   s.valor_esperado_usd,
+                   s.valor_minimo_ars,
+                   s.valor_minimo_usd,
+                   s.valor_maximo_ars,
+                   s.valor_maximo_usd,
+                   s.retorno_esperado_pct_ars,
+                   s.retorno_esperado_pct_usd,
+                   s.rendimiento_real_pct_ars,
+                   s.rendimiento_real_pct_usd
             FROM simulacion s
             JOIN portfolio  p ON p.id_portfolio = s.id_portfolio
             WHERE s.id_portfolio = @idPortfolio
@@ -196,7 +260,19 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    s.retorno_esperado_pct,
                    s.rendimiento_real_pct,
                    s.desvio_estandar,
-                   s.observaciones
+                   s.observaciones,
+                   s.valor_inicial_ars,
+                   s.valor_inicial_usd,
+                   s.valor_esperado_ars,
+                   s.valor_esperado_usd,
+                   s.valor_minimo_ars,
+                   s.valor_minimo_usd,
+                   s.valor_maximo_ars,
+                   s.valor_maximo_usd,
+                   s.retorno_esperado_pct_ars,
+                   s.retorno_esperado_pct_usd,
+                   s.rendimiento_real_pct_ars,
+                   s.rendimiento_real_pct_usd
             FROM simulacion s
             JOIN portfolio  p ON p.id_portfolio = s.id_portfolio
             WHERE s.id_simulacion = @idSimulacion
@@ -211,7 +287,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
             SELECT spe.id_tipo_escenario::int,
                    te.nombre AS nombre_tipo_escenario,
                    spe.inflacion_mensual_min,
-                   spe.inflacion_mensual_max
+                   spe.inflacion_mensual_max,
+                   spe.inflacion_mensual_min_usd,
+                   spe.inflacion_mensual_max_usd
             FROM simulacion_parametro_escenario spe
             JOIN tipo_escenario te ON te.id_tipo_escenario = spe.id_tipo_escenario
             WHERE spe.id_simulacion = @idSimulacion
@@ -226,7 +304,12 @@ public sealed class SimulacionRepository : ISimulacionRepository
             sim.NumTrayectorias, sim.SeedAleatoria, sim.ValorInicial,
             sim.ValorEsperado, sim.ValorMinimo, sim.ValorMaximo,
             sim.RetornoEsperadoPct, sim.RendimientoRealPct, sim.DesvioEstandar,
-            sim.Observaciones, parametros);
+            sim.Observaciones,
+            sim.ValorInicialArs, sim.ValorInicialUsd, sim.ValorEsperadoArs, sim.ValorEsperadoUsd,
+            sim.ValorMinimoArs, sim.ValorMinimoUsd, sim.ValorMaximoArs, sim.ValorMaximoUsd,
+            sim.RetornoEsperadoPctArs, sim.RetornoEsperadoPctUsd,
+            sim.RendimientoRealPctArs, sim.RendimientoRealPctUsd,
+            parametros);
     }
 
     public async Task<IReadOnlyList<ResultadoSimulacionResponse>> ObtenerResultadosAsync(
@@ -251,6 +334,28 @@ public sealed class SimulacionRepository : ISimulacionRepository
         var rows = await conn.QueryAsync<ResultadoRow>(
             new CommandDefinition(sql, new { idSimulacion, idUsuario, ambito }, cancellationToken: ct));
         return rows.Select(ToResultado).ToList();
+    }
+
+    public async Task<IReadOnlyList<InstrumentoSimulacionResponse>> ObtenerInstrumentosAsync(
+        long idSimulacion, long idUsuario, CancellationToken ct = default)
+    {
+        using var conn = _db.Crear();
+        const string sql = """
+            SELECT si.ambito,
+                   si.tipo,
+                   si.monto,
+                   si.parametros::text AS parametros,
+                   s.horizonte_meses::int
+            FROM simulacion_instrumento si
+            JOIN simulacion s ON s.id_simulacion = si.id_simulacion
+            JOIN portfolio  p ON p.id_portfolio  = s.id_portfolio
+            WHERE si.id_simulacion = @idSimulacion
+              AND p.id_usuario     = @idUsuario
+            ORDER BY si.ambito
+            """;
+        var rows = await conn.QueryAsync<InstrumentoRow>(
+            new CommandDefinition(sql, new { idSimulacion, idUsuario }, cancellationToken: ct));
+        return rows.Select(ToInstrumento).ToList();
     }
 
     public async Task<SimulacionPreviewResponse?> ObtenerPreviewAsync(
@@ -734,7 +839,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
             SELECT te.id_tipo_escenario::int,
                    te.codigo,
                    ee.inflacion_mensual_min,
-                   ee.inflacion_mensual_max
+                   ee.inflacion_mensual_max,
+                   ee.inflacion_mensual_min_usd,
+                   ee.inflacion_mensual_max_usd
             FROM escenario_economico ee
             JOIN tipo_escenario te ON te.id_tipo_escenario = ee.id_tipo_escenario
             WHERE ee.vigente_desde <= CURRENT_DATE
@@ -743,7 +850,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
             """;
         var rows = await conn.QueryAsync<EscenarioRow>(new CommandDefinition(sql, cancellationToken: ct));
         return rows
-            .Select(r => new EscenarioSimulacion(r.IdTipoEscenario, r.Codigo, r.InflacionMensualMin, r.InflacionMensualMax))
+            .Select(r => new EscenarioSimulacion(
+                r.IdTipoEscenario, r.Codigo, r.InflacionMensualMin, r.InflacionMensualMax,
+                r.InflacionMensualMinUsd, r.InflacionMensualMaxUsd))
             .ToArray();
     }
 
@@ -753,10 +862,22 @@ public sealed class SimulacionRepository : ISimulacionRepository
         const string sql = """
             INSERT INTO simulacion (id_portfolio, horizonte_meses, num_trayectorias, seed_aleatoria,
                                     valor_inicial, valor_esperado, valor_minimo, valor_maximo,
-                                    retorno_esperado_pct, rendimiento_real_pct, desvio_estandar)
+                                    retorno_esperado_pct, rendimiento_real_pct, desvio_estandar,
+                                    valor_inicial_ars, valor_inicial_usd,
+                                    valor_esperado_ars, valor_esperado_usd,
+                                    valor_minimo_ars, valor_minimo_usd,
+                                    valor_maximo_ars, valor_maximo_usd,
+                                    retorno_esperado_pct_ars, retorno_esperado_pct_usd,
+                                    rendimiento_real_pct_ars, rendimiento_real_pct_usd)
             VALUES (@IdPortfolio, @HorizonteMeses, @NumTrayectorias, @SeedAleatoria,
                     @ValorInicial, @ValorEsperado, @ValorMinimo, @ValorMaximo,
-                    @RetornoEsperadoPct, @RendimientoRealPct, @DesvioEstandar)
+                    @RetornoEsperadoPct, @RendimientoRealPct, @DesvioEstandar,
+                    @ValorInicialArs, @ValorInicialUsd,
+                    @ValorEsperadoArs, @ValorEsperadoUsd,
+                    @ValorMinimoArs, @ValorMinimoUsd,
+                    @ValorMaximoArs, @ValorMaximoUsd,
+                    @RetornoEsperadoPctArs, @RetornoEsperadoPctUsd,
+                    @RendimientoRealPctArs, @RendimientoRealPctUsd)
             RETURNING id_simulacion
             """;
         return await conn.ExecuteScalarAsync<long>(
@@ -769,18 +890,23 @@ public sealed class SimulacionRepository : ISimulacionRepository
     {
         const string sql = """
             INSERT INTO simulacion_parametro_escenario
-                (id_simulacion, id_tipo_escenario, inflacion_mensual_min, inflacion_mensual_max)
+                (id_simulacion, id_tipo_escenario, inflacion_mensual_min, inflacion_mensual_max,
+                 inflacion_mensual_min_usd, inflacion_mensual_max_usd)
             SELECT @idSimulacion,
                    unnest(@idsTipoEscenario::smallint[]),
                    unnest(@mins::numeric[]),
-                   unnest(@maxs::numeric[])
+                   unnest(@maxs::numeric[]),
+                   unnest(@minsUsd::numeric[]),
+                   unnest(@maxsUsd::numeric[])
             """;
         await conn.ExecuteAsync(new CommandDefinition(sql, new
         {
             idSimulacion,
             idsTipoEscenario = escenarios.Select(e => (short)e.IdTipoEscenario).ToArray(),
             mins             = escenarios.Select(e => e.InflacionMensualMin).ToArray(),
-            maxs             = escenarios.Select(e => e.InflacionMensualMax).ToArray()
+            maxs             = escenarios.Select(e => e.InflacionMensualMax).ToArray(),
+            minsUsd          = escenarios.Select(e => e.InflacionMensualMinUsd).ToArray(),
+            maxsUsd          = escenarios.Select(e => e.InflacionMensualMaxUsd).ToArray()
         }, transaction: tx, cancellationToken: ct));
     }
 
@@ -824,7 +950,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
         var metricas   = new List<string>();
         var stats      = new List<string>();
 
-        var metricsSet = new[] { "patrimonio", "ganancias_nominales", "ganancias_reales", "prob_perdida" };
+        var metricsSet = new[] { "patrimonio", "ganancias_nominales", "ganancias_reales" };
         var scenarioSet = new[] { "global", "favorable", "moderado", "desfavorable" };
 
         // portfolio_ars and portfolio_usd are top-level
@@ -840,6 +966,23 @@ public sealed class SimulacionRepository : ISimulacionRepository
             foreach (var instrumento in instrumentosEl.EnumerateObject())
             {
                 ExtractMetrics(instrumento.Name, instrumento.Value, metricsSet, scenarioSet, ambitos, escenarios, metricas, stats);
+            }
+        }
+
+        // Las métricas de inflación son de nivel superior (escenario directo, sin ámbito ni
+        // desglose por moneda/instrumento) — no encajan en ExtractMetrics, que espera
+        // ambito.metrica.escenario.
+        var metricasInflacion = new[] { "inflacion_acumulada", "inflacion_acumulada_usd", "inflacion_mensual", "inflacion_mensual_usd" };
+        foreach (var metricaInflacion in metricasInflacion)
+        {
+            if (!motorResponse.TryGetProperty(metricaInflacion, out var inflacionEl)) continue;
+            foreach (var escenario in scenarioSet)
+            {
+                if (!inflacionEl.TryGetProperty(escenario, out var statsEl)) continue;
+                ambitos.Add("global");
+                escenarios.Add(escenario);
+                metricas.Add(metricaInflacion);
+                stats.Add(statsEl.GetRawText());
             }
         }
 
@@ -938,9 +1081,11 @@ public sealed class SimulacionRepository : ISimulacionRepository
 
     private sealed class EscenarioRow
     {
-        public int     IdTipoEscenario     { get; set; }
-        public string  Codigo              { get; set; } = "";
-        public decimal InflacionMensualMin { get; set; }
-        public decimal InflacionMensualMax { get; set; }
+        public int     IdTipoEscenario        { get; set; }
+        public string  Codigo                 { get; set; } = "";
+        public decimal InflacionMensualMin    { get; set; }
+        public decimal InflacionMensualMax    { get; set; }
+        public decimal InflacionMensualMinUsd { get; set; }
+        public decimal InflacionMensualMaxUsd { get; set; }
     }
 }

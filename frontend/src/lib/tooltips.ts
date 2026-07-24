@@ -4,12 +4,12 @@ export const GBM_TOOLTIPS = {
   mu: {
     term: 'Retorno esperado',
     definition:
-      'Tendencia de retorno mensual observada históricamente para este ticker — hacia dónde tendió a moverse el precio en el pasado.',
+      'Tendencia de retorno anualizada observada históricamente para este ticker — hacia dónde tendió a moverse el precio en el pasado. La simulación lo convierte internamente a paso mensual.',
   },
   sigma: {
     term: 'Volatilidad',
     definition:
-      'Cuánto tendió a oscilar el precio históricamente. A mayor volatilidad, mayor el rango de resultados posibles en la simulación.',
+      'Cuánto tendió a oscilar el precio históricamente, anualizado. A mayor volatilidad, mayor el rango de resultados posibles en la simulación. La simulación lo convierte internamente a paso mensual.',
   },
   rho: {
     term: 'Correlación con su índice de referencia',

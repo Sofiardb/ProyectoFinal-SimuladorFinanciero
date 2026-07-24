@@ -40,6 +40,14 @@
   --color-moderado:     #f59e0b;
   --color-desfavorable: #ef4444;
 
+  /* Variantes fondo claro + texto legible, para badges de escenario (ej. "Rangos de inflación") */
+  --color-favorable-bg:      #eaf7f0;
+  --color-favorable-badge:   #2f8f5f;
+  --color-moderado-bg:       #fdf1e0;
+  --color-moderado-badge:    #92600e;
+  --color-desfavorable-bg:   #faeae6;
+  --color-desfavorable-badge: #d1503f;
+
   /* Colores por perfil de riesgo (fiel a prototipos-UI/Portfolios) */
   --color-riesgo-conservador:    #4caf7d;
   --color-riesgo-conservador-bg: #eaf7f0;
@@ -137,7 +145,10 @@
     @apply h-9 w-full rounded-[7px] border-[1.5px] border-field-border bg-white px-2.5 text-[12.5px] text-navy-950 outline-none focus:border-blue-brand;
   }
   .readonly-chip {
-    @apply flex h-9 items-center rounded-[7px] bg-line-soft px-2.5 text-[12.5px] text-ink-muted;
+    @apply flex h-9 items-center truncate rounded-[7px] bg-line-soft px-2.5 text-[12.5px] text-ink-muted;
+  }
+  .readonly-chip-value {
+    @apply flex h-9 items-center truncate rounded-[7px] border border-line bg-white px-2.5 text-[12.5px] font-semibold text-navy-950;
   }
 
   .banner-danger {
@@ -158,8 +169,6 @@
     @apply mb-[18px] flex items-center gap-1 text-[12.5px] font-semibold text-navy-950 hover:underline;
   }
 
-  /* Fila de tenencia (chip con título/subtítulo + stats a la derecha), compartida entre
-     las secciones de acciones/bonos/letras/plazo fijo y el resumen de nueva simulación. */
   .tenencia-row {
     @apply flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-[9px] bg-chip px-3.5 py-3;
   }
@@ -169,14 +178,20 @@
   .tenencia-row-subtitle {
     @apply mt-[3px] truncate text-[11.5px] leading-tight text-ink-soft;
   }
+
   .tenencia-row-stats {
-    @apply flex shrink-0 gap-[18px];
+    @apply grid grid-cols-2 gap-x-[18px] gap-y-2 sm:flex sm:min-w-0 sm:flex-wrap;
   }
   .stat-label {
     @apply text-[9.5px] tracking-[0.3px] text-ink-soft uppercase;
   }
   .stat-value {
     @apply text-[12.5px] font-semibold text-navy-950;
+  }
+
+  /* Título de sección dentro de una .card (ej: "Detalle del portfolio", "Rangos de inflación") */
+  .card-section-label {
+    @apply text-[11px] font-bold tracking-[0.4px] text-ink-soft uppercase;
   }
 
   /* Botón de submit de los formularios de auth (login/registro/reset) */

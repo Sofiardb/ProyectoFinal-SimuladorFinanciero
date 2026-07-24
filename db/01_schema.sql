@@ -139,8 +139,8 @@ CREATE TABLE accion (
 );
 
 COMMENT ON TABLE  accion IS 'Acciones disponibles para conformar portfolios. Limitadas al mercado estadounidense (S&P 500) según SR-01.';
-COMMENT ON COLUMN accion.mu_retorno_esperado    IS 'Drift del GBM (μ): retorno logarítmico esperado mensual.';
-COMMENT ON COLUMN accion.sigma_volatilidad      IS 'Volatilidad del GBM (σ): desvío estándar de los retornos logarítmicos mensuales.';
+COMMENT ON COLUMN accion.mu_retorno_esperado    IS 'Drift del GBM (μ): retorno logarítmico esperado anualizado (el motor lo convierte a paso mensual internamente, /12).';
+COMMENT ON COLUMN accion.sigma_volatilidad      IS 'Volatilidad del GBM (σ): desvío estándar de los retornos logarítmicos anualizado (el motor lo convierte a paso mensual internamente, /√12).';
 COMMENT ON COLUMN accion.rho_correlacion_indice IS 'Correlación (ρ) entre los retornos de la acción y su índice de referencia.';
 COMMENT ON COLUMN accion.meses_de_datos         IS 'Meses de historia real usados para estimar μ, σ, ρ. Menor a 120 en empresas con historial corto (RIVN, COIN, etc.).';
 
@@ -366,13 +366,18 @@ COMMENT ON TABLE tipo_escenario IS 'Tipos de escenario económico (FAVORABLE, MO
 -- Configuración paramétrica de rangos de inflación por tipo de escenario.
 -- Soporta versiones históricas mediante vigente_desde / vigente_hasta.
 CREATE TABLE escenario_economico (
-    id_escenario_economico SMALLSERIAL PRIMARY KEY,
-    id_tipo_escenario      SMALLINT      NOT NULL REFERENCES tipo_escenario(id_tipo_escenario),
-    inflacion_mensual_min  NUMERIC(10,8) NOT NULL,
-    inflacion_mensual_max  NUMERIC(10,8) NOT NULL,
-    vigente_desde          DATE          NOT NULL DEFAULT CURRENT_DATE,
-    vigente_hasta          DATE,
-    CHECK (inflacion_mensual_min <= inflacion_mensual_max)
+    id_escenario_economico     SMALLSERIAL PRIMARY KEY,
+    id_tipo_escenario          SMALLINT      NOT NULL REFERENCES tipo_escenario(id_tipo_escenario),
+    inflacion_mensual_min      NUMERIC(10,8) NOT NULL,
+    inflacion_mensual_max      NUMERIC(10,8) NOT NULL,
+    -- Inflación USD alineada al mismo escenario (no es un cross-product ARS×USD): cuando una
+    -- trayectoria cae en "moderado", ambas monedas muestrean de su propio rango moderado.
+    inflacion_mensual_min_usd  NUMERIC(10,8) NOT NULL,
+    inflacion_mensual_max_usd  NUMERIC(10,8) NOT NULL,
+    vigente_desde              DATE          NOT NULL DEFAULT CURRENT_DATE,
+    vigente_hasta              DATE,
+    CHECK (inflacion_mensual_min <= inflacion_mensual_max),
+    CHECK (inflacion_mensual_min_usd <= inflacion_mensual_max_usd)
 );
 
 COMMENT ON TABLE escenario_economico IS 'Rangos de inflación mensual por escenario para el muestreo Monte Carlo estratificado. Los rangos pueden actualizarse sin perder el historial gracias a vigente_desde/hasta.';
@@ -403,13 +408,29 @@ CREATE TABLE simulacion (
     horizonte_meses      SMALLINT      NOT NULL CHECK (horizonte_meses BETWEEN 1 AND 360),
     num_trayectorias     INTEGER       NOT NULL CHECK (num_trayectorias > 0),
     seed_aleatoria       BIGINT        NOT NULL,
-    -- Métricas agregadas sobre todas las trayectorias (para consultas rápidas)
-    valor_inicial        NUMERIC(20,6) NOT NULL,
-    valor_esperado       NUMERIC(20,6),
-    valor_minimo         NUMERIC(20,6),
-    valor_maximo         NUMERIC(20,6),
-    retorno_esperado_pct NUMERIC(14,8),
-    rendimiento_real_pct NUMERIC(14,8),
+    -- Métricas agregadas sobre todas las trayectorias (para consultas rápidas). valor_esperado/
+    -- valor_minimo/valor_maximo/retorno_esperado_pct/rendimiento_real_pct quedan NULL cuando el
+    -- portfolio mezcla instrumentos ARS y USD a la vez — sumarlos sin proyectar el tipo de cambio a T
+    -- meses no es una cifra real (ver docs/02 Decisión 9). En ese caso se usan las columnas *_ars/*_usd,
+    -- siempre pobladas por separado.
+    valor_inicial            NUMERIC(20,6) NOT NULL,
+    valor_esperado           NUMERIC(20,6),
+    valor_minimo             NUMERIC(20,6),
+    valor_maximo             NUMERIC(20,6),
+    retorno_esperado_pct     NUMERIC(14,8),
+    rendimiento_real_pct     NUMERIC(14,8),
+    valor_inicial_ars        NUMERIC(20,6),
+    valor_inicial_usd        NUMERIC(20,6),
+    valor_esperado_ars       NUMERIC(20,6),
+    valor_esperado_usd       NUMERIC(20,6),
+    valor_minimo_ars         NUMERIC(20,6),
+    valor_minimo_usd         NUMERIC(20,6),
+    valor_maximo_ars         NUMERIC(20,6),
+    valor_maximo_usd         NUMERIC(20,6),
+    retorno_esperado_pct_ars NUMERIC(14,8),
+    retorno_esperado_pct_usd NUMERIC(14,8),
+    rendimiento_real_pct_ars NUMERIC(14,8),
+    rendimiento_real_pct_usd NUMERIC(14,8),
     desvio_estandar      NUMERIC(20,6),
     observaciones        TEXT
 );
@@ -444,10 +465,12 @@ COMMENT ON TABLE simulacion_instrumento IS 'Snapshot por instrumento de cada sim
 -- Parámetros de inflación vigentes al momento de ejecutar cada simulación.
 -- Garantiza reproducibilidad aunque escenario_economico sea modificado posteriormente.
 CREATE TABLE simulacion_parametro_escenario (
-    id_simulacion         BIGINT        NOT NULL REFERENCES simulacion(id_simulacion) ON DELETE CASCADE,
-    id_tipo_escenario     SMALLINT      NOT NULL REFERENCES tipo_escenario(id_tipo_escenario),
-    inflacion_mensual_min NUMERIC(10,8) NOT NULL,
-    inflacion_mensual_max NUMERIC(10,8) NOT NULL,
+    id_simulacion             BIGINT        NOT NULL REFERENCES simulacion(id_simulacion) ON DELETE CASCADE,
+    id_tipo_escenario         SMALLINT      NOT NULL REFERENCES tipo_escenario(id_tipo_escenario),
+    inflacion_mensual_min     NUMERIC(10,8) NOT NULL,
+    inflacion_mensual_max     NUMERIC(10,8) NOT NULL,
+    inflacion_mensual_min_usd NUMERIC(10,8) NOT NULL,
+    inflacion_mensual_max_usd NUMERIC(10,8) NOT NULL,
     PRIMARY KEY (id_simulacion, id_tipo_escenario)
 );
 
@@ -495,9 +518,9 @@ CREATE TABLE resultado_simulacion (
 CREATE INDEX idx_resultado_simulacion ON resultado_simulacion(id_simulacion, ambito);
 
 COMMENT ON TABLE  resultado_simulacion IS 'Estadísticas temporales (media, mediana, p25, p75, mín, máx) por instrumento o sub-portfolio, escenario y métrica. Una fila por combinación (simulacion, ambito, escenario, metrica).';
-COMMENT ON COLUMN resultado_simulacion.ambito    IS 'portfolio_ars, portfolio_usd, o id del instrumento tal como llega en el JSON del motor.';
+COMMENT ON COLUMN resultado_simulacion.ambito    IS 'portfolio_ars, portfolio_usd, id del instrumento tal como llega en el JSON del motor, o "global" para métricas que no son por moneda/instrumento (ej: inflacion_acumulada).';
 COMMENT ON COLUMN resultado_simulacion.escenario IS 'global | favorable | moderado | desfavorable';
-COMMENT ON COLUMN resultado_simulacion.metrica   IS 'patrimonio | ganancias_nominales | ganancias_reales';
+COMMENT ON COLUMN resultado_simulacion.metrica   IS 'patrimonio | ganancias_nominales | ganancias_reales | prob_perdida | inflacion_acumulada';
 COMMENT ON COLUMN resultado_simulacion.stats     IS 'Vector de largo T+1 para cada estadístico. Índice 0 corresponde a t=0 (monto inicial).';
 
 
@@ -610,14 +633,22 @@ ON CONFLICT (ticker) DO UPDATE SET
     sector = EXCLUDED.sector;
 
 
-INSERT INTO escenario_economico (id_tipo_escenario, inflacion_mensual_min, inflacion_mensual_max, vigente_desde)
-SELECT te.id_tipo_escenario, v.min, v.max, CURRENT_DATE
+INSERT INTO escenario_economico (
+    id_tipo_escenario,
+    inflacion_mensual_min,
+    inflacion_mensual_max,
+    inflacion_mensual_min_usd,
+    inflacion_mensual_max_usd,
+    vigente_desde
+)
+SELECT te.id_tipo_escenario, v.min, v.max, v.min_usd, v.max_usd, CURRENT_DATE
 FROM (VALUES
-    ('FAVORABLE',    0.01,  0.025),
-    ('MODERADO',     0.025, 0.05 ),
-    ('DESFAVORABLE', 0.05,  0.10 )
-) AS v(codigo, min, max)
-JOIN tipo_escenario te ON te.codigo = v.codigo;
+    ('FAVORABLE',    0.005, 0.015, 0.000, 0.002),
+    ('MODERADO',     0.015, 0.040, 0.002, 0.004),
+    ('DESFAVORABLE', 0.040, 0.080, 0.004, 0.008)
+) AS v(codigo, min, max, min_usd, max_usd)
+JOIN tipo_escenario te
+ON te.codigo = v.codigo;
 
 
 -- Para crear el primer usuario administrador:

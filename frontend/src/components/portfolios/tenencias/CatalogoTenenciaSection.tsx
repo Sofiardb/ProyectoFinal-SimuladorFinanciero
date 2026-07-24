@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
+import TruncatedText from '@/components/portfolios/TruncatedText'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
@@ -125,7 +126,7 @@ function ViewRow({
   return (
     <div className="tenencia-row">
       <div className="min-w-0 flex-1 basis-32">
-        <p className="tenencia-row-title">{tenencia.titulo}</p>
+        <TruncatedText text={tenencia.titulo} className="tenencia-row-title" />
         <p className="tenencia-row-subtitle">{tenencia.subtitulo}</p>
       </div>
       <div className="tenencia-row-stats">

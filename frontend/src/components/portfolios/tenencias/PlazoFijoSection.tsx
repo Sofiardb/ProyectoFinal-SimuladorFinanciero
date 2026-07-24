@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import TruncatedText from '@/components/portfolios/TruncatedText'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
@@ -153,7 +154,7 @@ function ViewRow({
     <div className="tenencia-row">
       <div className="min-w-0 flex-1 basis-32">
         <div className="flex items-center gap-1.5">
-          <p className="tenencia-row-title">{tenencia.entidadFinanciera}</p>
+          <TruncatedText text={tenencia.entidadFinanciera} className="tenencia-row-title" />
           {vencido && (
             <span className="inline-flex shrink-0 items-center rounded-full bg-danger-bg px-2 py-0.5 text-[10.5px] font-bold text-danger">
               Vencido
@@ -170,7 +171,7 @@ function ViewRow({
           </div>
         ))}
       </div>
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
         {vencido && (
           <RenovarButton tenencia={tenencia} moneda={moneda} isMutating={isMutating} onConfirm={onRenovar} />
         )}

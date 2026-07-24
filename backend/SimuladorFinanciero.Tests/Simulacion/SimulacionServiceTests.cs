@@ -43,9 +43,9 @@ public class SimulacionServiceTests
 
     private static EscenarioSimulacion[] EscenariosVigentes() =>
     [
-        new(1, "FAVORABLE",    0.01m, 0.025m),
-        new(2, "MODERADO",     0.025m, 0.05m),
-        new(3, "DESFAVORABLE", 0.05m, 0.10m)
+        new(1, "FAVORABLE",    0.01m, 0.025m, 0.001m, 0.002m),
+        new(2, "MODERADO",     0.025m, 0.05m, 0.002m, 0.004m),
+        new(3, "DESFAVORABLE", 0.05m, 0.10m, 0.004m, 0.008m)
     ];
 
     private static AccionTenenciaSimulacion AccionConGbm(long id = 5) => new(
@@ -65,14 +65,12 @@ public class SimulacionServiceTests
               "portfolio_ars": {
                 "patrimonio":          { "global": { "media": [0,0], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
                 "ganancias_nominales": { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} },
-                "ganancias_reales":    { "global": { "media": [0,50], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
-                "prob_perdida":        { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} }
+                "ganancias_reales":    { "global": { "media": [0,50], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} }
               },
               "portfolio_usd": {
                 "patrimonio":          { "global": { "media": [0,1800], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,1500], "maximo": [0,2200] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
                 "ganancias_nominales": { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} },
-                "ganancias_reales":    { "global": { "media": [0,200], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} },
-                "prob_perdida":        { "global": {}, "favorable": {}, "moderado": {}, "desfavorable": {} }
+                "ganancias_reales":    { "global": { "media": [0,200], "mediana": [0,0], "p25": [0,0], "p75": [0,0], "minimo": [0,0], "maximo": [0,0] }, "favorable": {}, "moderado": {}, "desfavorable": {} }
               },
               "instrumentos": {}
             }

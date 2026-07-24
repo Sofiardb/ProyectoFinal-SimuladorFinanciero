@@ -1,11 +1,12 @@
 import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
-import { PRECIO_VN_TOOLTIP } from '@/lib/tooltips'
+import { GBM_TOOLTIPS, PRECIO_VN_TOOLTIP } from '@/lib/tooltips'
 import type {
   AccionCatalogo,
   BonoCatalogo,
   LetraCatalogo,
   PortfolioAccion,
   PortfolioBono,
+  PortfolioDetalle,
   PortfolioLetra,
   PortfolioPlazoFijo,
 } from '@/types'
@@ -34,10 +35,31 @@ function valorNominalField(cantidadLotes: number): CampoPreview {
 }
 
 // ─── Acciones ──────────────────────────────────────────────────────────────
-export function accionPreview(a: { sector?: string; precioActual?: number }): CampoPreview[] {
+export function accionPreview(a: {
+  sector?:       string
+  precioActual?: number
+  mu?:           number
+  sigma?:        number
+  rho?:          number
+}): CampoPreview[] {
   return [
     { label: 'Sector', value: a.sector ?? '—' },
     { label: 'Precio actual', value: a.precioActual != null ? `USD ${a.precioActual.toFixed(2)}` : '—' },
+    {
+      label: 'Retorno esperado (μ)',
+      value: a.mu != null ? formatPorcentaje(a.mu * 100) : '—',
+      tooltip: GBM_TOOLTIPS.mu.definition,
+    },
+    {
+      label: 'Volatilidad (σ)',
+      value: a.sigma != null ? formatPorcentaje(a.sigma * 100) : '—',
+      tooltip: GBM_TOOLTIPS.sigma.definition,
+    },
+    {
+      label: 'Correlación (ρ)',
+      value: a.rho != null ? formatPorcentaje(a.rho * 100) : '—',
+      tooltip: GBM_TOOLTIPS.rho.definition,
+    },
   ]
 }
 
@@ -98,7 +120,14 @@ export function accionHeldPreview(a: PortfolioAccion, catalogo: Map<number, Acci
   const c = catalogo.get(a.idAccion)
   return [
     { label: 'Cantidad', value: a.cantidad.toLocaleString('es-AR') },
-    ...accionPreview({ sector: a.sector ?? c?.sector, precioActual: a.precioActual ?? c?.precioActual }),
+    ...accionPreview({
+      sector: a.sector ?? c?.sector,
+      precioActual: a.precioActual ?? c?.precioActual,
+      // μ/σ/ρ: se muestra el snapshot con el que se simula (docs/09), no el valor vivo del catálogo.
+      mu: a.muRetornoEsperadoCompra ?? c?.muRetornoEsperado,
+      sigma: a.sigmaVolatilidadCompra ?? c?.sigmaVolatilidad,
+      rho: a.rhoCorrelacionIndiceCompra ?? c?.rhoCorrelacionIndice,
+    }),
   ]
 }
 
@@ -164,6 +193,49 @@ export function plazoFijoPreview(pf: PortfolioPlazoFijo): CampoPreview[] {
     { label: 'Inicio', value: formatFecha(pf.fechaInicio) },
     { label: 'Reinversión', value: pf.reinvertirAlVencimiento ? 'Sí' : 'No' },
   ]
+}
+
+// ─── Resolución de "ámbito" de resultado_simulacion a nombre + moneda ─────────
+// Convención de ids usada por MotorPayloadBuilder (SimulacionService.cs): acción/bono/letra
+// usan el id de catálogo (idAccion/idBono/idLetra); plazo fijo usa el id de la fila de tenencia
+// (idPortfolioPlazoFijo). Se resuelve contra el portfolio ACTUAL — si el instrumento ya no está
+// en el portfolio (se editó/eliminó después de esa corrida), se usa el ambito crudo como label.
+export interface AmbitoInfo {
+  label:  string
+  /** Identificador corto (ticker, o entidad financiera para plazo fijo) — para chips/marcadores
+   * donde el label completo (con nombre y fecha de vencimiento) no entra. */
+  corto:  string
+  moneda: 'ARS' | 'USD'
+}
+
+export function resolveAmbitoInfo(ambito: string, detalle: PortfolioDetalle): AmbitoInfo {
+  if (ambito === 'portfolio_ars') return { label: 'Portfolio (ARS)', corto: 'Portfolio ARS', moneda: 'ARS' }
+  if (ambito === 'portfolio_usd') return { label: 'Portfolio (USD)', corto: 'Portfolio USD', moneda: 'USD' }
+
+  const m = ambito.match(/^(accion|bono|letra|plazo_fijo)_(\d+)$/)
+  if (!m) return { label: ambito, corto: ambito, moneda: 'ARS' }
+  const [, tipo, idStr] = m
+  const id = Number(idStr)
+
+  if (tipo === 'accion') {
+    const a = detalle.acciones.find((x) => x.idAccion === id)
+    return { label: a ? `${a.ticker} · ${a.nombre}` : ambito, corto: a?.ticker ?? ambito, moneda: 'USD' }
+  }
+  if (tipo === 'bono') {
+    const b = detalle.bonos.find((x) => x.idBono === id)
+    return { label: b ? `${b.ticker} · ${b.nombre}` : ambito, corto: b?.ticker ?? ambito, moneda: 'ARS' }
+  }
+  if (tipo === 'letra') {
+    const l = detalle.letras.find((x) => x.idLetra === id)
+    return { label: l ? `${l.ticker} · ${l.nombre}` : ambito, corto: l?.ticker ?? ambito, moneda: 'ARS' }
+  }
+  // plazo_fijo
+  const pf = detalle.plazosFijos.find((x) => x.idPortfolioPlazoFijo === id)
+  return {
+    label: pf ? `${pf.entidadFinanciera} (${pf.nombreTipoPlazoFijo})` : ambito,
+    corto: pf?.entidadFinanciera ?? ambito,
+    moneda: (pf?.codigoMoneda as 'ARS' | 'USD') ?? 'ARS',
+  }
 }
 
 // ─── Filas mini para la card de la lista de portfolios ───────────────────────

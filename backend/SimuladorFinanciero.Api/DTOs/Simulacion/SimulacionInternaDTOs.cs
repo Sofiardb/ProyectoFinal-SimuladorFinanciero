@@ -57,7 +57,9 @@ public sealed record EscenarioSimulacion(
     int     IdTipoEscenario,
     string  Codigo,
     decimal InflacionMensualMin,
-    decimal InflacionMensualMax
+    decimal InflacionMensualMax,
+    decimal InflacionMensualMinUsd,
+    decimal InflacionMensualMaxUsd
 );
 
 public sealed record InsertSimulacionData(
@@ -71,7 +73,19 @@ public sealed record InsertSimulacionData(
     decimal? ValorMaximo,
     decimal? RetornoEsperadoPct,
     decimal? RendimientoRealPct,
-    decimal? DesvioEstandar
+    decimal? DesvioEstandar,
+    decimal? ValorInicialArs,
+    decimal? ValorInicialUsd,
+    decimal? ValorEsperadoArs,
+    decimal? ValorEsperadoUsd,
+    decimal? ValorMinimoArs,
+    decimal? ValorMinimoUsd,
+    decimal? ValorMaximoArs,
+    decimal? ValorMaximoUsd,
+    decimal? RetornoEsperadoPctArs,
+    decimal? RetornoEsperadoPctUsd,
+    decimal? RendimientoRealPctArs,
+    decimal? RendimientoRealPctUsd
 );
 
 public sealed record InstrumentoSimulacionSnapshot(
