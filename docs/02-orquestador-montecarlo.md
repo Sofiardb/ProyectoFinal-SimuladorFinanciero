@@ -316,23 +316,19 @@ def simular():
     "lecap_1": {
       "patrimonio":          { "global": {...}, "favorable": {...}, "moderado": {...}, "desfavorable": {...} },
       "ganancias_nominales": { "global": {...}, ... },
-      "ganancias_reales":    { "global": {...}, ... },
-      "prob_perdida":        { "global": {...}, ... }
+      "ganancias_reales":    { "global": {...}, ... }
     }
   },
   "portfolio_ars": {
     "patrimonio":          { "global": {...}, ... },
     "ganancias_nominales": { ... },
-    "ganancias_reales":    { ... },
-    "prob_perdida":        { ... }
+    "ganancias_reales":    { ... }
   },
   "portfolio_usd": { ... }
 }
 ```
 
 **Jerarquía: métrica → escenario (no al revés).** Esta estructura permite al frontend cambiar entre "vista de patrimonio" y "vista de ganancias reales" con una sola clave, sin iterar escenarios. Es más eficiente para los patrones de acceso de la interfaz de usuario.
-
-**`prob_perdida`:** fracción de simulaciones donde `V(t) < monto`. Se calcula tanto en términos nominales como reales, y desagregada por escenario. Por construcción, `prob_perdida_real ≥ prob_perdida_nominal` cuando la inflación es positiva: perder en términos reales es más probable que perder en términos nominales.
 
 ---
 

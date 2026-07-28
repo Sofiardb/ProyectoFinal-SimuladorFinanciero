@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -88,6 +89,7 @@ function PortfolioForm({
   onDone: () => void
 }) {
   const isEdit = !!portfolio
+  const navigate = useNavigate()
   const { data: monedas } = useMonedas()
   const { data: perfiles } = usePerfilesRiesgo()
   const createPortfolio = useCreatePortfolio()
@@ -114,9 +116,11 @@ function PortfolioForm({
       capitalInicial: values.capitalInicial ? Number(values.capitalInicial) : undefined,
     }
     mutation.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (creado) => {
         toast.success(isEdit ? 'Portfolio actualizado.' : 'Portfolio creado.')
         onDone()
+        // Al crear (no al editar) vamos directo al detalle para agregar instrumentos.
+        if (!isEdit) navigate(`/portfolios/${creado.idPortfolio}`)
       },
     })
   }

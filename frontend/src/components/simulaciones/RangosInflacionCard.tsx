@@ -38,7 +38,7 @@ export default function RangosInflacionCard() {
           >
             <span
               className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-[11.5px] font-bold ${
-                ESCENARIO_BADGE[e.nombreEscenario] ?? 'bg-line-soft text-ink-muted'
+                ESCENARIO_BADGE[e.nombreEscenario.toLowerCase()] ?? 'bg-line-soft text-ink-muted'
               }`}
             >
               {LABEL_POR_ESCENARIO[e.nombreEscenario] ?? e.nombreEscenario}

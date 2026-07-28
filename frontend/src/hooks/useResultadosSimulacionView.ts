@@ -31,6 +31,14 @@ export function useResultadosSimulacionView(idSimulacion: number) {
     return detalle ? resolveAmbitoInfo(ambito, detalle).label : ambito
   }
 
+  /** Monto invertido para cualquier ámbito (no solo el "KPI" fijo de más abajo) — usado por la
+   * línea de equilibrio del gráfico, que tiene que funcionar sea cual sea el ámbito elegido. */
+  function montoInvertidoDe(ambito: string): number | undefined {
+    if (ambito === 'portfolio_ars') return sim?.valorInicialArs ?? sim?.valorInicial
+    if (ambito === 'portfolio_usd') return sim?.valorInicialUsd
+    return instrumentos?.find((i) => i.ambito === ambito)?.monto
+  }
+
   function filaFor(ambito: string, esc: EscenarioNombre, met: MetricaResultado): StatsVector | undefined {
     return filas?.find((f) => f.ambito === ambito && f.escenario === esc && f.metrica === met)?.stats
   }
@@ -90,6 +98,7 @@ export function useResultadosSimulacionView(idSimulacion: number) {
     instrumentos,
     monedaDe,
     labelDe,
+    montoInvertidoDe,
     ambitosPortfolio,
     ambitosArs,
     ambitosUsd,

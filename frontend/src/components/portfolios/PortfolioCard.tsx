@@ -5,6 +5,7 @@ import GrupoMonedaList from '@/components/portfolios/GrupoMonedaList'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import PresupuestoBoxes from '@/components/portfolios/PresupuestoBoxes'
 import { usePortfolio, useBonosCatalogo, useLetrasCatalogo } from '@/api/hooks'
+import { useTienePortfolioInstrumentos } from '@/hooks/usePortfolioInstrumentos'
 import {
   accionCardDisplay,
   bonoCardDisplay,
@@ -32,6 +33,7 @@ export default function PortfolioCard({
   const { data: bonosCatalogo } = useBonosCatalogo()
   const { data: letrasCatalogo } = useLetrasCatalogo()
   const archivado = portfolio.estado === 'ARCHIVADO'
+  const tieneInstrumentos = useTienePortfolioInstrumentos(detalle)
 
   const bonosPorId = bonoCatalogoPorId(bonosCatalogo)
   const letrasPorId = letraCatalogoPorId(letrasCatalogo)
@@ -73,7 +75,9 @@ export default function PortfolioCard({
         </div>
         <button
           onClick={() => navigate(`/portfolios/${portfolio.idPortfolio}/simular`)}
-          className="h-8 shrink-0 whitespace-nowrap rounded-[7px] bg-sand-50 px-3 text-xs font-semibold text-navy-950 hover:bg-sand-100"
+          disabled={!tieneInstrumentos}
+          title={tieneInstrumentos ? undefined : 'Agregá al menos un instrumento para poder simular.'}
+          className="h-8 shrink-0 whitespace-nowrap rounded-[7px] bg-sand-50 px-3 text-xs font-semibold text-navy-950 hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-sand-50"
         >
           Simular
         </button>
@@ -89,13 +93,21 @@ export default function PortfolioCard({
       {detalle && <PresupuestoBoxes detalle={detalle} />}
 
       {visibleUsd.length > 0 && (
-        <GrupoMonedaList titulo="USD · ACCIONES Y PLAZO FIJO" tituloClassName="text-blue-brand" items={visibleUsd} />
+        <GrupoMonedaList titulo="USD · ACCIONES Y PLAZO FIJO" tituloClassName="text-currency-usd" items={visibleUsd} />
       )}
       {visibleArs.length > 0 && (
         <GrupoMonedaList titulo="ARS · BONOS, LETRAS Y PLAZO FIJO" tituloClassName="text-currency-ars" items={visibleArs} />
       )}
       {detalle && totalCount === 0 && (
-        <p className="text-sm text-ink-muted">Todavía no tiene instrumentos.</p>
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-sm text-ink-muted">Todavía no tiene instrumentos.</p>
+          <button
+            onClick={() => navigate(`/portfolios/${portfolio.idPortfolio}`)}
+            className="h-8 shrink-0 rounded-[7px] bg-navy-950 px-3 text-xs font-semibold text-white hover:bg-navy-900"
+          >
+            Agregar instrumentos
+          </button>
+        </div>
       )}
       {hiddenCount > 0 && (
         <div className="flex items-center justify-between rounded-lg bg-line-soft px-3 py-[9px]">

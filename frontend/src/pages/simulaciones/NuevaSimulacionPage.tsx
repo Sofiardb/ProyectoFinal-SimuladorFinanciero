@@ -156,7 +156,7 @@ function ConfigurarSimulacion({
           <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-riesgo-moderado-bg text-2xl text-accent-blue-strong">
             ✓
           </div>
-          <p className="mb-2 font-display text-xl font-semibold text-navy-950">Simulación en curso</p>
+          <p className="mb-2 font-display text-xl font-semibold text-navy-950">Simulación finalizada</p>
           <p className="mx-auto mb-6 max-w-[420px] text-sm leading-relaxed text-ink-muted">
             Se corrieron {resumen.numTrayectorias.toLocaleString('es-AR')} trayectorias Monte Carlo para{' '}
             {detalle.nombre} a {resumen.horizonteMeses} meses.
@@ -280,7 +280,7 @@ function ConfigurarSimulacion({
         <p className="card-section-label">Detalle del portfolio</p>
         {usdFilas.length > 0 && (
           <div>
-            <p className="mb-2 text-[11px] font-bold tracking-[0.4px] text-blue-brand">
+            <p className="mb-2 text-[11px] font-bold tracking-[0.4px] text-currency-usd">
               USD · ACCIONES Y PLAZO FIJO
             </p>
             <div className="flex flex-col gap-2">

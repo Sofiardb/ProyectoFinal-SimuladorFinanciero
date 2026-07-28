@@ -36,6 +36,7 @@ import {
   useUpdatePortfolio,
   useSimulacionesPortfolio,
 } from '@/api/hooks'
+import { useTienePortfolioInstrumentos } from '@/hooks/usePortfolioInstrumentos'
 import {
   accionPreview,
   accionCatalogoPorId,
@@ -68,6 +69,7 @@ export default function PortfolioDetallePage() {
   const navigate = useNavigate()
 
   const { data: detalle, isLoading } = usePortfolio(idPortfolio)
+  const tieneInstrumentos = useTienePortfolioInstrumentos(detalle)
   const { data: simulaciones } = useSimulacionesPortfolio(idPortfolio)
   const { data: perfiles } = usePerfilesRiesgo()
   const { data: monedas } = useMonedas()
@@ -230,7 +232,8 @@ export default function PortfolioDetallePage() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => navigate(`/portfolios/${idPortfolio}/simular`)}
-            disabled={archivado}
+            disabled={archivado || !tieneInstrumentos}
+            title={!archivado && !tieneInstrumentos ? 'Agregá al menos un instrumento para poder simular.' : undefined}
             className="btn-primary"
           >
             Nueva simulación
@@ -261,7 +264,7 @@ export default function PortfolioDetallePage() {
 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-5">
-          <p className="text-[11px] font-bold tracking-[0.6px] text-blue-brand">USD</p>
+          <p className="text-[11px] font-bold tracking-[0.6px] text-currency-usd">USD</p>
 
           {(accionesTenencias.length > 0 || accionesOpciones.length > 0) && (
             <TypeSectionCard>

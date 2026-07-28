@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import EscenarioChart, { type SerieEscenario, type VencimientoMarcador } from '@/components/charts/EscenarioChart'
+import EscenarioChart, { type BreakevenMarcador, type SerieEscenario, type VencimientoMarcador } from '@/components/charts/EscenarioChart'
+import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import { resolveAmbitoInfo } from '@/lib/tenenciaDisplay'
 import { formatMoneda } from '@/lib/format'
+import { RESULTADOS_TOOLTIPS } from '@/lib/tooltips'
 import type {
   EscenarioNombre,
   InstrumentoSimulacion,
@@ -16,11 +18,27 @@ const ESCENARIOS: { key: EscenarioNombre; label: string; color: string }[] = [
   { key: 'desfavorable', label: 'Desfavorable', color: 'var(--color-desfavorable)' },
 ]
 
-const METRICAS: { key: MetricaResultado; label: string }[] = [
-  { key: 'patrimonio', label: 'Patrimonio' },
-  { key: 'ganancias_nominales', label: 'Ganancias nominales' },
-  { key: 'ganancias_reales', label: 'Ganancias reales' },
+const METRICAS: { key: MetricaResultado; label: string; tooltip: { term: string; definition: string } }[] = [
+  { key: 'patrimonio', label: 'Patrimonio', tooltip: RESULTADOS_TOOLTIPS.patrimonio },
+  { key: 'ganancias_nominales', label: 'Ganancias nominales', tooltip: RESULTADOS_TOOLTIPS.gananciasNominales },
+  { key: 'ganancias_reales', label: 'Ganancias reales', tooltip: RESULTADOS_TOOLTIPS.gananciasReales },
 ]
+
+/** Métrica "contraria" para el overlay nominal-vs-real (idea 4) — no aplica a patrimonio. */
+function metricaOpuesta(m: MetricaResultado): MetricaResultado {
+  return m === 'ganancias_nominales' ? 'ganancias_reales' : 'ganancias_nominales'
+}
+
+function metricaCorta(m: MetricaResultado): string {
+  return m === 'ganancias_nominales' ? 'Nominal' : 'Real'
+}
+
+// Par de colores fijo para el overlay nominal-vs-real (idea 4) — independiente del color que
+// tendría la serie normalmente (instrumento/escenario), para que las dos líneas se distingan por
+// color y no solo por el punteado. Validado con el validador de paletas del dataviz skill:
+// ΔE CVD 26.7 (protan) / 24.9 (tritan), ΔE visión normal 30.4, contraste >= 3:1 sobre blanco.
+const COLOR_NOMINAL = '#2a78d6'
+const COLOR_REAL = '#c1740f'
 
 // Paleta categórica validada (dataviz skill) para comparar N instrumentos/ámbitos a la vez —
 // los colores de escenario (favorable/moderado/desfavorable) están reservados semánticamente.
@@ -37,6 +55,8 @@ interface PanelGraficoResultadosProps {
   filas: ResultadoSimulacionRow[]
   detalle: PortfolioDetalle | undefined
   instrumentos: InstrumentoSimulacion[] | undefined
+  /** Monto invertido para cualquier ámbito — usado por la línea de "punto de equilibrio". */
+  montoInvertidoDe: (ambito: string) => number | undefined
 }
 
 export default function PanelGraficoResultados({
@@ -47,6 +67,7 @@ export default function PanelGraficoResultados({
   filas,
   detalle,
   instrumentos,
+  montoInvertidoDe,
 }: PanelGraficoResultadosProps) {
   const [ambitosSeleccionados, setAmbitosSeleccionados] = useState<string[]>(
     ambitosDisponibles.length > 0 ? [ambitosDisponibles[0]] : [],
@@ -54,6 +75,7 @@ export default function PanelGraficoResultados({
   const [metrica, setMetrica] = useState<MetricaResultado>('patrimonio')
   const [escenario, setEscenario] = useState<EscenarioNombre>('global')
   const [modoA, setModoA] = useState(false)
+  const [compararNominalReal, setCompararNominalReal] = useState(false)
 
   useEffect(() => {
     if (ambitosSeleccionados.length > 0 || ambitosDisponibles.length === 0) return
@@ -87,6 +109,28 @@ export default function PanelGraficoResultados({
   useEffect(() => {
     if (modoA && ambitosSeleccionados.length !== 1) setModoA(false)
   }, [modoA, ambitosSeleccionados.length])
+
+  // El overlay nominal-vs-real (idea 4) solo tiene sentido con una única serie visible: con más de
+  // un ámbito o con los 3 escenarios a la vez, superponer también nominal/real duplicaría todas las
+  // líneas y el gráfico se vuelve ilegible. Tampoco aplica a "patrimonio" (no hay una versión
+  // "nominal" vs. "real" separada de esa métrica, solo de las ganancias).
+  const puedeCompararNominalReal = metrica !== 'patrimonio' && !modoA && ambitosSeleccionados.length === 1
+  useEffect(() => {
+    if (compararNominalReal && !puedeCompararNominalReal) setCompararNominalReal(false)
+  }, [compararNominalReal, puedeCompararNominalReal])
+
+  // Línea de "punto de equilibrio": monto invertido para patrimonio, cero para las métricas de
+  // ganancia. Solo se puede fijar un valor con un único ámbito seleccionado — con varios, cada
+  // instrumento tiene un monto distinto y una sola línea horizontal sería engañosa.
+  const breakeven: BreakevenMarcador | undefined = useMemo(() => {
+    if (ambitosSeleccionados.length !== 1) return undefined
+    if (metrica === 'patrimonio') {
+      const monto = montoInvertidoDe(ambitosSeleccionados[0])
+      return monto != null ? { valor: monto } : undefined
+    }
+    return { valor: 0 }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ambitosSeleccionados, metrica])
 
   // Marca en el gráfico el mes en que cada instrumento vencido dejó de crecer — a partir de ahí el
   // capital queda parado (Decisión 7); a nivel de un instrumento individual su "ganancia real" ya
@@ -124,11 +168,37 @@ export default function PanelGraficoResultados({
       if (!stats) return []
       const label = labelDe(ambito)
       const color = ambitosSeleccionados.length === 1 ? 'var(--color-accent-blue-strong)' : PALETA_INSTRUMENTOS[i % PALETA_INSTRUMENTOS.length]
+
+      let labelPrincipal = label
+      let colorPrincipal = color
+      let mediaSecundaria: number[] | undefined
+      let labelSecundaria: string | undefined
+      let colorSecundaria: string | undefined
+      let p25Secundaria: number[] | undefined
+      let p75Secundaria: number[] | undefined
+      if (compararNominalReal && puedeCompararNominalReal) {
+        const statsOpuesta = filaFor(ambito, escenario, metricaOpuesta(metrica))
+        if (statsOpuesta) {
+          labelPrincipal = metricaCorta(metrica)
+          colorPrincipal = metrica === 'ganancias_nominales' ? COLOR_NOMINAL : COLOR_REAL
+          mediaSecundaria = statsOpuesta.media
+          labelSecundaria = metricaCorta(metricaOpuesta(metrica))
+          colorSecundaria = metrica === 'ganancias_nominales' ? COLOR_REAL : COLOR_NOMINAL
+          p25Secundaria = mostrarBanda ? statsOpuesta.p25 : undefined
+          p75Secundaria = mostrarBanda ? statsOpuesta.p75 : undefined
+        }
+      }
+
       return [{
         key: ambito,
-        label,
-        color,
+        label: labelPrincipal,
+        color: colorPrincipal,
         media: stats.media,
+        mediaSecundaria,
+        labelSecundaria,
+        colorSecundaria,
+        p25Secundaria,
+        p75Secundaria,
         p25: mostrarBanda ? stats.p25 : undefined,
         p75: mostrarBanda ? stats.p75 : undefined,
         minimo: mostrarBanda ? stats.minimo : undefined,
@@ -136,7 +206,7 @@ export default function PanelGraficoResultados({
       }]
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filas, ambitosSeleccionados, metrica, escenario, modoA, detalle])
+  }, [filas, ambitosSeleccionados, metrica, escenario, modoA, detalle, compararNominalReal, puedeCompararNominalReal])
 
   if (ambitosDisponibles.length === 0) return null
 
@@ -161,23 +231,35 @@ export default function PanelGraficoResultados({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {METRICAS.map((m) => (
-            <button
-              key={m.key}
-              onClick={() => setMetrica(m.key)}
-              className={
-                metrica === m.key
-                  ? 'rounded-full bg-navy-950 px-3 py-1 text-[11.5px] font-semibold text-white'
-                  : 'rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-semibold text-ink-muted'
-              }
-            >
-              {m.label}
-            </button>
+            <span key={m.key} className="inline-flex items-center gap-0.5">
+              <button
+                onClick={() => setMetrica(m.key)}
+                className={
+                  metrica === m.key
+                    ? 'rounded-full bg-navy-950 px-3 py-1 text-[11.5px] font-semibold text-white'
+                    : 'rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-semibold text-ink-muted'
+                }
+              >
+                {m.label}
+              </button>
+              {metrica === m.key && <InfoTooltip term={m.tooltip.term} definition={m.tooltip.definition} />}
+            </span>
           ))}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {puedeCompararNominalReal && (
+            <label className="flex items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-muted">
+              <input
+                type="checkbox"
+                checked={compararNominalReal}
+                onChange={(e) => setCompararNominalReal(e.target.checked)}
+              />
+              Comparar nominal vs. real
+            </label>
+          )}
           {ambitosSeleccionados.length === 1 && (
             <label className="flex items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-muted">
               <input type="checkbox" checked={modoA} onChange={(e) => setModoA(e.target.checked)} />
@@ -185,7 +267,7 @@ export default function PanelGraficoResultados({
             </label>
           )}
           {!modoA && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {ESCENARIOS.map((e) => (
                 <button
                   key={e.key}
@@ -204,20 +286,31 @@ export default function PanelGraficoResultados({
                   {e.label}
                 </button>
               ))}
+              <InfoTooltip term={RESULTADOS_TOOLTIPS.escenarios.term} definition={RESULTADOS_TOOLTIPS.escenarios.definition} />
             </div>
           )}
         </div>
       </div>
 
-      <div className="min-h-[200px] flex-1">
+      <div className="h-[320px]">
         <EscenarioChart
           series={series}
           mostrarBanda={mostrarBanda}
+          mostrarMinMax={mostrarBanda && !compararNominalReal}
           formatY={(v) => formatMoneda(v, moneda)}
           vencimientos={vencimientos}
+          breakeven={breakeven}
           height="100%"
         />
       </div>
+
+      {vencimientos.length > 0 && metrica === 'ganancias_reales' && (
+        <p className="rounded-lg bg-line-soft px-3 py-2 text-[11.5px] leading-relaxed text-ink-muted">
+          <strong className="text-ink-soft">{RESULTADOS_TOOLTIPS.zonaVencida.term}: </strong>
+          {RESULTADOS_TOOLTIPS.zonaVencida.definition} Acá afecta a{' '}
+          {vencimientos.map((v) => v.label).join(', ')}.
+        </p>
+      )}
     </div>
   )
 }

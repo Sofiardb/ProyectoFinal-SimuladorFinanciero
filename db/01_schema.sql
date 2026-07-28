@@ -451,7 +451,11 @@ CREATE TABLE simulacion_instrumento (
     id_accion                 BIGINT       REFERENCES accion(id_accion),
     id_bono                   BIGINT       REFERENCES bono(id_bono),
     id_letra                  BIGINT       REFERENCES letra(id_letra),
-    id_portfolio_plazo_fijo   BIGINT       REFERENCES portfolio_plazo_fijo(id_portfolio_plazo_fijo),
+    -- A diferencia de id_accion/id_bono/id_letra (que apuntan al catálogo compartido, nunca se
+    -- borra), portfolio_plazo_fijo ES la tenencia — se borra al eliminar el plazo fijo del
+    -- portfolio. Sin ON DELETE SET NULL, esa eliminación violaba esta FK y fallaba siempre que el
+    -- plazo fijo ya hubiera participado de alguna simulación.
+    id_portfolio_plazo_fijo   BIGINT       REFERENCES portfolio_plazo_fijo(id_portfolio_plazo_fijo) ON DELETE SET NULL,
     monto                     NUMERIC(20,6) NOT NULL,
     parametros                JSONB         NOT NULL,  -- snapshot completo del instrumento enviado al motor
     UNIQUE (id_simulacion, ambito)
@@ -520,7 +524,7 @@ CREATE INDEX idx_resultado_simulacion ON resultado_simulacion(id_simulacion, amb
 COMMENT ON TABLE  resultado_simulacion IS 'Estadísticas temporales (media, mediana, p25, p75, mín, máx) por instrumento o sub-portfolio, escenario y métrica. Una fila por combinación (simulacion, ambito, escenario, metrica).';
 COMMENT ON COLUMN resultado_simulacion.ambito    IS 'portfolio_ars, portfolio_usd, id del instrumento tal como llega en el JSON del motor, o "global" para métricas que no son por moneda/instrumento (ej: inflacion_acumulada).';
 COMMENT ON COLUMN resultado_simulacion.escenario IS 'global | favorable | moderado | desfavorable';
-COMMENT ON COLUMN resultado_simulacion.metrica   IS 'patrimonio | ganancias_nominales | ganancias_reales | prob_perdida | inflacion_acumulada';
+COMMENT ON COLUMN resultado_simulacion.metrica   IS 'patrimonio | ganancias_nominales | ganancias_reales | inflacion_acumulada';
 COMMENT ON COLUMN resultado_simulacion.stats     IS 'Vector de largo T+1 para cada estadístico. Índice 0 corresponde a t=0 (monto inicial).';
 
 
@@ -532,10 +536,16 @@ INSERT INTO moneda (codigo_iso, nombre, simbolo) VALUES
     ('ARS', 'Peso argentino',       '$'  ),
     ('USD', 'Dólar estadounidense', 'US$');
 
+-- Umbrales en escala ANUAL de sigma_volatilidad (antes calibrados para escala mensual;
+-- AccionCatalogoService pasó a calcular/guardar sigma anualizado, commit 0e74e21). Conservador
+-- se mantiene en 0 a propósito: ese perfil no admite acciones. Moderado (0.35) y Agresivo (1.00)
+-- calibrados contra el catálogo real: el grueso de blue chips cae entre 0.18-0.33, autos/GE/COP
+-- rondan 0.36-0.38, y el cluster de tech/crecimiento/cripto (NVDA, TSLA, RIVN, COIN, etc.) sube
+-- hasta ~0.84 (COIN) — Agresivo en 1.00 deja margen sobre ese máximo para refrescos futuros.
 INSERT INTO perfil_riesgo (nombre, descripcion, sigma_max_accion) VALUES
     ('Conservador', 'Prioriza preservación de capital y baja volatilidad.',  0.00),
-    ('Moderado',    'Equilibrio entre estabilidad y crecimiento.',            0.10),
-    ('Agresivo',    'Alta exposición a renta variable y mayor volatilidad.', 0.30);
+    ('Moderado',    'Equilibrio entre estabilidad y crecimiento.',            0.35),
+    ('Agresivo',    'Alta exposición a renta variable y mayor volatilidad.', 1.00);
 
 INSERT INTO tipo_bono (codigo, nombre, descripcion) VALUES
     ('TASA_FIJA',          'Bono a tasa fija',            'Paga cupones constantes a lo largo del tiempo.'),

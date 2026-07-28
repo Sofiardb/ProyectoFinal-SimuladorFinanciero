@@ -35,3 +35,30 @@ function cantidadLotesTooltip(instrumento: string): string {
 
 export const CANTIDAD_LOTES_TOOLTIP_BONO = cantidadLotesTooltip('este bono')
 export const CANTIDAD_LOTES_TOOLTIP_LETRA = cantidadLotesTooltip('esta letra')
+
+export const RESULTADOS_TOOLTIPS = {
+  patrimonio: {
+    term: 'Patrimonio',
+    definition: 'Valor total del instrumento o portfolio en cada mes, en moneda nominal (sin ajustar por inflación).',
+  },
+  gananciasNominales: {
+    term: 'Ganancias nominales',
+    definition: 'Cuánto ganaste en pesos/dólares desde que invertiste (patrimonio menos monto invertido), sin descontar la inflación del período.',
+  },
+  gananciasReales: {
+    term: 'Ganancias reales',
+    definition: 'Lo mismo que las ganancias nominales, pero ajustado por la inflación acumulada — mide si tu poder de compra efectivamente aumentó o no.',
+  },
+  escenarios: {
+    term: 'Escenarios',
+    definition: 'Favorable, moderado y desfavorable son los mismos supuestos de mercado con distintos rangos de inflación asumida. Los rangos exactos de cada uno están en la tabla de abajo.',
+  },
+  banda: {
+    term: 'Banda p25–p75',
+    definition: 'El área sombreada muestra dónde cayó el 50% central de las simulaciones (entre el percentil 25 y el 75). Las líneas tenues marcan el mínimo y el máximo simulados, como referencia de los extremos.',
+  },
+  zonaVencida: {
+    term: 'Capital vencido',
+    definition: 'Cuando un instrumento vence, su capital no se reinvierte automáticamente: queda "parado" en la simulación. Por eso el patrimonio y las ganancias nominales dejan de moverse, pero las ganancias reales pueden seguir cayendo — ese capital inmóvil sigue expuesto a la inflación mientras no se decida qué hacer con él.',
+  },
+} as const

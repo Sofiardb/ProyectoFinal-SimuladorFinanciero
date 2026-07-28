@@ -134,6 +134,7 @@ function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number
               filas={filas}
               detalle={detalle}
               instrumentos={instrumentos}
+              montoInvertidoDe={viewA.montoInvertidoDe}
             />
           )}
         </Columna>
@@ -147,6 +148,7 @@ function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number
               filas={filas}
               detalle={detalle}
               instrumentos={instrumentos}
+              montoInvertidoDe={viewB.montoInvertidoDe}
             />
           )}
         </Columna>
@@ -163,6 +165,7 @@ function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number
               filas={filas}
               detalle={detalle}
               instrumentos={instrumentos}
+              montoInvertidoDe={viewA.montoInvertidoDe}
             />
           )}
         </Columna>
@@ -176,6 +179,7 @@ function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number
               filas={filas}
               detalle={detalle}
               instrumentos={instrumentos}
+              montoInvertidoDe={viewB.montoInvertidoDe}
             />
           )}
         </Columna>
@@ -192,6 +196,7 @@ function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number
               filas={filas}
               detalle={detalle}
               instrumentos={instrumentos}
+              montoInvertidoDe={viewA.montoInvertidoDe}
             />
           )}
         </Columna>
@@ -205,6 +210,7 @@ function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number
               filas={filas}
               detalle={detalle}
               instrumentos={instrumentos}
+              montoInvertidoDe={viewB.montoInvertidoDe}
             />
           )}
         </Columna>

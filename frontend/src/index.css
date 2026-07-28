@@ -63,7 +63,9 @@
   --color-line-soft:    #f0eee9;
   --color-line-dashed:  #d8d2c4;
   --color-chip:         #f7f6f2;
-  --color-currency-ars: #8fc98f;
+  /* USD/ARS invertidos a propósito (verde = USD, más representativo del billete) */
+  --color-currency-ars: #5b9bf2;
+  --color-currency-usd: #8fc98f;
 
   /* Texto de la píldora de perfil en el header de Detalle de Portfolio */
   --color-riesgo-conservador-badge: #2f8f5f;

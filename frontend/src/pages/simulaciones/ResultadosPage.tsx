@@ -77,40 +77,37 @@ export default function ResultadosPage() {
         />
       </div>
 
-      <div className="mb-5 flex flex-wrap justify-center gap-4">
-        <div className="w-full lg:w-[calc(50%-0.5rem)]">
-          <PanelGraficoResultados
-            titulo="Portfolio"
-            ambitosDisponibles={v.ambitosPortfolio}
-            seleccionUnica
-            moneda={v.monedaKpi}
-            filas={filas}
-            detalle={detalle}
-            instrumentos={instrumentos}
-          />
-        </div>
-        <div className="w-full lg:w-[calc(50%-0.5rem)]">
-          <PanelGraficoResultados
-            titulo="Instrumentos (ARS)"
-            ambitosDisponibles={v.ambitosArs}
-            seleccionUnica={false}
-            moneda="ARS"
-            filas={filas}
-            detalle={detalle}
-            instrumentos={instrumentos}
-          />
-        </div>
-        <div className="w-full lg:w-[calc(50%-0.5rem)]">
-          <PanelGraficoResultados
-            titulo="Instrumentos (USD)"
-            ambitosDisponibles={v.ambitosUsd}
-            seleccionUnica={false}
-            moneda="USD"
-            filas={filas}
-            detalle={detalle}
-            instrumentos={instrumentos}
-          />
-        </div>
+      <div className="mb-5 flex flex-col gap-4">
+        <PanelGraficoResultados
+          titulo="Portfolio"
+          ambitosDisponibles={v.ambitosPortfolio}
+          seleccionUnica
+          moneda={v.monedaKpi}
+          filas={filas}
+          detalle={detalle}
+          instrumentos={instrumentos}
+          montoInvertidoDe={v.montoInvertidoDe}
+        />
+        <PanelGraficoResultados
+          titulo="Instrumentos (ARS)"
+          ambitosDisponibles={v.ambitosArs}
+          seleccionUnica={false}
+          moneda="ARS"
+          filas={filas}
+          detalle={detalle}
+          instrumentos={instrumentos}
+          montoInvertidoDe={v.montoInvertidoDe}
+        />
+        <PanelGraficoResultados
+          titulo="Instrumentos (USD)"
+          ambitosDisponibles={v.ambitosUsd}
+          seleccionUnica={false}
+          moneda="USD"
+          filas={filas}
+          detalle={detalle}
+          instrumentos={instrumentos}
+          montoInvertidoDe={v.montoInvertidoDe}
+        />
       </div>
 
       <InflacionChart mensualArs={v.mensualArs} mensualUsd={v.mensualUsd} acumuladaArs={v.acumuladaArs} acumuladaUsd={v.acumuladaUsd} />
