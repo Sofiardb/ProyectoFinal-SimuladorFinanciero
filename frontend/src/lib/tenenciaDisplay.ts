@@ -202,8 +202,7 @@ export function plazoFijoPreview(pf: PortfolioPlazoFijo): CampoPreview[] {
 // en el portfolio (se editó/eliminó después de esa corrida), se usa el ambito crudo como label.
 export interface AmbitoInfo {
   label:  string
-  /** Identificador corto (ticker, o entidad financiera para plazo fijo) — para chips/marcadores
-   * donde el label completo (con nombre y fecha de vencimiento) no entra. */
+  /** Identificador corto (ticker, o entidad financiera para plazo fijo) — para chips/marcadores*/
   corto:  string
   moneda: 'ARS' | 'USD'
 }

@@ -34,7 +34,6 @@ export function useTiposEscenario() {
   })
 }
 
-/** Rangos de inflación mensual vigentes por escenario — config de admin, de solo lectura para el usuario (docs/09 §4). */
 export function useEscenariosEconomicos() {
   return useQuery({
     queryKey: ['referencia', 'escenarios-economicos'],
