@@ -140,11 +140,12 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
                     var flujosDtos = await _docta.ObtenerFlujosCajaAsync(inst.Ticker, ct);
                     if (flujosDtos.Count == 0) continue;
 
+                    bool esCer = EsCer(inst.Ticker, clase);
+
                     var flujos = flujosDtos
                         .Select((f, i) =>
                         {
                             DateOnly.TryParse(f.PaymentDate, out var fechaPago);
-                            bool esCer = clase == "CER";
                             return new FlujoBono
                             {
                                 NumeroCupon    = (short)(i + 1),
@@ -163,7 +164,7 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
                     {
                         Ticker               = inst.Ticker,
                         Nombre               = inst.Ticker,
-                        TipoBonoCodigo       = clase == "CER" ? "INDEXADO_INFLACION" : "TASA_FIJA",
+                        TipoBonoCodigo       = esCer ? "INDEXADO_INFLACION" : "TASA_FIJA",
                         TasaDescuento        = yield.Tir,
                         FechaEmision         = new DateOnly(2000, 1, 1),
                         FechaVencimiento     = vencimiento,
@@ -189,6 +190,9 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
 
     public Task<BonoResponse?> ObtenerPorIdAsync(long id, CancellationToken ct = default) =>
         _repo.ObtenerPorIdAsync(id, ct);
+
+    private static bool EsCer(string ticker, string claseDocta) =>
+        claseDocta == "CER" || ticker.StartsWith('T');
 
     private static short DeriveFrecuencia(List<FlujoBono> flujos)
     {

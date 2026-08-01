@@ -1,4 +1,4 @@
-import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
+import { formatFecha, formatFechaCorta, formatMoneda, formatPorcentaje } from '@/lib/format'
 import { GBM_TOOLTIPS, PRECIO_VN_TOOLTIP } from '@/lib/tooltips'
 import type {
   AccionCatalogo,
@@ -75,14 +75,14 @@ export function bonoPreview(b: {
   precioActual?: number
 }): CampoPreview[] {
   return [
-    { label: 'Vencimiento', value: b.fechaVencimiento },
+    { label: 'Vencimiento', value: formatFechaCorta(b.fechaVencimiento) },
     { label: 'Tasa', value: tasaTexto(b.tipoBono === 'TASA_FIJA' ? 'Fija' : 'CER', b.tasaDescuento) },
     precioVnField(b.precioActual),
   ]
 }
 
 export function bonoSubtitulo(b: { fechaVencimiento: string }): string {
-  return `Vence: ${b.fechaVencimiento}`
+  return `Vence: ${formatFechaCorta(b.fechaVencimiento)}`
 }
 
 // ─── Letras ────────────────────────────────────────────────────────────────
@@ -93,14 +93,14 @@ export function letraPreview(l: {
   precioActual?: number
 }): CampoPreview[] {
   return [
-    { label: 'Vencimiento', value: l.fechaVencimiento },
+    { label: 'Vencimiento', value: formatFechaCorta(l.fechaVencimiento) },
     { label: 'Tasa', value: tasaTexto(l.tipoLetra === 'LECAP' ? 'Fija' : 'CER', l.tasa) },
     precioVnField(l.precioActual),
   ]
 }
 
 export function letraSubtitulo(l: { fechaVencimiento: string }): string {
-  return `Vence: ${l.fechaVencimiento}`
+  return `Vence: ${formatFechaCorta(l.fechaVencimiento)}`
 }
 
 // ─── Resolución de catálogo completo (para tenencias existentes) ─────────────

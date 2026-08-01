@@ -65,11 +65,13 @@ public sealed class BonoRepository : IBonoRepository
             WHERE tb.codigo = @TipoBonoCodigo
               AND m.codigo_iso = 'ARS'
             ON CONFLICT (ticker) DO UPDATE SET
-                tasa_descuento      = EXCLUDED.tasa_descuento,
-                fecha_vencimiento   = EXCLUDED.fecha_vencimiento,
-                precio_actual       = EXCLUDED.precio_actual,
-                fecha_precio_actual = EXCLUDED.fecha_precio_actual,
-                activo              = TRUE
+                id_tipo_bono         = EXCLUDED.id_tipo_bono,
+                tasa_descuento       = EXCLUDED.tasa_descuento,
+                frecuencia_cupon_meses = EXCLUDED.frecuencia_cupon_meses,
+                fecha_vencimiento    = EXCLUDED.fecha_vencimiento,
+                precio_actual        = EXCLUDED.precio_actual,
+                fecha_precio_actual  = EXCLUDED.fecha_precio_actual,
+                activo               = TRUE
             RETURNING id_bono
             """;
 

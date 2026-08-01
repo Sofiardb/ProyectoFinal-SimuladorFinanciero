@@ -18,6 +18,15 @@ export function formatFecha(iso: string): string {
   }).format(new Date(iso))
 }
 
+/** dd/mm/yyyy, a partir de una fecha ISO (YYYY-MM-DD o datetime). */
+export function formatFechaCorta(iso: string): string {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(iso))
+}
+
 /** "hoy" / "ayer" / "hace N días", a partir de una fecha ISO (YYYY-MM-DD o datetime). */
 export function formatDiasDesde(iso: string): string {
   const fecha = new Date(iso)

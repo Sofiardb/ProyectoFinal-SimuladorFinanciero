@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import DisabledButtonTooltip from '@/components/ui/disabled-button-tooltip'
 import GrupoMonedaList from '@/components/portfolios/GrupoMonedaList'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import PresupuestoBoxes from '@/components/portfolios/PresupuestoBoxes'
+import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
+import DeletePortfolioDialog from '@/components/portfolios/DeletePortfolioDialog'
 import { usePortfolio, useBonosCatalogo, useLetrasCatalogo } from '@/api/hooks'
 import { useTienePortfolioInstrumentos } from '@/hooks/usePortfolioInstrumentos'
 import {
@@ -30,6 +34,8 @@ export default function PortfolioCard({
   mostrarPerfil?: boolean
 }) {
   const navigate = useNavigate()
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const { data: detalle, isLoading } = usePortfolio(portfolio.idPortfolio)
   const { data: bonosCatalogo } = useBonosCatalogo()
   const { data: letrasCatalogo } = useLetrasCatalogo()
@@ -126,7 +132,25 @@ export default function PortfolioCard({
         </div>
       )}
 
-      <div className="mt-auto flex justify-end border-t border-line-soft pt-1">
+      <div className="mt-auto flex items-center justify-between border-t border-line-soft pt-1">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setEditOpen(true)}
+            title="Editar portfolio"
+            aria-label="Editar portfolio"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-line-soft hover:text-navy-950"
+          >
+            <Pencil className="size-4" />
+          </button>
+          <button
+            onClick={() => setDeleteOpen(true)}
+            title="Eliminar portfolio"
+            aria-label="Eliminar portfolio"
+            className="rounded-md p-1.5 text-ink-muted hover:bg-line-soft hover:text-danger"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
         <button
           onClick={() => navigate(`/portfolios/${portfolio.idPortfolio}`)}
           className="text-[13px] font-semibold text-navy-950 hover:underline"
@@ -134,6 +158,9 @@ export default function PortfolioCard({
           Ver detalle →
         </button>
       </div>
+
+      <CreateEditPortfolioDialog open={editOpen} onOpenChange={setEditOpen} portfolio={portfolio} />
+      <DeletePortfolioDialog open={deleteOpen} onOpenChange={setDeleteOpen} portfolio={portfolio} />
     </Card>
   )
 }

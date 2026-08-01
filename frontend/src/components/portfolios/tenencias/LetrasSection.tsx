@@ -31,6 +31,7 @@ export default function LetrasSection({
     ...letraRow(l, letrasPorId),
   }))
   const opciones: CatalogoOpcion[] = (letrasCatalogo ?? [])
+    .filter((l) => l.diasAlVencimiento > 0)
     .filter((l) => !detalle.letras.some((existing) => existing.idLetra === l.idLetra))
     .map((l) => ({
       id: l.idLetra,

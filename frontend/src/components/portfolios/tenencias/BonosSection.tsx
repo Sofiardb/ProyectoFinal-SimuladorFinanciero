@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAddBono, useDeleteBono, useUpdateBono } from '@/api/hooks'
 import { conCaptura } from '@/lib/mutationHelpers'
 import { bonoCatalogoPorId, bonoPreview, bonoRow } from '@/lib/tenenciaDisplay'
+import { formatFechaCorta } from '@/lib/format'
 import { onErrorToast } from '@/lib/toast'
 import { CANTIDAD_LOTES_TOOLTIP_BONO, SECCION_TOOLTIPS } from '@/lib/tooltips'
 import type { BonoCatalogo, PortfolioDetalle } from '@/types'
@@ -31,10 +32,11 @@ export default function BonosSection({
     ...bonoRow(b, bonosPorId),
   }))
   const opciones: CatalogoOpcion[] = (bonosCatalogo ?? [])
+    .filter((b) => b.diasAlVencimiento > 0)
     .filter((b) => !detalle.bonos.some((existing) => existing.idBono === b.idBono))
     .map((b) => ({
       id: b.idBono,
-      etiqueta: `${b.ticker} - ${b.nombre}`,
+      etiqueta: `${b.ticker} - Vence ${formatFechaCorta(b.fechaVencimiento)}`,
       previewFields: bonoPreview(b),
       precioActual: b.precioActual ?? 0,
     }))
