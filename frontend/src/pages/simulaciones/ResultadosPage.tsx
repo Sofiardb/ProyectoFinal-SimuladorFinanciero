@@ -1,20 +1,21 @@
-import { Link, useParams } from 'react-router-dom'
+import { Fragment, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import InflacionChart from '@/components/charts/InflacionChart'
 import KpiCard from '@/components/simulaciones/KpiCard'
 import PanelGraficoResultados from '@/components/simulaciones/PanelGraficoResultados'
+import PercentilesPatrimonioTabla from '@/components/simulaciones/PercentilesPatrimonioTabla'
+import DeleteSimulacionDialog from '@/components/simulaciones/DeleteSimulacionDialog'
 import { useResultadosSimulacionView } from '@/hooks/useResultadosSimulacionView'
 import { ESCENARIO_BADGE } from '@/lib/escenarios'
 import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
-
-function ultimo(v: number[] | undefined): number | undefined {
-  return v && v.length > 0 ? v[v.length - 1] : undefined
-}
 
 export default function ResultadosPage() {
   const { id } = useParams<{ id: string }>()
   const idSimulacion = Number(id)
   const v = useResultadosSimulacionView(idSimulacion)
+  const navigate = useNavigate()
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   if (v.isLoading) {
     return (
@@ -30,7 +31,7 @@ export default function ResultadosPage() {
     return (
       <div className="page-shell max-w-[960px] text-center">
         <p className="text-ink-muted">No se encontró la simulación.</p>
-        <Link to="/simulaciones" className="mt-2 inline-block text-sm font-medium text-navy-950 underline">
+        <Link to="/simulaciones" className="link-back-fallback">
           Volver al historial
         </Link>
       </div>
@@ -53,18 +54,33 @@ export default function ResultadosPage() {
         <span className="font-semibold text-navy-950">Resultados</span>
       </div>
 
-      <div className="mb-6">
-        <h1 className="mb-1.5 font-display text-2xl leading-tight font-bold text-navy-950 xl:text-[26px]">
-          Resultados de la simulación
-        </h1>
-        <p className="text-[13.5px] text-ink-muted">
-          {formatFecha(sim.fechaEjecucion)} · Horizonte {sim.horizonteMeses} meses
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="page-title mb-1.5">
+            Resultados de la simulación
+          </h1>
+          <p className="text-[13.5px] text-ink-muted">
+            {formatFecha(sim.fechaEjecucion)} · Horizonte {sim.horizonteMeses} meses
+          </p>
+        </div>
+        <button onClick={() => setDeleteOpen(true)} className="btn-danger-outline">
+          Eliminar simulación
+        </button>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Monto invertido" value={v.montoInvertido != null ? formatMoneda(v.montoInvertido, v.monedaKpi) : '—'} />
-        <KpiCard label="Valor final (mediana)" value={v.valorFinalMediana != null ? formatMoneda(v.valorFinalMediana, v.monedaKpi) : '—'} />
+        {v.kpisPortfolio.map((k) => (
+          <Fragment key={k.ambito}>
+            <KpiCard
+              label={v.kpisPortfolio.length > 1 ? `Monto invertido (${k.moneda})` : 'Monto invertido'}
+              value={k.montoInvertido != null ? formatMoneda(k.montoInvertido, k.moneda) : '—'}
+            />
+            <KpiCard
+              label={v.kpisPortfolio.length > 1 ? `Valor final (mediana) (${k.moneda})` : 'Valor final (mediana)'}
+              value={k.valorFinalMediana != null ? formatMoneda(k.valorFinalMediana, k.moneda) : '—'}
+            />
+          </Fragment>
+        ))}
         <KpiCard
           label="Inflación acumulada (ARS)"
           value={v.inflacionAcumuladaArs != null ? formatPorcentaje((v.inflacionAcumuladaArs - 1) * 100) : '—'}
@@ -82,7 +98,7 @@ export default function ResultadosPage() {
           titulo="Portfolio"
           ambitosDisponibles={v.ambitosPortfolio}
           seleccionUnica
-          moneda={v.monedaKpi}
+          moneda={v.kpisPortfolio[0]?.moneda ?? 'ARS'}
           filas={filas}
           detalle={detalle}
           instrumentos={instrumentos}
@@ -112,27 +128,17 @@ export default function ResultadosPage() {
 
       <InflacionChart mensualArs={v.mensualArs} mensualUsd={v.mensualUsd} acumuladaArs={v.acumuladaArs} acumuladaUsd={v.acumuladaUsd} />
 
-      {v.gananciasRealesKpi && v.patrimonioKpi && (
-        <div className="card mb-5 overflow-x-auto">
-          <p className="card-section-label mb-3">Percentiles al final del horizonte ({v.labelDe(v.ambitoKpi ?? '')}, global)</p>
-          <table className="w-full text-[12.5px]">
-            <thead>
-              <tr className="text-left text-ink-soft">
-                <th className="pb-2 font-semibold">Percentil</th>
-                <th className="pb-2 font-semibold">Patrimonio</th>
-                <th className="pb-2 font-semibold">Ganancia real</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(['p25', 'mediana', 'p75'] as const).map((p) => (
-                <tr key={p} className="border-t border-line">
-                  <td className="py-2 font-semibold text-navy-950">{p === 'mediana' ? 'Mediana' : p.toUpperCase()}</td>
-                  <td className="py-2">{formatMoneda(ultimo(v.patrimonioKpi![p]) ?? 0, v.monedaKpi)}</td>
-                  <td className="py-2">{formatMoneda(ultimo(v.gananciasRealesKpi![p]) ?? 0, v.monedaKpi)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {v.kpisPortfolio.some((k) => k.patrimonio && k.gananciasReales) && (
+        <div className="mb-5 flex flex-col gap-3">
+          {v.kpisPortfolio.map((k) => k.patrimonio && k.gananciasReales && (
+            <PercentilesPatrimonioTabla
+              key={k.ambito}
+              titulo={`Percentiles al final del horizonte (${v.labelDe(k.ambito)}, global)`}
+              moneda={k.moneda}
+              patrimonio={k.patrimonio}
+              gananciasReales={k.gananciasReales}
+            />
+          ))}
         </div>
       )}
 
@@ -161,6 +167,14 @@ export default function ResultadosPage() {
           </div>
         </div>
       )}
+
+      <DeleteSimulacionDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        idSimulacion={sim.idSimulacion}
+        descripcion={`${formatFecha(sim.fechaEjecucion)} · Horizonte ${sim.horizonteMeses} meses`}
+        onDeleted={() => navigate(detalle ? `/portfolios/${detalle.idPortfolio}` : '/simulaciones')}
+      />
     </div>
   )
 }

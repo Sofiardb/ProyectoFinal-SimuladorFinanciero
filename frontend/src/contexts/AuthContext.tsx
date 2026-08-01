@@ -15,10 +15,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 const USER_KEY = 'investlab_usuario'
 
-/** Chequeo proactivo de vencimiento: sin esto, una sesión vencida solo se detecta reactivamente
- * cuando una llamada a la API responde 401 — si la pestaña estuvo cerrada/inactiva un buen rato y
- * se reabre, el usuario vería la app "logueada" (token viejo en localStorage) con datos faltantes
- * o stale hasta que algo dispare esa llamada. */
+
 function sesionVencida(): boolean {
   const expiresAt = getExpiresAt()
   return expiresAt !== null && Date.now() >= expiresAt
@@ -58,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apellido: auth.apellido,
         esAdmin:  auth.esAdmin,
       }
-      // Evita mostrar datos cacheados del usuario anterior (portfolios, etc.) al cambiar de cuenta.
+
       queryClient.clear()
       persistToken(auth.token)
       setExpiresAt(auth.expiresAt)
@@ -79,9 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(nextUsuario)
   }, [])
 
-  // Registra el handler de 401 del cliente HTTP (logout apenas la API confirma que el token ya no
-  // sirve) y además chequea el vencimiento por las suyas al volver a la pestaña o periódicamente,
-  // para no depender de que justo se dispare una request.
+ 
   useEffect(() => {
     setSessionExpiredHandler(logout)
 

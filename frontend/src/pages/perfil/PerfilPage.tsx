@@ -3,10 +3,10 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Form } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import { useUpdatePerfil } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -95,11 +95,7 @@ export default function PerfilPage() {
                 />
               </div>
 
-              {updatePerfil.isError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{updatePerfil.error.message}</AlertDescription>
-                </Alert>
-              )}
+              <MutationErrorAlert error={updatePerfil.error} />
 
               <div className="flex justify-end">
                 <Button

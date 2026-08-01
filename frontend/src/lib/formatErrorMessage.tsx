@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 
-/** Renderiza un mensaje de error del backend: `\n` como líneas separadas y `**texto**` como negrita. */
+
 export function FormattedErrorMessage({ text }: { text: string }) {
   const lines = text.split('\n')
   return (

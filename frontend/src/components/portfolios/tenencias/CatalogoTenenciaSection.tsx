@@ -165,7 +165,7 @@ function EditExistingRow({
   const canSave = cantidadNum > 0 && Number.isInteger(cantidadNum)
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
+    <div className="compare-card gap-2.5">
       <div className="grid grid-cols-2 gap-2">
         {tenencia.previewFields.map((f) => (
           <div key={f.label}>
@@ -225,7 +225,7 @@ function AddRow({
   const canSave = !!selected && cantidadNum > 0 && Number.isInteger(cantidadNum)
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
+    <div className="compare-card gap-2.5">
       {catalogo.length === 0 ? (
         <div className="banner-warning">
           {emptyMessage}

@@ -93,6 +93,16 @@ export default function PanelGraficoResultados({
     return detalle ? resolveAmbitoInfo(ambito, detalle).label : ambito
   }
 
+  function monedaDe(ambito: string): 'ARS' | 'USD' {
+    if (ambito === 'portfolio_ars') return 'ARS'
+    if (ambito === 'portfolio_usd') return 'USD'
+    return moneda
+  }
+
+  // El panel "Portfolio" alterna entre portfolio_ars y portfolio_usd con el mismo prop `moneda`
+  // fijo — sin esto el eje Y quedaba formateado en la moneda inicial aunque se cambiara de pestaña.
+  const monedaActual = ambitosSeleccionados.length === 1 ? monedaDe(ambitosSeleccionados[0]) : moneda
+
   function elegirAmbito(ambito: string) {
     if (seleccionUnica) {
       setAmbitosSeleccionados([ambito])
@@ -232,21 +242,26 @@ export default function PanelGraficoResultados({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          {METRICAS.map((m) => (
-            <span key={m.key} className="inline-flex items-center gap-0.5">
-              <button
-                onClick={() => setMetrica(m.key)}
-                className={
-                  metrica === m.key
-                    ? 'rounded-full bg-navy-950 px-3 py-1 text-[11.5px] font-semibold text-white'
-                    : 'rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-semibold text-ink-muted'
-                }
-              >
-                {m.label}
-              </button>
-              {metrica === m.key && <InfoTooltip term={m.tooltip.term} definition={m.tooltip.definition} />}
-            </span>
-          ))}
+          {METRICAS.map((m) => {
+            const activa = compararNominalReal && puedeCompararNominalReal && m.key !== 'patrimonio'
+              ? true
+              : metrica === m.key
+            return (
+              <span key={m.key} className="inline-flex items-center gap-0.5">
+                <button
+                  onClick={() => setMetrica(m.key)}
+                  className={
+                    activa
+                      ? 'rounded-full bg-navy-950 px-3 py-1 text-[11.5px] font-semibold text-white'
+                      : 'rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-semibold text-ink-muted'
+                  }
+                >
+                  {m.label}
+                </button>
+                {metrica === m.key && <InfoTooltip term={m.tooltip.term} definition={m.tooltip.definition} />}
+              </span>
+            )
+          })}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -297,7 +312,7 @@ export default function PanelGraficoResultados({
           series={series}
           mostrarBanda={mostrarBanda}
           mostrarMinMax={mostrarBanda && !compararNominalReal}
-          formatY={(v) => formatMoneda(v, moneda)}
+          formatY={(v) => formatMoneda(v, monedaActual)}
           vencimientos={vencimientos}
           breakeven={breakeven}
           height="100%"

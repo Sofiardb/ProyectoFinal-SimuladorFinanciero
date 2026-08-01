@@ -36,10 +36,12 @@ export default function PortfoliosPage() {
 
   const perfilActivo = perfiles?.find((p) => p.idPerfilRiesgo === activeTab)
   const estilo = perfilActivo ? getPerfilEstilo(perfilActivo.nombre) : null
-  const portfoliosDelPerfil = (portfolios ?? []).filter((p) => p.idPerfilRiesgo === activeTab)
+  const portfoliosDelPerfil = (portfolios ?? [])
+    .filter((p) => p.idPerfilRiesgo === activeTab)
+    .sort((a, b) => Number(a.estado === 'ARCHIVADO') - Number(b.estado === 'ARCHIVADO'))
 
   return (
-    <div className="mx-auto max-w-[1080px] px-4 pt-8 pb-10 sm:px-6 lg:px-8 lg:pt-11 lg:pb-16">
+    <div className="page-shell-lg max-w-[1080px]">
       <div className="mb-7">
         <h1 className="mb-1.5 font-display text-2xl font-bold text-navy-950 xl:text-[28px]">
           Mis portfolios

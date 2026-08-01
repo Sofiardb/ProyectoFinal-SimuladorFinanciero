@@ -8,10 +8,18 @@ function ultimo(v: number[] | undefined): number | undefined {
   return v && v.length > 0 ? v[v.length - 1] : undefined
 }
 
+export interface KpiPortfolioMoneda {
+  ambito:            'portfolio_ars' | 'portfolio_usd'
+  moneda:             'ARS' | 'USD'
+  montoInvertido:     number | undefined
+  valorFinalMediana:  number | undefined
+  patrimonio:         StatsVector | undefined
+  gananciasReales:    StatsVector | undefined
+}
+
 /**
  * Toda la data + derivaciones que necesita una vista de resultados de una simulación (KPIs,
- * ámbitos disponibles por moneda, series de inflación) — extraído de ResultadosPage para poder
- * reusarlo dos veces en CompararPage (una por simulación elegida) sin duplicar la lógica.
+ * ámbitos disponibles por moneda, series de inflación).
  */
 export function useResultadosSimulacionView(idSimulacion: number) {
   const { data: sim, isLoading: loadingSim } = useSimulacionDetalle(idSimulacion)
@@ -44,9 +52,13 @@ export function useResultadosSimulacionView(idSimulacion: number) {
   }
 
   const ambitosPortfolio = useMemo(() => {
-    if (!filas) return []
-    return (['portfolio_ars', 'portfolio_usd'] as const).filter((a) => filas.some((f) => f.ambito === a))
-  }, [filas])
+    if (!filas || !sim) return []
+    return (['portfolio_ars', 'portfolio_usd'] as const).filter((a) => {
+      if (!filas.some((f) => f.ambito === a)) return false
+      const montoInicial = a === 'portfolio_ars' ? sim.valorInicialArs : sim.valorInicialUsd
+      return montoInicial == null || montoInicial > 0
+    })
+  }, [filas, sim])
 
   const ambitosArs = useMemo(() => {
     if (!filas) return []
@@ -62,20 +74,22 @@ export function useResultadosSimulacionView(idSimulacion: number) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filas, detalle])
 
-  // KPIs de cabecera: snapshot fijo (portfolio en ARS si existe, si no USD; escenario global).
-  const ambitoKpi = ambitosPortfolio.includes('portfolio_ars') ? 'portfolio_ars' : ambitosPortfolio[0]
-  const monedaKpi = ambitoKpi ? monedaDe(ambitoKpi) : 'ARS'
-  const patrimonioKpi = ambitoKpi ? filaFor(ambitoKpi, 'global', 'patrimonio') : undefined
+  const kpisPortfolio: KpiPortfolioMoneda[] = ambitosPortfolio.map((ambito) => {
+    const patrimonio = filaFor(ambito, 'global', 'patrimonio')
+    return {
+      ambito,
+      moneda: monedaDe(ambito),
+      montoInvertido: ambito === 'portfolio_ars' ? sim?.valorInicialArs : sim?.valorInicialUsd,
+      valorFinalMediana: ultimo(patrimonio?.mediana),
+      patrimonio,
+      gananciasReales: filaFor(ambito, 'global', 'ganancias_reales'),
+    }
+  })
   const inflacionArsKpi = filaFor('global', 'global', 'inflacion_acumulada')
   const inflacionUsdKpi = filaFor('global', 'global', 'inflacion_acumulada_usd')
-  const gananciasRealesKpi = ambitoKpi ? filaFor(ambitoKpi, 'global', 'ganancias_reales') : undefined
 
-  const valorFinalMediana = ultimo(patrimonioKpi?.mediana)
   const inflacionAcumuladaArs = ultimo(inflacionArsKpi?.mediana)
   const inflacionAcumuladaUsd = ultimo(inflacionUsdKpi?.mediana)
-  const montoInvertido = sim
-    ? (monedaKpi === 'ARS' ? sim.valorInicialArs : sim.valorInicialUsd) ?? sim.valorInicial
-    : undefined
 
   function serieInflacion(metrica: MetricaResultado, transform: (v: number) => number): SerieInflacionPorEscenario {
     const leer = (esc: EscenarioNombre) => {
@@ -102,18 +116,13 @@ export function useResultadosSimulacionView(idSimulacion: number) {
     ambitosPortfolio,
     ambitosArs,
     ambitosUsd,
-    ambitoKpi,
-    monedaKpi,
-    valorFinalMediana,
-    montoInvertido,
+    kpisPortfolio,
     inflacionAcumuladaArs,
     inflacionAcumuladaUsd,
     mensualArs,
     mensualUsd,
     acumuladaArs,
     acumuladaUsd,
-    patrimonioKpi,
-    gananciasRealesKpi,
   }
 }
 

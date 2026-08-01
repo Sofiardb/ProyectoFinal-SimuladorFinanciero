@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout'
 import { useForgotPassword } from '@/api/hooks'
 
@@ -70,11 +71,7 @@ export default function ForgotPasswordPage() {
                 inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'vos@ejemplo.com', autoComplete: 'email' }}
               />
 
-              {forgotPassword.isError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{forgotPassword.error.message}</AlertDescription>
-                </Alert>
-              )}
+              <MutationErrorAlert error={forgotPassword.error} />
 
               <Button
                 type="submit"

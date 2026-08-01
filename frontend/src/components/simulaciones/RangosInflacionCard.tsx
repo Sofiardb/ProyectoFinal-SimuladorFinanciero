@@ -9,11 +9,6 @@ const LABEL_POR_ESCENARIO: Record<string, string> = {
   desfavorable: 'Desfavorable',
 }
 
-/**
- * Rangos de inflación mensual por escenario — de solo lectura. El prototipo los muestra como inputs
- * editables, pero no hay override por corrida en el backend (docs/09 §4): escenario_economico es una
- * tabla de configuración global de admin. Mismo espíritu pasivo que TipoCambioIndicator.
- */
 export default function RangosInflacionCard() {
   const { data: escenarios, isLoading } = useEscenariosEconomicos()
 

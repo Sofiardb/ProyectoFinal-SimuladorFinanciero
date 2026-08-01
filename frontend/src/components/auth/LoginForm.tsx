@@ -4,9 +4,9 @@ import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import { useLogin } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -73,11 +73,7 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
           )}
         />
 
-        {loginMutation.isError && (
-          <Alert variant="destructive">
-            <AlertDescription>{loginMutation.error.message}</AlertDescription>
-          </Alert>
-        )}
+        <MutationErrorAlert error={loginMutation.error} />
 
         <Button
           type="submit"

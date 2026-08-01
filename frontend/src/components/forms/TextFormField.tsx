@@ -12,7 +12,6 @@ interface Props<TFieldValues extends FieldValues> {
   inputProps?:    Omit<ComponentProps<typeof Input>, 'name'>
 }
 
-/** Campo de texto de un formulario react-hook-form: agrupa FormItem+FormLabel+Input+FormMessage. */
 export default function TextFormField<TFieldValues extends FieldValues>({
   control,
   name,

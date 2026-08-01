@@ -14,6 +14,7 @@ public interface ISimulacionRepository
     Task<IReadOnlyList<ResultadoSimulacionResponse>> ObtenerResultadosAsync(long idSimulacion, long idUsuario, string? ambito, CancellationToken ct = default);
     Task<IReadOnlyList<InstrumentoSimulacionResponse>> ObtenerInstrumentosAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
     Task<SimulacionPreviewResponse?> ObtenerPreviewAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
+    Task<bool> EliminarAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
 
     Task<TenenciasSimulacionData> ObtenerTenenciasParaSimulacionAsync(long idPortfolio, CancellationToken ct = default);
     Task<EscenarioSimulacion[]> ObtenerEscenariosVigentesAsync(CancellationToken ct = default);
@@ -356,6 +357,21 @@ public sealed class SimulacionRepository : ISimulacionRepository
         var rows = await conn.QueryAsync<InstrumentoRow>(
             new CommandDefinition(sql, new { idSimulacion, idUsuario }, cancellationToken: ct));
         return rows.Select(ToInstrumento).ToList();
+    }
+
+    public async Task<bool> EliminarAsync(long idSimulacion, long idUsuario, CancellationToken ct = default)
+    {
+        using var conn = _db.Crear();
+        const string sql = """
+            DELETE FROM simulacion s
+            USING portfolio p
+            WHERE s.id_simulacion = @idSimulacion
+              AND s.id_portfolio  = p.id_portfolio
+              AND p.id_usuario    = @idUsuario
+            """;
+        var affected = await conn.ExecuteAsync(
+            new CommandDefinition(sql, new { idSimulacion, idUsuario }, cancellationToken: ct));
+        return affected > 0;
     }
 
     public async Task<SimulacionPreviewResponse?> ObtenerPreviewAsync(

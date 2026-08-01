@@ -33,7 +33,7 @@ export default function TenenciaResumenRow({
       </div>
       <Link
         to={editHref}
-        className="ml-auto shrink-0 text-[12px] font-semibold whitespace-nowrap text-navy-950 hover:underline"
+        className="tenencia-row-action ml-auto"
       >
         Editar →
       </Link>

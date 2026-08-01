@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/api/client'
+import { tienePortfolioInstrumentos } from '@/hooks/usePortfolioInstrumentos'
 import type { PortfolioDetalle, PortfolioResumen } from '@/types'
 
 export function usePortfolios() {
@@ -15,6 +16,30 @@ export function usePortfolio(idPortfolio: number) {
     queryFn: () => api.get<PortfolioDetalle>(`/portfolios/${idPortfolio}`),
     enabled: Number.isFinite(idPortfolio),
   })
+}
+
+/**
+ * Portfolios del usuario simulables: activos (no archivados) y que ya tienen al menos un
+ * instrumento cargado — para el selector de "Nueva simulación". Mismo patrón N+1 ya aceptado
+ * para PortfolioCard/useTodasLasSimulaciones: trae el detalle de cada portfolio en paralelo.
+ */
+export function usePortfoliosConInstrumentos() {
+  const { data: portfolios, isLoading: loadingPortfolios } = usePortfolios()
+
+  const detalles = useQueries({
+    queries: (portfolios ?? []).map((p) => ({
+      queryKey: ['portfolio', p.idPortfolio],
+      queryFn: () => api.get<PortfolioDetalle>(`/portfolios/${p.idPortfolio}`),
+    })),
+  })
+
+  const isLoading = loadingPortfolios || detalles.some((d) => d.isLoading)
+
+  const data = (portfolios ?? []).filter(
+    (p, i) => p.estado !== 'ARCHIVADO' && tienePortfolioInstrumentos(detalles[i]?.data),
+  )
+
+  return { data, isLoading }
 }
 
 export interface CrearPortfolioPayload {

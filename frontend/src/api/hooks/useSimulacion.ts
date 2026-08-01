@@ -20,9 +20,17 @@ export function useLanzarSimulacion(idPortfolio: number) {
       api.post<SimulacionResumen>(`/portfolios/${idPortfolio}/simular`, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', idPortfolio] })
-      // Historial (por portfolio y global) y la card de "Historial de simulaciones" del detalle
-      // leen esta misma query key — sin esto, la corrida recién lanzada no aparecía hasta refrescar.
       queryClient.invalidateQueries({ queryKey: ['simulaciones', 'portfolio', idPortfolio] })
+    },
+  })
+}
+
+export function useDeleteSimulacion() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (idSimulacion: number) => api.delete<void>(`/simulaciones/${idSimulacion}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['simulaciones'] })
     },
   })
 }

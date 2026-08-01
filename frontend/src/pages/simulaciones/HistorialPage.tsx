@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import ValorPorMoneda from '@/components/simulaciones/ValorPorMoneda'
-import { usePerfilesRiesgo, useTodasLasSimulaciones } from '@/api/hooks'
+import DeleteSimulacionDialog from '@/components/simulaciones/DeleteSimulacionDialog'
+import { usePerfilesRiesgo, useTodasLasSimulaciones, type SimulacionConPortfolio } from '@/api/hooks'
 import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +13,7 @@ export default function HistorialPage() {
   const { data: simulaciones, isLoading } = useTodasLasSimulaciones()
   const [perfilFiltro, setPerfilFiltro] = useState<number | null>(null)
   const [seleccionadas, setSeleccionadas] = useState<number[]>([])
+  const [aEliminar, setAEliminar] = useState<SimulacionConPortfolio | null>(null)
   const navigate = useNavigate()
 
   const filtradas = perfilFiltro == null ? simulaciones : simulaciones.filter((s) => s.idPerfilRiesgo === perfilFiltro)
@@ -33,7 +35,7 @@ export default function HistorialPage() {
     <div className="page-shell max-w-[1080px]">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="mb-1.5 font-display text-2xl leading-tight font-bold text-navy-950 xl:text-[26px]">
+          <h1 className="page-title mb-1.5">
             Historial de simulaciones
           </h1>
           <p className="text-[13.5px] text-ink-muted">Todas las corridas de tus portfolios, más recientes primero.</p>
@@ -100,6 +102,7 @@ export default function HistorialPage() {
                 <th className="px-2 py-3 font-semibold">Valor final</th>
                 <th className="px-2 py-3 font-semibold">Retorno esperado</th>
                 <th className="px-4 py-3 font-semibold">Resultados</th>
+                <th className="px-4 py-3 font-semibold"></th>
               </tr>
             </thead>
             <tbody>
@@ -145,12 +148,30 @@ export default function HistorialPage() {
                         Ver →
                       </Link>
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setAEliminar(s)}
+                        className="font-semibold text-danger hover:underline"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
         </div>
+      )}
+
+      {aEliminar && (
+        <DeleteSimulacionDialog
+          open
+          onOpenChange={(open) => !open && setAEliminar(null)}
+          idSimulacion={aEliminar.idSimulacion}
+          descripcion={`${aEliminar.nombrePortfolio} · ${formatFecha(aEliminar.fechaEjecucion)} · ${aEliminar.horizonteMeses} meses`}
+          onDeleted={() => setAEliminar(null)}
+        />
       )}
     </div>
   )

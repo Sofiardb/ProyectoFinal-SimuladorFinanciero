@@ -113,4 +113,15 @@ public sealed class SimulacionController : ControllerBase
 
         return Ok(await _repo.ObtenerInstrumentosAsync(id, GetUserId(), ct));
     }
+
+    /// <summary>Elimina una simulación y sus datos asociados (resultados, instrumentos, trayectorias — CASCADE).</summary>
+    [HttpDelete("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Eliminar(long id, CancellationToken ct)
+    {
+        if (!await _repo.EliminarAsync(id, GetUserId(), ct))
+            throw new NotFoundException($"Simulación {id} no encontrada.");
+        return NoContent();
+    }
 }

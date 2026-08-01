@@ -1,8 +1,4 @@
-/**
- * Muestra un valor combinado (ARS+USD) cuando el backend pudo calcularlo, o el desglose por moneda
- * cuando no — el backend deja el campo combinado en null si el portfolio invierte en ambas monedas a la
- * vez, porque combinarlas requeriría proyectar el tipo de cambio a T meses (docs/02 Decisión 9).
- */
+
 export default function ValorPorMoneda({
   combinado,
   ars,

@@ -12,7 +12,7 @@
 --     con alta precisión decimal sin pérdida por flotante.
 --   * Porcentajes / tasas: NUMERIC(10,8) expresados en forma decimal
 --     (0.05 = 5%).
--- =============================================================================
+-- =============================================================================69
 
 BEGIN;
 

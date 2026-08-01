@@ -2,9 +2,7 @@ import { useState } from 'react'
 
 /**
  * Estado de edición/alta inline compartido por las secciones de tenencias (acciones, bonos,
- * letras, plazo fijo). Encapsula qué fila está en edición o si se está agregando una nueva,
- * y el patrón de "guardar y cerrar la fila, o dejarla abierta si falla" (el error se muestra
- * aparte, en el banner de la sección).
+ * letras, plazo fijo). 
  */
 export function useEditableSectionState() {
   const [editingId, setEditingId] = useState<number | null>(null)

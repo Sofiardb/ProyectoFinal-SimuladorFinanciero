@@ -87,9 +87,7 @@ interface InflacionChartProps {
 }
 
 /**
- * 4 mini-gráficos (mensual/acumulada × ARS/USD) en vez de un solo gráfico de doble eje — mensual
- * (tasa) y acumulada (índice) tienen escalas muy distintas y un dual-axis inventaría una
- * correlación que no existe (dataviz skill, anti-patrones). Cada mini-gráfico compara los 3
+ * 4 mini-gráficos (mensual/acumulada × ARS/USD). Cada mini-gráfico compara los 3
  * escenarios con los mismos colores que el resto de la app.
  */
 export default function InflacionChart({ mensualArs, mensualUsd, acumuladaArs, acumuladaUsd }: InflacionChartProps) {

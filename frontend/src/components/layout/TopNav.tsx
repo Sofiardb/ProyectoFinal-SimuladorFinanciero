@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, TrendingUp, UserCog, LogOut, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -27,9 +27,18 @@ function iniciales(nombre?: string, apellido?: string, username?: string): strin
   return (username ?? '?').slice(0, 2).toUpperCase()
 }
 
+/** /simulaciones/nueva no debe marcar el tab "Historial" — se llega ahí desde el botón aparte, no navegando el historial. */
+function isNavItemActive(pathname: string, to: string): boolean {
+  if (to === '/simulaciones') {
+    return pathname === '/simulaciones' || (pathname.startsWith('/simulaciones/') && pathname !== '/simulaciones/nueva')
+  }
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
+
 export default function TopNav() {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navItems = usuario?.esAdmin
@@ -58,14 +67,12 @@ export default function TopNav() {
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) =>
-                  cn(
-                    'flex h-full items-center border-b-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'border-navy-950 font-semibold text-navy-950'
-                      : 'border-transparent text-muted-foreground hover:text-navy-950',
-                  )
-                }
+                className={cn(
+                  'flex h-full items-center border-b-2 text-sm font-medium transition-colors',
+                  isNavItemActive(location.pathname, to)
+                    ? 'border-navy-950 font-semibold text-navy-950'
+                    : 'border-transparent text-muted-foreground hover:text-navy-950',
+                )}
               >
                 {label}
               </NavLink>
@@ -140,14 +147,12 @@ export default function TopNav() {
                 key={to}
                 to={to}
                 onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-navy-950 text-white'
-                      : 'text-muted-foreground hover:bg-sand-100 hover:text-navy-950',
-                  )
-                }
+                className={cn(
+                  'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  isNavItemActive(location.pathname, to)
+                    ? 'bg-navy-950 text-white'
+                    : 'text-muted-foreground hover:bg-sand-100 hover:text-navy-950',
+                )}
               >
                 {label}
               </NavLink>

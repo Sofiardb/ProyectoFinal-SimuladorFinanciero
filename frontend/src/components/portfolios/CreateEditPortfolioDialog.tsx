@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -30,6 +29,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import TipoCambioIndicator from '@/components/portfolios/TipoCambioIndicator'
 import { useCreatePortfolio, useUpdatePortfolio, useMonedas, usePerfilesRiesgo } from '@/api/hooks'
 import type { PortfolioResumen } from '@/types'
@@ -229,11 +229,7 @@ function PortfolioForm({
           />
           <TipoCambioIndicator />
 
-          {mutation.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>{mutation.error.message}</AlertDescription>
-            </Alert>
-          )}
+          <MutationErrorAlert error={mutation.error} />
 
           <DialogFooter>
             <Button

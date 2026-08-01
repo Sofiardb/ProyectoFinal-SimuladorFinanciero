@@ -4,30 +4,27 @@ import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import { useRegister } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
+import { confirmPasswordFieldSchema, passwordFieldSchema, refinePasswordsMatch } from '@/lib/validation'
 
-const registerSchema = z
-  .object({
+const registerSchema = refinePasswordsMatch(
+  z.object({
     email: z.string().min(1, 'Ingresá tu email.').email('Email inválido.'),
     username: z.string().min(1, 'Ingresá un nombre de usuario.'),
     nombre: z.string().optional(),
     apellido: z.string().optional(),
-    password: z.string().min(8, 'Debe tener al menos 8 caracteres.'),
-    confirmPassword: z.string().min(1, 'Repetí tu contraseña.'),
+    password: passwordFieldSchema,
+    confirmPassword: confirmPasswordFieldSchema,
     terms: z.boolean(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contraseñas no coinciden.',
-    path: ['confirmPassword'],
-  })
-  .refine((data) => data.terms, {
-    message: 'Tenés que aceptar para continuar.',
-    path: ['terms'],
-  })
+  }),
+).refine((data) => data.terms, {
+  message: 'Tenés que aceptar para continuar.',
+  path: ['terms'],
+})
 
 type RegisterValues = z.infer<typeof registerSchema>
 
@@ -163,11 +160,7 @@ export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () 
           )}
         />
 
-        {registerMutation.isError && (
-          <Alert variant="destructive">
-            <AlertDescription>{registerMutation.error.message}</AlertDescription>
-          </Alert>
-        )}
+        <MutationErrorAlert error={registerMutation.error} />
 
         <Button
           type="submit"

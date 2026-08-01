@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import DisabledButtonTooltip from '@/components/ui/disabled-button-tooltip'
 import GrupoMonedaList from '@/components/portfolios/GrupoMonedaList'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import PresupuestoBoxes from '@/components/portfolios/PresupuestoBoxes'
@@ -73,14 +74,24 @@ export default function PortfolioCard({
             {archivado ? ' · Archivado' : ''}
           </p>
         </div>
-        <button
-          onClick={() => navigate(`/portfolios/${portfolio.idPortfolio}/simular`)}
-          disabled={!tieneInstrumentos}
-          title={tieneInstrumentos ? undefined : 'Agregá al menos un instrumento para poder simular.'}
-          className="h-8 shrink-0 whitespace-nowrap rounded-[7px] bg-sand-50 px-3 text-xs font-semibold text-navy-950 hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-sand-50"
+        <DisabledButtonTooltip
+          className="shrink-0"
+          title={
+            archivado
+              ? 'Reactivá el portfolio para poder simular.'
+              : !tieneInstrumentos
+                ? 'Agregá al menos un instrumento para poder simular.'
+                : undefined
+          }
         >
-          Simular
-        </button>
+          <button
+            onClick={() => navigate(`/portfolios/${portfolio.idPortfolio}/simular`)}
+            disabled={archivado || !tieneInstrumentos}
+            className="h-8 whitespace-nowrap rounded-[7px] bg-sand-50 px-3 text-xs font-semibold text-navy-950 hover:bg-sand-100 disabled:pointer-events-none disabled:opacity-40"
+          >
+            Simular
+          </button>
+        </DisabledButtonTooltip>
       </div>
 
       {isLoading && (

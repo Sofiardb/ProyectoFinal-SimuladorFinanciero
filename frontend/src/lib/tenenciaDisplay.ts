@@ -195,11 +195,7 @@ export function plazoFijoPreview(pf: PortfolioPlazoFijo): CampoPreview[] {
   ]
 }
 
-// ─── Resolución de "ámbito" de resultado_simulacion a nombre + moneda ─────────
-// Convención de ids usada por MotorPayloadBuilder (SimulacionService.cs): acción/bono/letra
-// usan el id de catálogo (idAccion/idBono/idLetra); plazo fijo usa el id de la fila de tenencia
-// (idPortfolioPlazoFijo). Se resuelve contra el portfolio ACTUAL — si el instrumento ya no está
-// en el portfolio (se editó/eliminó después de esa corrida), se usa el ambito crudo como label.
+
 export interface AmbitoInfo {
   label:  string
   /** Identificador corto (ticker, o entidad financiera para plazo fijo) — para chips/marcadores*/

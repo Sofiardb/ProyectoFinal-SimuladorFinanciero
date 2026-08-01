@@ -7,18 +7,17 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout'
 import { useResetPassword } from '@/api/hooks'
+import { confirmPasswordFieldSchema, passwordFieldSchema, refinePasswordsMatch } from '@/lib/validation'
 
-const schema = z
-  .object({
-    password: z.string().min(8, 'Debe tener al menos 8 caracteres.'),
-    confirmPassword: z.string().min(1, 'Repetí tu contraseña.'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contraseñas no coinciden.',
-    path: ['confirmPassword'],
-  })
+const schema = refinePasswordsMatch(
+  z.object({
+    password: passwordFieldSchema,
+    confirmPassword: confirmPasswordFieldSchema,
+  }),
+)
 
 type Values = z.infer<typeof schema>
 
@@ -106,11 +105,7 @@ export default function ResetPasswordPage() {
               }}
             />
 
-            {resetPassword.isError && (
-              <Alert variant="destructive">
-                <AlertDescription>{resetPassword.error.message}</AlertDescription>
-              </Alert>
-            )}
+            <MutationErrorAlert error={resetPassword.error} />
 
             <Button
               type="submit"

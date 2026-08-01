@@ -405,7 +405,7 @@ function EditRow({
     duracionNum >= 1
 
   return (
-    <div className="flex flex-col gap-2 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
+    <div className="compare-card gap-2">
       <FormGrid
         moneda={moneda}
         tipos={tipos}
@@ -461,7 +461,7 @@ function AddRow({
     duracionNum >= 1
 
   return (
-    <div className="flex flex-col gap-2 rounded-[9px] border border-compare-border bg-compare-bg p-3.5">
+    <div className="compare-card gap-2">
       <FormGrid
         moneda={moneda}
         tipos={tipos}
