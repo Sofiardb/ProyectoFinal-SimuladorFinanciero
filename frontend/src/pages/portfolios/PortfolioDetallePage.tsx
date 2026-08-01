@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { useTour } from '@/contexts/TourContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import DeletePortfolioDialog from '@/components/portfolios/DeletePortfolioDialog'
@@ -35,6 +36,7 @@ export default function PortfolioDetallePage() {
 
   const { data: detalle, isLoading } = usePortfolio(idPortfolio)
   const tieneInstrumentos = useTienePortfolioInstrumentos(detalle)
+  const { avanzarSiEsperando } = useTour()
   const { data: simulaciones } = useSimulacionesPortfolio(idPortfolio)
   const { data: perfiles } = usePerfilesRiesgo()
   const { data: monedas } = useMonedas()
@@ -47,6 +49,18 @@ export default function PortfolioDetallePage() {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [simulacionAEliminar, setSimulacionAEliminar] = useState<SimulacionResumen | null>(null)
+
+  const idMonedaArs = monedas?.find((m) => m.codigoIso === 'ARS')?.idMoneda
+
+  useEffect(() => {
+    if (tieneInstrumentos) avanzarSiEsperando('agregar-instrumento-form')
+  }, [tieneInstrumentos, avanzarSiEsperando])
+
+  // El botón "+ Agregar plazo fijo (ARS)" que apunta el tour recién existe una vez que se resuelve
+  // idMonedaArs (además de la carga del portfolio) — esperamos eso, no solo el cambio de ruta.
+  useEffect(() => {
+    if (idMonedaArs != null) avanzarSiEsperando('crear-portfolio-form')
+  }, [idMonedaArs, avanzarSiEsperando])
 
   if (isLoading) {
     return (
@@ -71,7 +85,6 @@ export default function PortfolioDetallePage() {
 
   const sigmaMaxAccion = perfiles?.find((p) => p.idPerfilRiesgo === detalle.idPerfilRiesgo)?.sigmaMaxAccion
   const idMonedaUsd = monedas?.find((m) => m.codigoIso === 'USD')?.idMoneda
-  const idMonedaArs = monedas?.find((m) => m.codigoIso === 'ARS')?.idMoneda
   const archivado = detalle.estado === 'ARCHIVADO'
   const perfilLower = detalle.nombrePerfilRiesgo.toLowerCase()
 
@@ -142,6 +155,7 @@ export default function PortfolioDetallePage() {
               moneda="ARS"
               idMoneda={idMonedaArs}
               tiposPlazoFijo={tiposPlazoFijo}
+              addButtonDataTour="tour-agregar-instrumento"
             />
           )}
         </div>

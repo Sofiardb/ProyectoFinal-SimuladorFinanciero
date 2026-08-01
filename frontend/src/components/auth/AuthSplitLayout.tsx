@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react'
 import Logo from '@/components/brand/Logo'
 import TrendSparkline from '@/components/brand/TrendSparkline'
+import { cn } from '@/lib/utils'
 
 interface AuthSplitLayoutProps {
   headline: string
   body: string
   children: ReactNode
+  /** Deja un margen visible debajo (no ocupa el 100% del viewport), para que el usuario note que hay contenido para scrollear. */
+  compact?: boolean
 }
 
-export default function AuthSplitLayout({ headline, body, children }: AuthSplitLayoutProps) {
+export default function AuthSplitLayout({ headline, body, children, compact = false }: AuthSplitLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
+    <div className={cn('flex flex-col lg:flex-row', compact ? 'min-h-[80vh]' : 'min-h-screen')}>
       <div className="flex flex-col justify-between gap-8 bg-navy-950 px-6 py-10 sm:px-10 lg:w-[46%] lg:gap-0 lg:px-14 lg:py-14">
         <Logo variant="light" />
 

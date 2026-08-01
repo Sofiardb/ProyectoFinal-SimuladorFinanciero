@@ -40,7 +40,12 @@ export default function HistorialPage() {
           </h1>
           <p className="text-[13.5px] text-ink-muted">Todas las corridas de tus portfolios, más recientes primero.</p>
         </div>
-        <button onClick={comparar} disabled={seleccionadas.length !== 2} className="btn-primary">
+        <button
+          data-tour="tour-comparar"
+          onClick={comparar}
+          disabled={seleccionadas.length !== 2}
+          className="btn-primary"
+        >
           Comparar ({seleccionadas.length}/2)
         </button>
       </div>

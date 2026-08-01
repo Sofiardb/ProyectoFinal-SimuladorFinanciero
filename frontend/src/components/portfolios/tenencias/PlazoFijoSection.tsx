@@ -37,13 +37,14 @@ export interface EditarPlazoFijo {
 }
 
 interface Props {
-  titulo:       string
-  tooltip:      string
-  moneda:       string
-  tenencias:    PortfolioPlazoFijo[]
-  tipos:        TipoPlazoFijo[]
-  isMutating:   boolean
-  error?:       string | null
+  titulo:            string
+  tooltip:           string
+  moneda:            string
+  addButtonDataTour?: string
+  tenencias:         PortfolioPlazoFijo[]
+  tipos:             TipoPlazoFijo[]
+  isMutating:        boolean
+  error?:            string | null
   onAdd:    (payload: NuevoPlazoFijo) => Promise<void>
   onUpdate: (idPortfolioPlazoFijo: number, payload: EditarPlazoFijo) => Promise<void>
   onDelete: (idPortfolioPlazoFijo: number) => void
@@ -57,6 +58,7 @@ export default function PlazoFijoSection({
   titulo,
   tooltip,
   moneda,
+  addButtonDataTour,
   tenencias,
   tipos,
   isMutating,
@@ -81,6 +83,7 @@ export default function PlazoFijoSection({
       titulo={titulo}
       tooltip={tooltip}
       addLabel="+ Agregar plazo fijo"
+      addButtonDataTour={addButtonDataTour}
       isAdding={isAdding}
       onStartAdd={empezarAgregar}
       error={error}

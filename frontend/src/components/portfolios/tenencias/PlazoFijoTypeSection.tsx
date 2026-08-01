@@ -13,12 +13,14 @@ export default function PlazoFijoTypeSection({
   moneda,
   idMoneda,
   tiposPlazoFijo,
+  addButtonDataTour,
 }: {
   idPortfolio: number
   detalle: PortfolioDetalle
   moneda: 'ARS' | 'USD'
   idMoneda: number
   tiposPlazoFijo: TipoPlazoFijo[] | undefined
+  addButtonDataTour?: string
 }) {
   const addPlazoFijo = useAddPlazoFijo(idPortfolio)
   const updatePlazoFijo = useUpdatePlazoFijo(idPortfolio)
@@ -35,6 +37,7 @@ export default function PlazoFijoTypeSection({
         titulo={`Plazo fijo (${moneda})`}
         tooltip={moneda === 'USD' ? SECCION_TOOLTIPS.plazoFijoUsd : SECCION_TOOLTIPS.plazoFijoArs}
         moneda={moneda}
+        addButtonDataTour={addButtonDataTour}
         tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === moneda)}
         tipos={tipos}
         isMutating={addPlazoFijo.isPending || updatePlazoFijo.isPending || deletePlazoFijo.isPending}

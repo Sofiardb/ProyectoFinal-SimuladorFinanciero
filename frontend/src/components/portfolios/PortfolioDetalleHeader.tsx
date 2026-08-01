@@ -67,6 +67,7 @@ export default function PortfolioDetalleHeader({
             }
           >
             <button
+              data-tour="tour-simular"
               onClick={() => navigate(`/portfolios/${idPortfolio}/simular`)}
               disabled={archivado || !tieneInstrumentos}
               className="btn-primary"

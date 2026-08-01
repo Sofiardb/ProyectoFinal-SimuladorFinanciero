@@ -58,7 +58,7 @@ export default function PortfoliosPage() {
       ) : (
         <>
           <div className="-mx-4 mb-7 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div role="tablist" className="flex gap-2 border-b-[1.5px] border-line">
+            <div role="tablist" data-tour="tour-perfil-tabs" className="flex gap-2 border-b-[1.5px] border-line">
               {perfiles.map((p) => {
                 const isActive = p.idPerfilRiesgo === activeTab
                 return (
@@ -115,6 +115,7 @@ export default function PortfoliosPage() {
               ))}
 
               <button
+                data-tour="tour-crear-portfolio"
                 onClick={() => setCreateOpen(true)}
                 className="flex min-h-[200px] flex-col items-center justify-center gap-2.5 rounded-xl border-[1.5px] border-dashed border-line-dashed p-6 transition-colors hover:border-navy-950/40 hover:bg-chip"
               >

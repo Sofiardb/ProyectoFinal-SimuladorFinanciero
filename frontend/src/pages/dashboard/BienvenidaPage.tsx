@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import { usePortfolios } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTour } from '@/contexts/TourContext'
 import { cn } from '@/lib/utils'
 
 const ACCIONES = [
@@ -15,6 +16,7 @@ const ACCIONES = [
     titulo: 'Mis portfolios',
     descripcion: 'Ver, crear y editar tus carteras por perfil de riesgo.',
     destacada: true,
+    tourId: 'tour-portfolios',
   },
   {
     to: '/simulaciones/nueva',
@@ -37,6 +39,7 @@ export default function BienvenidaPage() {
   const { usuario } = useAuth()
   const { data: portfolios } = usePortfolios()
   const [createOpen, setCreateOpen] = useState(false)
+  const { iniciarTour } = useTour()
 
   const cantidadPortfolios = portfolios?.length ?? 0
   const tienePortfolios = cantidadPortfolios > 0
@@ -54,9 +57,10 @@ export default function BienvenidaPage() {
       </p>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {ACCIONES.map(({ to, icon: Icon, titulo, descripcion, destacada }) => (
+        {ACCIONES.map(({ to, icon: Icon, titulo, descripcion, destacada, tourId }) => (
           <button
             key={to}
+            data-tour={tourId}
             onClick={() => navigate(to)}
             className={cn(
               'rounded-xl p-5 text-left transition-transform hover:-translate-y-0.5',
@@ -114,6 +118,12 @@ export default function BienvenidaPage() {
             >
               Crear mi primer portfolio
             </Button>
+            <button
+              onClick={iniciarTour}
+              className="text-xs font-semibold text-blue-brand hover:underline"
+            >
+              ¿Preferís que te guiemos paso a paso?
+            </button>
           </CardContent>
         </Card>
       )}

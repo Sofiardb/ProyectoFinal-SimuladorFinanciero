@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, TrendingUp, UserCog, LogOut, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import Logo from '@/components/brand/Logo'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTour } from '@/contexts/TourContext'
 
 const baseNavItems = [
   { to: '/bienvenida', label: 'Inicio' },
@@ -39,11 +40,21 @@ export default function TopNav() {
   const { usuario, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { pasoActual } = useTour()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navItems = usuario?.esAdmin
     ? [...baseNavItems, { to: '/admin', label: 'Admin' }]
     : baseNavItems
+
+  // El paso "ir-historial" del tour apunta al link de Historial, que en pantallas chicas vive
+  // adentro del menú hamburguesa — hay que abrirlo para que el elemento exista y sea visible.
+  useEffect(() => {
+    if (pasoActual !== 'ir-historial') return
+    if (!window.matchMedia('(max-width: 767px)').matches) return
+    setMobileOpen(true)
+    return () => setMobileOpen(false)
+  }, [pasoActual])
 
   const handleLogout = () => {
     logout()
@@ -67,6 +78,7 @@ export default function TopNav() {
               <NavLink
                 key={to}
                 to={to}
+                data-tour={to === '/simulaciones' ? 'tour-historial-nav' : undefined}
                 className={cn(
                   'flex h-full items-center border-b-2 text-sm font-medium transition-colors',
                   isNavItemActive(location.pathname, to)
@@ -146,6 +158,7 @@ export default function TopNav() {
               <NavLink
                 key={to}
                 to={to}
+                data-tour={to === '/simulaciones' ? 'tour-historial-nav' : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   'rounded-md px-3 py-2 text-sm font-medium transition-colors',

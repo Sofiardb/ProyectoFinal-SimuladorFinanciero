@@ -25,7 +25,7 @@ export default function SimulacionFinalizadaCard({
         <button onClick={onVolverAlPortfolio} className="btn-secondary">
           Volver al portfolio
         </button>
-        <button onClick={onVerResultados} className="btn-primary">
+        <button data-tour="tour-ver-resultados" onClick={onVerResultados} className="btn-primary">
           Ver resultados →
         </button>
       </div>

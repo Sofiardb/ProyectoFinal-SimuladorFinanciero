@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTour } from '@/contexts/TourContext'
 import DisabledButtonTooltip from '@/components/ui/disabled-button-tooltip'
 import RangosInflacionCard from '@/components/simulaciones/RangosInflacionCard'
 import ConfirmarSimulacionStaleDialog from '@/components/simulaciones/nuevaSimulacion/ConfirmarSimulacionStaleDialog'
@@ -45,6 +46,11 @@ function ConfigurarSimulacion({
   const [horizonteMeses, setHorizonteMeses] = useState(HORIZONTE_DEFAULT)
   const [resumen, setResumen] = useState<SimulacionResumen | null>(null)
   const [confirmStaleOpen, setConfirmStaleOpen] = useState(false)
+  const { avanzarSiEsperando } = useTour()
+
+  useEffect(() => {
+    if (resumen) avanzarSiEsperando('simulacion-form')
+  }, [resumen, avanzarSiEsperando])
 
   if (loadingDetalle || loadingPreview) {
     return (
@@ -166,6 +172,7 @@ function ConfigurarSimulacion({
         </p>
         <DisabledButtonTooltip title={bloqueado ? 'Hay instrumentos vencidos que bloquean esta simulación.' : undefined}>
           <button
+            data-tour="tour-lanzar-simulacion"
             onClick={handleLanzarClick}
             disabled={bloqueado || lanzarSimulacion.isPending}
             className="btn-primary"
