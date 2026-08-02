@@ -1,3 +1,4 @@
+import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigger'
 import { formatMoneda } from '@/lib/format'
 import type { StatsVector } from '@/types'
 
@@ -10,15 +11,22 @@ export default function PercentilesPatrimonioTabla({
   moneda,
   patrimonio,
   gananciasReales,
+  dataGuia,
+  onAbrirGuia,
 }: {
   titulo:          string
   moneda:          'ARS' | 'USD'
   patrimonio:      StatsVector
   gananciasReales: StatsVector
+  dataGuia?:       string
+  onAbrirGuia?:    () => void
 }) {
   return (
-    <div className="card overflow-x-auto">
-      <p className="card-section-label mb-3">{titulo}</p>
+    <div className="card overflow-x-auto" data-guia={dataGuia}>
+      <p className="card-section-label mb-3 flex items-center gap-1">
+        {titulo}
+        {onAbrirGuia && <GuiaResultadosTrigger onClick={onAbrirGuia} />}
+      </p>
       <table className="w-full text-[12.5px]">
         <thead>
           <tr className="text-left text-ink-soft">

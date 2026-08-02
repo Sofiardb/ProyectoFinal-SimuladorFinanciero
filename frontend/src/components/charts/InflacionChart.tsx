@@ -1,4 +1,5 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigger'
 import { formatPorcentaje } from '@/lib/format'
 
 const ESCENARIOS = [
@@ -84,18 +85,22 @@ interface InflacionChartProps {
   mensualUsd:    SerieInflacionPorEscenario
   acumuladaArs:  SerieInflacionPorEscenario
   acumuladaUsd:  SerieInflacionPorEscenario
+  onAbrirGuia?:  () => void
 }
 
 /**
  * 4 mini-gráficos (mensual/acumulada × ARS/USD). Cada mini-gráfico compara los 3
  * escenarios con los mismos colores que el resto de la app.
  */
-export default function InflacionChart({ mensualArs, mensualUsd, acumuladaArs, acumuladaUsd }: InflacionChartProps) {
+export default function InflacionChart({ mensualArs, mensualUsd, acumuladaArs, acumuladaUsd, onAbrirGuia }: InflacionChartProps) {
   if (mensualArs.favorable.length === 0) return null
 
   return (
-    <div className="card mb-5">
-      <p className="card-section-label mb-3">Inflación por escenario</p>
+    <div className="card mb-5" data-guia="grafico-inflacion">
+      <p className="card-section-label mb-3 flex items-center gap-1">
+        Inflación por escenario
+        {onAbrirGuia && <GuiaResultadosTrigger onClick={onAbrirGuia} />}
+      </p>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <MiniChart titulo="Mensual (ARS)" datos={mensualArs} />
         <MiniChart titulo="Mensual (USD)" datos={mensualUsd} />

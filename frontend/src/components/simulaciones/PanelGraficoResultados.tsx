@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import EscenarioChart, { type BreakevenMarcador, type SerieEscenario, type VencimientoMarcador } from '@/components/charts/EscenarioChart'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
+import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigger'
 import { resolveAmbitoInfo } from '@/lib/tenenciaDisplay'
 import { formatMoneda } from '@/lib/format'
 import { RESULTADOS_TOOLTIPS } from '@/lib/tooltips'
@@ -24,7 +25,6 @@ const METRICAS: { key: MetricaResultado; label: string; tooltip: { term: string;
   { key: 'ganancias_reales', label: 'Ganancias reales', tooltip: RESULTADOS_TOOLTIPS.gananciasReales },
 ]
 
-/** Métrica "contraria" para el overlay nominal-vs-real (idea 4) — no aplica a patrimonio. */
 function metricaOpuesta(m: MetricaResultado): MetricaResultado {
   return m === 'ganancias_nominales' ? 'ganancias_reales' : 'ganancias_nominales'
 }
@@ -33,30 +33,23 @@ function metricaCorta(m: MetricaResultado): string {
   return m === 'ganancias_nominales' ? 'Nominal' : 'Real'
 }
 
-// Par de colores fijo para el overlay nominal-vs-real (idea 4) — independiente del color que
-// tendría la serie normalmente (instrumento/escenario), para que las dos líneas se distingan por
-// color y no solo por el punteado. Validado con el validador de paletas del dataviz skill:
-// ΔE CVD 26.7 (protan) / 24.9 (tritan), ΔE visión normal 30.4, contraste >= 3:1 sobre blanco.
 const COLOR_NOMINAL = '#2a78d6'
 const COLOR_REAL = '#c1740f'
 
-// Paleta categórica validada (dataviz skill) para comparar N instrumentos/ámbitos a la vez —
-// los colores de escenario (favorable/moderado/desfavorable) están reservados semánticamente.
 const PALETA_INSTRUMENTOS = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a', '#eb6834', '#4a3aa7', '#e34948']
 
 interface PanelGraficoResultadosProps {
   titulo: string
   ambitosDisponibles: string[]
-  /** true = elegís un solo ámbito a la vez (radio) — se usa para portfolio, donde ARS y USD no
-   * pueden convivir en el mismo gráfico por escala/unidad. false = selección múltiple (chips),
-   * para comparar varios instrumentos de la misma moneda. */
   seleccionUnica: boolean
   moneda: 'ARS' | 'USD'
   filas: ResultadoSimulacionRow[]
   detalle: PortfolioDetalle | undefined
   instrumentos: InstrumentoSimulacion[] | undefined
-  /** Monto invertido para cualquier ámbito — usado por la línea de "punto de equilibrio". */
   montoInvertidoDe: (ambito: string) => number | undefined
+  guiaAnchors?: boolean
+  dataGuiaPanel?: string
+  onAbrirGuia?: () => void
 }
 
 export default function PanelGraficoResultados({
@@ -68,6 +61,9 @@ export default function PanelGraficoResultados({
   detalle,
   instrumentos,
   montoInvertidoDe,
+  guiaAnchors,
+  dataGuiaPanel,
+  onAbrirGuia,
 }: PanelGraficoResultadosProps) {
   const [ambitosSeleccionados, setAmbitosSeleccionados] = useState<string[]>(
     ambitosDisponibles.length > 0 ? [ambitosDisponibles[0]] : [],
@@ -99,8 +95,6 @@ export default function PanelGraficoResultados({
     return moneda
   }
 
-  // El panel "Portfolio" alterna entre portfolio_ars y portfolio_usd con el mismo prop `moneda`
-  // fijo — sin esto el eje Y quedaba formateado en la moneda inicial aunque se cambiara de pestaña.
   const monedaActual = ambitosSeleccionados.length === 1 ? monedaDe(ambitosSeleccionados[0]) : moneda
 
   function elegirAmbito(ambito: string) {
@@ -113,25 +107,16 @@ export default function PanelGraficoResultados({
 
   const mostrarBanda = !modoA && ambitosSeleccionados.length === 1
 
-  // "Comparar los 3 escenarios" (modoA) solo tiene sentido con un único ámbito (una serie por
-  // escenario); si se agrega un segundo ámbito mientras estaba activo, se desactiva solo — sin
-  // esto, quedaba "prendido" en segundo plano y podía reaparecer solo al volver a 1 seleccionado.
   useEffect(() => {
     if (modoA && ambitosSeleccionados.length !== 1) setModoA(false)
   }, [modoA, ambitosSeleccionados.length])
 
-  // El overlay nominal-vs-real (idea 4) solo tiene sentido con una única serie visible: con más de
-  // un ámbito o con los 3 escenarios a la vez, superponer también nominal/real duplicaría todas las
-  // líneas y el gráfico se vuelve ilegible. Tampoco aplica a "patrimonio" (no hay una versión
-  // "nominal" vs. "real" separada de esa métrica, solo de las ganancias).
   const puedeCompararNominalReal = metrica !== 'patrimonio' && !modoA && ambitosSeleccionados.length === 1
   useEffect(() => {
     if (compararNominalReal && !puedeCompararNominalReal) setCompararNominalReal(false)
   }, [compararNominalReal, puedeCompararNominalReal])
 
-  // Línea de "punto de equilibrio": monto invertido para patrimonio, cero para las métricas de
-  // ganancia. Solo se puede fijar un valor con un único ámbito seleccionado — con varios, cada
-  // instrumento tiene un monto distinto y una sola línea horizontal sería engañosa.
+
   const breakeven: BreakevenMarcador | undefined = useMemo(() => {
     if (ambitosSeleccionados.length !== 1) return undefined
     if (metrica === 'patrimonio') {
@@ -142,10 +127,6 @@ export default function PanelGraficoResultados({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ambitosSeleccionados, metrica])
 
-  // Marca en el gráfico el mes en que cada instrumento vencido dejó de crecer — a partir de ahí el
-  // capital queda parado (Decisión 7); a nivel de un instrumento individual su "ganancia real" ya
-  // no sigue después de eso (queda congelada), a nivel portfolio el efecto se sigue notando porque
-  // el total no congela. Ver [[project_ganancias_reales_negativas_investigacion]].
   const vencimientos: VencimientoMarcador[] = useMemo(() => {
     if (!instrumentos || ambitosSeleccionados.length === 0) return []
     const relevantes = instrumentos.filter((inst) => {
@@ -221,8 +202,11 @@ export default function PanelGraficoResultados({
   if (ambitosDisponibles.length === 0) return null
 
   return (
-    <div className="card flex h-full flex-col gap-4">
-      <p className="card-section-label">{titulo}</p>
+    <div className="card flex h-full flex-col gap-4" data-guia={dataGuiaPanel}>
+      <p className="card-section-label flex items-center gap-1">
+        {titulo}
+        {onAbrirGuia && <GuiaResultadosTrigger onClick={onAbrirGuia} />}
+      </p>
 
       <div className="flex flex-wrap gap-1.5">
         {ambitosDisponibles.map((a) => (
@@ -241,7 +225,7 @@ export default function PanelGraficoResultados({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5" data-guia={guiaAnchors ? 'panel-metricas' : undefined}>
           {METRICAS.map((m) => {
             const activa = compararNominalReal && puedeCompararNominalReal && m.key !== 'patrimonio'
               ? true
@@ -266,7 +250,10 @@ export default function PanelGraficoResultados({
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {puedeCompararNominalReal && (
-            <label className="flex items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-muted">
+            <label
+              className="flex items-center gap-1.5 text-[12px] whitespace-nowrap text-ink-muted"
+              data-guia={guiaAnchors ? 'panel-nominal-real' : undefined}
+            >
               <input
                 type="checkbox"
                 checked={compararNominalReal}
@@ -282,7 +269,7 @@ export default function PanelGraficoResultados({
             </label>
           )}
           {!modoA && (
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1" data-guia={guiaAnchors ? 'panel-escenarios' : undefined}>
               {ESCENARIOS.map((e) => (
                 <button
                   key={e.key}
@@ -307,7 +294,7 @@ export default function PanelGraficoResultados({
         </div>
       </div>
 
-      <div className="h-[320px]">
+      <div className="h-[320px]" data-guia={guiaAnchors ? 'panel-grafico' : undefined}>
         <EscenarioChart
           series={series}
           mostrarBanda={mostrarBanda}

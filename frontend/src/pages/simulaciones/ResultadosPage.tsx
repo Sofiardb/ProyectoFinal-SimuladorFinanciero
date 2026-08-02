@@ -6,9 +6,14 @@ import KpiCard from '@/components/simulaciones/KpiCard'
 import PanelGraficoResultados from '@/components/simulaciones/PanelGraficoResultados'
 import PercentilesPatrimonioTabla from '@/components/simulaciones/PercentilesPatrimonioTabla'
 import DeleteSimulacionDialog from '@/components/simulaciones/DeleteSimulacionDialog'
+import GuiaResultadosButton from '@/components/simulaciones/GuiaResultadosButton'
+import GuiaResultadosSlot from '@/components/simulaciones/GuiaResultadosSlot'
+import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigger'
 import { useResultadosSimulacionView } from '@/hooks/useResultadosSimulacionView'
+import { useGuiaResultados } from '@/hooks/useGuiaResultados'
 import { ESCENARIO_BADGE } from '@/lib/escenarios'
 import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
+import { GUIA_RESULTADOS } from '@/lib/guiaResultados'
 
 export default function ResultadosPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +21,7 @@ export default function ResultadosPage() {
   const v = useResultadosSimulacionView(idSimulacion)
   const navigate = useNavigate()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const guia = useGuiaResultados(GUIA_RESULTADOS)
 
   if (v.isLoading) {
     return (
@@ -39,6 +45,7 @@ export default function ResultadosPage() {
   }
 
   const { sim, filas, detalle, instrumentos } = v
+  const primerAmbitoConPercentiles = v.kpisPortfolio.find((k) => k.patrimonio && k.gananciasReales)?.ambito
 
   return (
     <div className="page-shell max-w-[1080px]">
@@ -63,21 +70,28 @@ export default function ResultadosPage() {
             {formatFecha(sim.fechaEjecucion)} · Horizonte {sim.horizonteMeses} meses
           </p>
         </div>
-        <button onClick={() => setDeleteOpen(true)} className="btn-danger-outline">
-          Eliminar simulación
-        </button>
+        <div className="flex items-center gap-2">
+          <GuiaResultadosButton guia={guia} />
+          <button onClick={() => setDeleteOpen(true)} className="btn-danger-outline">
+            Eliminar simulación
+          </button>
+        </div>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {v.kpisPortfolio.map((k) => (
+        {v.kpisPortfolio.map((k, i) => (
           <Fragment key={k.ambito}>
             <KpiCard
               label={v.kpisPortfolio.length > 1 ? `Monto invertido (${k.moneda})` : 'Monto invertido'}
               value={k.montoInvertido != null ? formatMoneda(k.montoInvertido, k.moneda) : '—'}
+              dataGuia={i === 0 ? 'kpi-monto-invertido' : undefined}
+              onAbrirGuia={i === 0 ? () => guia.iniciarEnSlot('kpis', 0) : undefined}
             />
             <KpiCard
               label={v.kpisPortfolio.length > 1 ? `Valor final (mediana) (${k.moneda})` : 'Valor final (mediana)'}
               value={k.valorFinalMediana != null ? formatMoneda(k.valorFinalMediana, k.moneda) : '—'}
+              dataGuia={i === 0 ? 'kpi-valor-final' : undefined}
+              onAbrirGuia={i === 0 ? () => guia.iniciarEnSlot('kpis', 1) : undefined}
             />
           </Fragment>
         ))}
@@ -85,6 +99,8 @@ export default function ResultadosPage() {
           label="Inflación acumulada (ARS)"
           value={v.inflacionAcumuladaArs != null ? formatPorcentaje((v.inflacionAcumuladaArs - 1) * 100) : '—'}
           tooltip={{ term: 'Inflación acumulada (ARS)', definition: 'Mediana de la inflación acumulada simulada en pesos a lo largo del horizonte, escenario global.' }}
+          dataGuia="kpi-inflacion-ars"
+          onAbrirGuia={() => guia.iniciarEnSlot('kpis', 2)}
         />
         <KpiCard
           label="Inflación acumulada (USD)"
@@ -92,6 +108,8 @@ export default function ResultadosPage() {
           tooltip={{ term: 'Inflación acumulada (USD)', definition: 'Mediana de la inflación acumulada simulada en dólares a lo largo del horizonte, escenario global.' }}
         />
       </div>
+
+      <GuiaResultadosSlot guia={guia} slot="kpis" />
 
       <div className="mb-5 flex flex-col gap-4">
         <PanelGraficoResultados
@@ -103,7 +121,10 @@ export default function ResultadosPage() {
           detalle={detalle}
           instrumentos={instrumentos}
           montoInvertidoDe={v.montoInvertidoDe}
+          guiaAnchors
+          onAbrirGuia={() => guia.iniciarEnSlot('panel-portfolio')}
         />
+        <GuiaResultadosSlot guia={guia} slot="panel-portfolio" />
         <PanelGraficoResultados
           titulo="Instrumentos (ARS)"
           ambitosDisponibles={v.ambitosArs}
@@ -113,7 +134,10 @@ export default function ResultadosPage() {
           detalle={detalle}
           instrumentos={instrumentos}
           montoInvertidoDe={v.montoInvertidoDe}
+          dataGuiaPanel="panel-instrumentos-ars"
+          onAbrirGuia={() => guia.iniciarEnSlot('panel-instrumentos-ars')}
         />
+        <GuiaResultadosSlot guia={guia} slot="panel-instrumentos-ars" />
         <PanelGraficoResultados
           titulo="Instrumentos (USD)"
           ambitosDisponibles={v.ambitosUsd}
@@ -123,10 +147,21 @@ export default function ResultadosPage() {
           detalle={detalle}
           instrumentos={instrumentos}
           montoInvertidoDe={v.montoInvertidoDe}
+          dataGuiaPanel="panel-instrumentos-usd"
+          onAbrirGuia={() => guia.iniciarEnSlot('panel-instrumentos-usd')}
         />
+        <GuiaResultadosSlot guia={guia} slot="panel-instrumentos-usd" />
       </div>
 
-      <InflacionChart mensualArs={v.mensualArs} mensualUsd={v.mensualUsd} acumuladaArs={v.acumuladaArs} acumuladaUsd={v.acumuladaUsd} />
+      <InflacionChart
+        mensualArs={v.mensualArs}
+        mensualUsd={v.mensualUsd}
+        acumuladaArs={v.acumuladaArs}
+        acumuladaUsd={v.acumuladaUsd}
+        onAbrirGuia={() => guia.iniciarEnSlot('grafico-inflacion')}
+      />
+
+      <GuiaResultadosSlot guia={guia} slot="grafico-inflacion" />
 
       {v.kpisPortfolio.some((k) => k.patrimonio && k.gananciasReales) && (
         <div className="mb-5 flex flex-col gap-3">
@@ -137,14 +172,21 @@ export default function ResultadosPage() {
               moneda={k.moneda}
               patrimonio={k.patrimonio}
               gananciasReales={k.gananciasReales}
+              dataGuia={k.ambito === primerAmbitoConPercentiles ? 'tabla-percentiles' : undefined}
+              onAbrirGuia={k.ambito === primerAmbitoConPercentiles ? () => guia.iniciarEnSlot('tabla-percentiles') : undefined}
             />
           ))}
         </div>
       )}
 
+      <GuiaResultadosSlot guia={guia} slot="tabla-percentiles" />
+
       {sim.parametrosEscenario.length > 0 && (
-        <div className="card">
-          <p className="card-section-label mb-3">Rangos de inflación usados en esta corrida</p>
+        <div className="card" data-guia="rangos-inflacion">
+          <p className="card-section-label mb-3 flex items-center gap-1">
+            Rangos de inflación usados en esta corrida
+            <GuiaResultadosTrigger onClick={() => guia.iniciarEnSlot('rangos-inflacion')} />
+          </p>
           <div className="flex flex-col gap-3">
             {sim.parametrosEscenario.map((p) => (
               <div
@@ -167,6 +209,8 @@ export default function ResultadosPage() {
           </div>
         </div>
       )}
+
+      <GuiaResultadosSlot guia={guia} slot="rangos-inflacion" />
 
       <DeleteSimulacionDialog
         open={deleteOpen}

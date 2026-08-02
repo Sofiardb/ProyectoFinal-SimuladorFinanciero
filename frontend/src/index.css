@@ -223,3 +223,10 @@
     @apply h-[50px] w-full bg-navy-950 text-base text-white hover:bg-navy-900;
   }
 }
+
+.guia-resaltado {
+  outline: 2px solid var(--color-blue-brand);
+  outline-offset: 3px;
+  border-radius: 12px;
+  transition: outline-color 0.2s ease-out;
+}
