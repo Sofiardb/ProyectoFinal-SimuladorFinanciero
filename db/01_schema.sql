@@ -468,10 +468,6 @@ CREATE TABLE simulacion_instrumento (
     id_accion                 BIGINT       REFERENCES accion(id_accion),
     id_bono                   BIGINT       REFERENCES bono(id_bono),
     id_letra                  BIGINT       REFERENCES letra(id_letra),
-    -- A diferencia de id_accion/id_bono/id_letra (que apuntan al catálogo compartido, nunca se
-    -- borra), portfolio_plazo_fijo ES la tenencia — se borra al eliminar el plazo fijo del
-    -- portfolio. Sin ON DELETE SET NULL, esa eliminación violaba esta FK y fallaba siempre que el
-    -- plazo fijo ya hubiera participado de alguna simulación.
     id_portfolio_plazo_fijo   BIGINT       REFERENCES portfolio_plazo_fijo(id_portfolio_plazo_fijo) ON DELETE SET NULL,
     monto                     NUMERIC(20,6) NOT NULL,
     parametros                JSONB         NOT NULL,  -- snapshot completo del instrumento enviado al motor
@@ -553,12 +549,6 @@ INSERT INTO moneda (codigo_iso, nombre, simbolo) VALUES
     ('ARS', 'Peso argentino',       '$'  ),
     ('USD', 'Dólar estadounidense', 'US$');
 
--- Umbrales en escala ANUAL de sigma_volatilidad (antes calibrados para escala mensual;
--- AccionCatalogoService pasó a calcular/guardar sigma anualizado, commit 0e74e21). Conservador
--- se mantiene en 0 a propósito: ese perfil no admite acciones. Moderado (0.35) y Agresivo (1.00)
--- calibrados contra el catálogo real: el grueso de blue chips cae entre 0.18-0.33, autos/GE/COP
--- rondan 0.36-0.38, y el cluster de tech/crecimiento/cripto (NVDA, TSLA, RIVN, COIN, etc.) sube
--- hasta ~0.84 (COIN) — Agresivo en 1.00 deja margen sobre ese máximo para refrescos futuros.
 INSERT INTO perfil_riesgo (nombre, descripcion, sigma_max_accion) VALUES
     ('Conservador', 'Prioriza preservación de capital y baja volatilidad.',  0.00),
     ('Moderado',    'Equilibrio entre estabilidad y crecimiento.',            0.35),
