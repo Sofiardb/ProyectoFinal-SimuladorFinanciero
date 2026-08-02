@@ -1,25 +1,17 @@
 # Referencia de endpoints — Backend API v1
 
-**Base URL (desarrollo):** `http://localhost:5000`  
-**Formato:** JSON en todos los requests y responses  
-**Documentación interactiva:** Swagger disponible en `http://localhost:5000/`
+**Base URL (desarrollo):** `http://localhost:5000`
+**Base URL (producción):** `https://proyectofinal-simuladorfinanciero-1.onrender.com`
+**Formato:** JSON en todos los requests y responses
+**Documentación interactiva:** Swagger disponible en la raíz de cada base URL (`http://localhost:5000/` en desarrollo, `https://proyectofinal-simuladorfinanciero-1.onrender.com/` en producción)
 
 ---
 
 ## Convenciones generales
 
-### Autenticación
+Los endpoints protegidos requieren el token JWT obtenido en `POST /auth/login` o `POST /auth/register`, enviado en el header `Authorization: Bearer <token>`.
 
-Los endpoints protegidos requieren el token JWT en el header:
-```
-Authorization: Bearer <token>
-```
-
-El token se obtiene en `POST /auth/login` o `POST /auth/register`.
-
-### Errores
-
-Todos los errores siguen el formato **Problem Details** (RFC 7807):
+Todos los errores siguen el formato Problem Details (RFC 7807), por ejemplo:
 
 ```json
 {
@@ -40,281 +32,48 @@ Todos los errores siguen el formato **Problem Details** (RFC 7807):
 | 502 | Motor de simulación no disponible |
 | 500 | Error interno inesperado |
 
----
-
 ## 1. Salud del sistema
 
-### `GET /health`
-**Auth:** No requerida
-
-**Response 200:**
-```json
-{ "estado": "ok", "db": "ok" }
-```
-
----
+`GET /health`, público y sin autenticación, verifica que la API y la base de datos responden correctamente y devuelve `{ "estado": "ok", "db": "ok" }`. Este endpoint nunca expone detalle de errores internos en la respuesta (ver `docs/05-backend-arquitectura.md`), ya que el hosting lo consulta como chequeo de salud sin credenciales.
 
 ## 2. Autenticación
 
-### `POST /auth/register`
-**Auth:** No requerida  
-Registra un nuevo usuario y devuelve el token JWT listo para usar.
+`POST /auth/register`, público, registra un nuevo usuario y devuelve el token JWT listo para usar. Recibe `email` (requerido, formato email), `username` (requerido), `password` (requerido, mínimo 8 caracteres) y opcionalmente `nombre` y `apellido`. Responde `201` con `{ token, expiresAt, email, username, nombre, esAdmin }`, o `400` si falla la validación y `409` si el email o username ya están registrados.
 
-**Request body:**
-```json
-{
-  "email":    "sofia@ejemplo.com",   // requerido, formato email
-  "username": "sofia",               // requerido
-  "password": "mi_clave_segura",     // requerido, mínimo 8 caracteres
-  "nombre":   "Sofía",               // opcional
-  "apellido": "Rodríguez"            // opcional
-}
-```
-
-**Response 201:**
-```json
-{
-  "token":     "eyJhbGciOiJIUzI1NiIs...",
-  "expiresAt": "2026-07-11T14:00:00Z",
-  "email":     "sofia@ejemplo.com",
-  "username":  "sofia",
-  "nombre":    "Sofía",
-  "esAdmin":   false
-}
-```
-
-**Errores:** `400` (validación), `409` (email o username ya registrado)
-
----
-
-### `POST /auth/login`
-**Auth:** No requerida  
-Autentica al usuario con nombre de usuario/email y contraseña.
-
-**Request body:**
-```json
-{
-  "identificador":    "sofia@ejemplo.com",
-  "password": "mi_clave_segura"
-}
-```
-
-**Response 200:** igual a `POST /auth/register`
-
-**Errores:** `400` (campos requeridos), `401` (credenciales incorrectas)
-
----
+`POST /auth/login`, público, autentica con `identificador` (email o username) y `password`, y responde con el mismo formato que el registro (`200`), o `400`/`401` si faltan campos o las credenciales son incorrectas.
 
 ## 3. Datos de referencia
 
-Todos los endpoints de esta sección requieren autenticación (`[Authorize]`). Devuelven los catálogos de valores válidos para construir portfolios y simular.
-
-### `GET /referencia/monedas`
-Lista las monedas disponibles (ARS, USD).
-
-**Response 200:** `[{ "idMoneda": 1, "codigoIso": "ARS", "nombre": "Peso argentino", "simbolo": "$" }, ...]`
-
----
-
-### `GET /referencia/perfiles-riesgo`
-Lista los perfiles de riesgo disponibles con su límite de volatilidad para acciones.
-
-**Response 200:** `[{ "idPerfilRiesgo": 1, "nombre": "conservador", "sigmaMaxAccion": 0.20 }, ...]`
-
----
-
-### `GET /referencia/tipos-escenario`
-Lista los tipos de escenario económico (favorable, moderado, desfavorable).
-
-**Response 200:** `[{ "idTipoEscenario": 1, "nombre": "favorable" }, ...]`
-
----
-
-### `GET /referencia/escenarios-economicos`
-Lista los escenarios económicos **vigentes** (aquellos donde `vigente_hasta IS NULL`).
-
-**Response 200:**
-```json
-[{
-  "idEscenarioEconomico": 1,
-  "idTipoEscenario": 1,
-  "nombreEscenario": "favorable",
-  "inflacionMensualMin": 0.01,
-  "inflacionMensualMax": 0.025
-}, ...]
-```
-
----
+Los cuatro endpoints de esta sección requieren autenticación y devuelven catálogos de valores válidos para construir portfolios y simular, sin filtros ni parámetros. `GET /referencia/monedas` lista las monedas disponibles (`[{ idMoneda, codigoIso, nombre, simbolo }]`, por ejemplo ARS y USD). `GET /referencia/perfiles-riesgo` lista los perfiles de riesgo con su límite de volatilidad para acciones (`[{ idPerfilRiesgo, nombre, sigmaMaxAccion }]`). `GET /referencia/tipos-escenario` lista los tipos de escenario económico —favorable, moderado, desfavorable— como `[{ idTipoEscenario, nombre }]`. `GET /referencia/escenarios-economicos` lista los escenarios vigentes (aquellos con `vigente_hasta IS NULL`), con sus rangos de inflación: `[{ idEscenarioEconomico, idTipoEscenario, nombreEscenario, inflacionMensualMin, inflacionMensualMax }]`.
 
 ## 4. Catálogo de instrumentos
 
-Todos requieren autenticación. Devuelven los instrumentos disponibles para armar portfolios.
+Estos endpoints, todos autenticados, devuelven los instrumentos disponibles para armar portfolios.
 
-### `GET /instrumentos/letras`
-Lista las letras del Tesoro activas (LECAP y LECER).
+`GET /instrumentos/letras` lista las letras del Tesoro activas (LECAP y LECER): `[{ idLetra, codigo, tipo, tna, fechaVencimiento, settlPrice, activa }]`. `GET /instrumentos/letras/{id}` devuelve el detalle de una letra puntual, o `404` si no existe.
 
-**Response 200:**
-```json
-[{
-  "idLetra": 1,
-  "codigo": "S31E5",
-  "tipo": "lecap",
-  "tna": 0.45,
-  "fechaVencimiento": "2025-01-31",
-  "settlPrice": 92.50,
-  "activa": true
-}, ...]
-```
+`GET /instrumentos/bonos` lista los bonos soberanos junto con sus flujos de caja: `[{ idBono, codigo, nombre, tipo, tir, fechaVencimiento, valida, flujos: [{ idFlujoBono, fechaPago, montoCupon, montoCapital }] }]`. `GET /instrumentos/bonos/{id}` devuelve el detalle de un bono con todos sus flujos, o `404`.
 
----
+`GET /instrumentos/acciones` lista las acciones con sus parámetros GBM estimados: `[{ idAccion, ticker, nombre, sector, muRetornoEsperado, sigmaVolatilidad, rhoCorrelacionIndice, precioActual, activo }]`, donde `mu` y `sigma` son parámetros mensuales (no anualizados) y `rho` es la correlación histórica con el S&P 500. `GET /instrumentos/acciones/{id}` devuelve el detalle de una acción, o `404`.
 
-### `GET /instrumentos/letras/{id}`
-Detalle de una letra por ID.
-
-**Errores:** `404` (no encontrada)
-
----
-
-### `GET /instrumentos/bonos`
-Lista los bonos soberanos con sus flujos de caja.
-
-**Response 200:**
-```json
-[{
-  "idBono": 1,
-  "codigo": "AL30",
-  "nombre": "BONARES 2030",
-  "tipo": "bono_tasa_fija",
-  "tir": 0.12,
-  "fechaVencimiento": "2030-07-09",
-  "valida": true,
-  "flujos": [
-    { "idFlujoBono": 1, "fechaPago": "2025-07-09", "montoCupon": 18.5, "montoCapital": 0 },
-    ...
-  ]
-}, ...]
-```
-
----
-
-### `GET /instrumentos/bonos/{id}`
-Detalle de un bono con todos sus flujos.
-
-**Errores:** `404`
-
----
-
-### `GET /instrumentos/acciones`
-Lista las acciones con sus parámetros GBM estimados.
-
-**Response 200:**
-```json
-[{
-  "idAccion": 1,
-  "ticker": "AAPL",
-  "nombre": "Apple Inc.",
-  "sector": "Technology",
-  "muRetornoEsperado": 0.015,
-  "sigmaVolatilidad": 0.062,
-  "rhoCorrelacionIndice": 0.72,
-  "precioActual": 185.50,
-  "activo": true
-}, ...]
-```
-
-`mu` y `sigma` son parámetros mensuales (no anualizados). `rho` es la correlación histórica con el S&P 500.
-
----
-
-### `GET /instrumentos/acciones/{id}`
-Detalle de una acción por ID.
-
-**Errores:** `404`
-
----
-
-### `GET /instrumentos/tipos-plazo-fijo`
-Lista los tipos de plazo fijo disponibles (Tradicional, UVA, etc.).
-
-**Response 200:** `[{ "idTipoPlazoFijo": 1, "nombre": "Plazo fijo tradicional", "entidad": null, "caracteristica": "TRADICIONAL" }, ...]`
-
----
+`GET /instrumentos/tipos-plazo-fijo` lista los tipos de plazo fijo disponibles (Tradicional, UVA, etc.): `[{ idTipoPlazoFijo, nombre, entidad, caracteristica }]`.
 
 ## 5. Administración del catálogo
 
-Todos requieren rol `Admin`. El job automático `CatalogoRefreshJob` ejecuta estos mismos refrescos una vez por día hábil a las 11:30 ART; estos endpoints permiten forzarlos manualmente.
+Todos los endpoints de esta sección requieren rol `Admin`. El job automático `CatalogoRefreshJob` ejecuta estos mismos refrescos una vez por día hábil a las 11:30 ART; estos endpoints permiten forzarlos manualmente.
 
-### `GET /admin/catalogo/check`
-Verifica conectividad con BYMA Open Data y Docta Capital sin consumir cuota significativa.
+`GET /admin/catalogo/check` verifica conectividad con BYMA Open Data y Docta Capital sin consumir cuota significativa, devolviendo `{ byma: { ok, detalle }, docta: { ok, detalle } }`.
 
-**Response 200:**
-```json
-{
-  "byma":  { "ok": true,  "detalle": "Sesión establecida correctamente." },
-  "docta": { "ok": true,  "detalle": "Token obtenido correctamente." }
-}
-```
+`POST /admin/catalogo/refresh/letras` actualiza el catálogo de letras consultando BYMA Open Data y responde `{ insertadas, actualizadas, errores: [] }`. `POST /admin/catalogo/refresh/bonos/yields` actualiza las TIR de bonos consultando Docta Capital, y `POST /admin/catalogo/refresh/bonos/flujos` actualiza sus flujos de caja; ambos responden `{ actualizados, errores: [] }`.
 
----
-
-### `POST /admin/catalogo/refresh/letras`
-Actualiza el catálogo de letras (LECAP y LECER) consultando BYMA Open Data.
-
-**Response 200:** `{ "insertadas": 3, "actualizadas": 2, "errores": [] }`
-
----
-
-### `POST /admin/catalogo/refresh/bonos/yields`
-Actualiza las TIR de bonos consultando Docta Capital.
-
-**Response 200:** `{ "actualizados": 5, "errores": [] }`
-
----
-
-### `POST /admin/catalogo/refresh/bonos/flujos`
-Actualiza los flujos de caja de bonos consultando Docta Capital.
-
-**Response 200:** `{ "actualizados": 5, "errores": [] }`
-
----
-
-### `POST /admin/catalogo/refresh/acciones`
-Recalcula parámetros GBM (mu, sigma, rho) para todas las acciones usando Alpha Vantage.
-
-**Response 200:**
-```json
-[{
-  "ticker": "AAPL",
-  "ok": true,
-  "mu": 0.015,
-  "sigma": 0.062,
-  "rho": 0.72,
-  "mesesDeDatos": 120,
-  "error": null
-}, ...]
-```
-
-> `mesesDeDatos` indica cuántos meses de historia real respaldaron el cálculo. No se persiste en la base de datos porque cambia con cada refresh; se devuelve solo en este response.
-
----
-
-### `POST /admin/catalogo/refresh/acciones/{ticker}`
-Recalcula GBM para una acción específica.
-
-**Response 200:** un objeto `GbmRefreshResult` (igual que el elemento del array del endpoint anterior).
-
-**Errores:** `404` (ticker no encontrado en el catálogo)
-
----
+`POST /admin/catalogo/refresh/acciones` recalcula los parámetros GBM (`mu`, `sigma`, `rho`) de todas las acciones usando Alpha Vantage, devolviendo un array `[{ ticker, ok, mu, sigma, rho, mesesDeDatos, error }]`; `mesesDeDatos` indica cuántos meses de historia real respaldaron el cálculo, y no se persiste en la base de datos porque cambia con cada refresh, solo se devuelve en este response. `POST /admin/catalogo/refresh/acciones/{ticker}` hace lo mismo para una acción puntual, devolviendo un único objeto `GbmRefreshResult` (`404` si el ticker no está en el catálogo).
 
 ## 6. Portfolios
 
-Todos requieren autenticación. El ownership está garantizado: solo se retornan o modifican portfolios del usuario autenticado. Acceder a un portfolio ajeno devuelve `404`.
+Todos los endpoints de portfolios requieren autenticación, y el ownership está garantizado: solo se retornan o modifican portfolios del usuario autenticado, y acceder a uno ajeno devuelve `404` en lugar de `403`, para no revelar su existencia.
 
-### `GET /portfolios`
-Lista todos los portfolios del usuario con resumen (sin tenencias).
+`GET /portfolios` lista todos los portfolios del usuario con su resumen, sin tenencias:
 
-**Response 200:** array de `PortfolioResumenResponse`
 ```json
 [{
   "idPortfolio": 1,
@@ -332,264 +91,47 @@ Lista todos los portfolios del usuario con resumen (sin tenencias).
 }, ...]
 ```
 
----
+`GET /portfolios/{id}` devuelve el detalle completo de un portfolio, con la misma cabecera más las cuatro listas de tenencias (acciones, bonos, letras, plazos fijos), o `404`.
 
-### `GET /portfolios/{id}`
-Detalle completo de un portfolio con todas sus tenencias (acciones, bonos, letras, plazos fijos).
+`POST /portfolios` crea un nuevo portfolio a partir de `nombre` (requerido, máximo 100 caracteres), `descripcion` (opcional, máximo 500), `idPerfilRiesgo` (requerido), `idMonedaBase` (requerido), `capitalInicial` (opcional) y `horizonteMeses` (requerido, entre 1 y 360). Responde `201` con el resumen creado, o `400`/`404` (perfil o moneda inexistente)/`409` (nombre duplicado para ese perfil).
 
-**Response 200:** `PortfolioDetalleResponse` — incluye las mismas cabecera que el resumen más las cuatro listas de tenencias.
+`PUT /portfolios/{id}` hace una actualización parcial: acepta los mismos campos que la creación, todos opcionales — los que no se envían mantienen su valor actual — más `estado` (`"ACTIVO"` o `"ARCHIVADO"`). Cambiar `idPerfilRiesgo` valida que las acciones existentes no superen el nuevo `sigmaMaxAccion`; si alguna lo supera, responde `422` y el perfil no se actualiza. Responde `200` con el resumen actualizado, o `400`/`404`/`409`.
 
-**Errores:** `404`
+`DELETE /portfolios/{id}` elimina el portfolio y todas sus tenencias por cascada en la base de datos, respondiendo `204` sin cuerpo, o `404`.
 
----
+### Tenencias
 
-### `POST /portfolios`
-Crea un nuevo portfolio.
+Las tenencias de acciones, bonos y letras comparten la misma forma: `POST /portfolios/{id}/{tipo}` agrega la posición con `id{Tipo}` (requerido), `cantidad` (requerido, positivo) y `precioCompra` (requerido, no negativo), y responde `201` con la tenencia creada. Como cada una de estas tres tablas tiene restricción de unicidad por instrumento (`docs/07-portfolio-reglas-negocio.md`), el mismo instrumento no puede agregarse dos veces al mismo portfolio: `409` si ya está, `422` si es una acción cuya `sigma` supera el límite del perfil de riesgo, `404` si el portfolio o el instrumento no existen. `PUT /portfolios/{id}/{tipo}/{idInstrumento}` actualiza `cantidad` y/o `precioCompra` (ambos opcionales) de una posición existente, y `DELETE /portfolios/{id}/{tipo}/{idInstrumento}` la elimina — ambos responden `404` si la posición no existe, y el `PUT` también puede responder `422` en el caso de una acción que deja de cumplir el límite de volatilidad. Los tres recursos son:
 
-**Request body:**
-```json
-{
-  "nombre":        "Mi portfolio",     // requerido, máximo 100 caracteres
-  "descripcion":   "Descripción",      // opcional, máximo 500 caracteres
-  "idPerfilRiesgo": 2,                 // requerido
-  "idMonedaBase":   1,                 // requerido
-  "capitalInicial": 100000.00,         // opcional
-  "horizonteMeses": 12                 // requerido, entre 1 y 360
-}
-```
+| Tenencia | Ruta base | Body de creación |
+|---|---|---|
+| Acciones | `/portfolios/{id}/acciones` | `{ idAccion, cantidad, precioCompra }` |
+| Bonos | `/portfolios/{id}/bonos` | `{ idBono, cantidad, precioCompra }` |
+| Letras | `/portfolios/{id}/letras` | `{ idLetra, cantidad, precioCompra }` |
 
-**Response 201:** `PortfolioResumenResponse`
-
-**Errores:** `400`, `404` (perfil/moneda no existe), `409` (nombre duplicado para ese perfil)
-
----
-
-### `PUT /portfolios/{id}`
-Actualización parcial. Solo se modifican los campos enviados (los campos no enviados mantienen su valor actual).
-
-**Request body:** mismos campos que `POST /portfolios` pero todos opcionales. Agrega:
-```json
-{
-  "estado": "ARCHIVADO"   // "ACTIVO" o "ARCHIVADO"
-}
-```
-
-Cambiar el `idPerfilRiesgo` valida que las acciones existentes no superen el nuevo `sigmaMaxAccion`.
-
-**Response 200:** `PortfolioResumenResponse` actualizado
-
-**Errores:** `400`, `404`, `409`, `422` (acciones incompatibles con el nuevo perfil)
-
----
-
-### `DELETE /portfolios/{id}`
-Elimina el portfolio y todas sus tenencias (CASCADE en DB).
-
-**Response 204:** sin cuerpo
-
-**Errores:** `404`
-
----
-
-### Tenencias de acciones
-
-#### `POST /portfolios/{id}/acciones`
-Agrega una acción al portfolio. Una acción puede aparecer una sola vez por portfolio (restricción UNIQUE).
-
-**Request body:**
-```json
-{
-  "idAccion":    1,          // requerido
-  "cantidad":    10.5,       // requerido, positivo
-  "precioCompra": 185.50     // requerido, no negativo
-}
-```
-
-**Response 201:** `PortfolioAccionResponse`
-
-**Errores:** `400`, `404` (portfolio o acción no existe), `409` (acción ya en el portfolio), `422` (sigma de la acción supera el límite del perfil de riesgo)
-
----
-
-#### `PUT /portfolios/{id}/acciones/{idAccion}`
-Actualiza cantidad y/o precio de compra de una posición existente.
-
-**Request body:** `ActualizarAccionRequest` — `cantidad` y `precioCompra` opcionales.
-
-**Response 200:** `PortfolioAccionResponse`
-
-**Errores:** `400`, `404`, `422`
-
----
-
-#### `DELETE /portfolios/{id}/acciones/{idAccion}`
-Elimina la posición en la acción del portfolio.
-
-**Response 204**
-
-**Errores:** `404`
-
----
-
-### Tenencias de bonos
-
-#### `POST /portfolios/{id}/bonos`
-Agrega un bono al portfolio. Un bono puede aparecer una sola vez por portfolio.
-
-**Request body:**
-```json
-{
-  "idBono":    1,
-  "cantidad":  5.0,
-  "precioCompra": 980.00
-}
-```
-
-**Response 201:** `PortfolioBonoResponse`
-
-**Errores:** `400`, `404`, `409`, `422`
-
----
-
-#### `PUT /portfolios/{id}/bonos/{idBono}`
-
-**Response 200:** `PortfolioBonoResponse`
-
----
-
-#### `DELETE /portfolios/{id}/bonos/{idBono}`
-
-**Response 204**
-
----
-
-### Tenencias de letras
-
-#### `POST /portfolios/{id}/letras`
-Agrega una letra del Tesoro al portfolio. Una letra puede aparecer una sola vez por portfolio.
-
-**Request body:**
-```json
-{
-  "idLetra":    1,
-  "cantidad":   3.0,
-  "precioCompra": 92.50
-}
-```
-
-**Response 201:** `PortfolioLetraResponse`
-
-**Errores:** `400`, `404`, `409`, `422`
-
----
-
-#### `PUT /portfolios/{id}/letras/{idLetra}`
-
-**Response 200:** `PortfolioLetraResponse`
-
----
-
-#### `DELETE /portfolios/{id}/letras/{idLetra}`
-
-**Response 204**
-
----
-
-### Tenencias de plazos fijos
-
-A diferencia de acciones, bonos y letras, **no hay unicidad** por tipo de plazo fijo. Se pueden agregar múltiples contratos del mismo tipo (por ejemplo, dos plazos fijos tradicionales en distintos bancos). Cada fila es un contrato independiente y se identifica por `idPortfolioPlazoFijo`.
-
-#### `POST /portfolios/{id}/plazos-fijos`
-Agrega un nuevo contrato de plazo fijo al portfolio.
-
-**Request body:**
-```json
-{
-  "idTipoPlazoFijo":      1,             // requerido
-  "idMoneda":             1,             // requerido
-  "entidadFinanciera":    "Banco Galicia", // requerido, máximo 150 caracteres
-  "montoInvertido":       50000.00,      // requerido, positivo
-  "tnaPactada":           0.42,          // requerido, no negativo (decimal: 42% = 0.42)
-  "fechaInicio":          "2026-06-01",  // requerido
-  "duracionDias":         180,           // requerido, mínimo 1
-  "reinvertirAlVencimiento": false       // opcional, default false
-}
-```
-
-**Response 201:** `PortfolioPlazoFijoResponse`
-
-**Errores:** `400`, `404`
-
----
-
-#### `PUT /portfolios/{id}/plazos-fijos/{idPortfolioPlazoFijo}`
-
-**Response 200:** `PortfolioPlazoFijoResponse`
-
-> La URL usa `idPortfolioPlazoFijo` (identificador de la fila de tenencia), no `idTipoPlazoFijo`.
-
----
-
-#### `DELETE /portfolios/{id}/plazos-fijos/{idPortfolioPlazoFijo}`
-
-**Response 204**
-
----
+Los plazos fijos son distintos: al no tener restricción de unicidad por tipo (se pueden tener varios contratos del mismo tipo en bancos o montos distintos), cada fila es un contrato independiente identificado por `idPortfolioPlazoFijo`, no por el tipo de instrumento. `POST /portfolios/{id}/plazos-fijos` agrega un nuevo contrato con `idTipoPlazoFijo` (requerido), `idMoneda` (requerido), `entidadFinanciera` (requerido, máximo 150 caracteres), `montoInvertido` (requerido, positivo), `tnaPactada` (requerido, no negativo, en decimal — 42% = 0.42), `fechaInicio` (requerido), `duracionDias` (requerido, mínimo 1) y `reinvertirAlVencimiento` (opcional, default `false`), respondiendo `201` o `400`/`404`. `PUT /portfolios/{id}/plazos-fijos/{idPortfolioPlazoFijo}` y `DELETE /portfolios/{id}/plazos-fijos/{idPortfolioPlazoFijo}` actualizan o eliminan el contrato — nótese que la URL usa el identificador de la fila de tenencia (`idPortfolioPlazoFijo`), no `idTipoPlazoFijo`.
 
 ## 7. Simulaciones
 
-Todos requieren autenticación. El ownership está garantizado: no es posible acceder a simulaciones de otro usuario (devuelve `404`).
+Todos los endpoints de simulaciones requieren autenticación, con el mismo aislamiento por usuario que los portfolios: no es posible acceder a simulaciones de otro usuario (`404`).
 
-### `GET /portfolios/{idPortfolio}/simular/preview`
-Compara el estado del portfolio con los precios de mercado actuales e indica si la simulación puede ejecutarse. Identifica instrumentos vencidos, sin precio o con parámetros GBM desactualizados.
+`GET /portfolios/{idPortfolio}/simular/preview` compara el estado del portfolio con los precios de mercado actuales e indica si la simulación puede ejecutarse, identificando instrumentos vencidos, sin precio o con parámetros GBM desactualizados:
 
-**Response 200:** `SimulacionPreviewResponse`
 ```json
 {
   "puedeSimular": true,
   "instrumentos": [
+    { "tipo": "accion", "id": 1, "ticker": "AAPL", "estado": "ok", "detalle": null },
     {
-      "tipo": "accion",
-      "id": 1,
-      "ticker": "AAPL",
-      "estado": "ok",
-      "detalle": null
-    },
-    {
-      "tipo": "letra",
-      "id": 2,
-      "codigo": "S31E5",
-      "estado": "vencida",
+      "tipo": "letra", "id": 2, "codigo": "S31E5", "estado": "vencida",
       "detalle": "Venció el 2026-01-31 — eliminarla del portfolio para poder simular."
     }
   ]
 }
 ```
 
-**Errores:** `404` (portfolio no encontrado)
+`POST /portfolios/{idPortfolio}/simular` ejecuta el motor de simulación Monte Carlo para el portfolio y persiste los resultados. Recibe `horizonteMeses` y `semilla`, ambos opcionales — si se omite el horizonte, usa el guardado en el portfolio; la semilla se genera automáticamente si no se envía, aunque el motor no la utiliza como input funcional (ver la sección sobre generación de aleatoriedad en `docs/02-orquestador-montecarlo.md`). Internamente, el endpoint carga el portfolio y sus tenencias, valida que haya instrumentos, que las acciones tengan GBM estimado y que no haya instrumentos vencidos, construye el payload del motor (`docs/08-integracion-motor.md`), llama a `POST /simular` sobre la URL del motor configurada (`http://localhost:5050` en desarrollo, `https://proyectofinal-simuladorfinanciero.onrender.com` en producción), persiste la cabecera, el snapshot de escenarios y los resultados estadísticos en PostgreSQL, y devuelve el resumen:
 
----
-
-### `POST /portfolios/{idPortfolio}/simular`
-Ejecuta el motor de simulación Monte Carlo para el portfolio indicado y persiste los resultados.
-
-**Request body (ambos campos opcionales):**
-```json
-{
-  "horizonteMeses": 12,   // si se omite, usa el horizonte guardado en el portfolio
-  "semilla": 42           // si se omite, se genera automáticamente (garantiza reproducibilidad si se persiste)
-}
-```
-
-**Flujo interno:**
-1. Carga el portfolio y sus tenencias.
-2. Valida que haya instrumentos, que las acciones tengan GBM, y que no haya instrumentos vencidos.
-3. Construye el payload del motor (ver [`docs/08-integracion-motor.md`](08-integracion-motor.md)).
-4. Llama a `POST http://localhost:5050/simular`.
-5. Persiste la cabecera, snapshot de escenarios y resultados estadísticos en PostgreSQL.
-6. Devuelve el resumen de la simulación.
-
-**Response 201:** `SimulacionResumenResponse`
 ```json
 {
   "idSimulacion":       42,
@@ -609,39 +151,14 @@ Ejecuta el motor de simulación Monte Carlo para el portfolio indicado y persist
 }
 ```
 
-**Errores:** `404` (portfolio no encontrado), `422` (sin instrumentos, acciones sin GBM, instrumentos vencidos, horizonte no cubre flujos de bonos), `502` (motor no disponible)
+Responde `201` en éxito, `404` si el portfolio no existe, `422` si no hay instrumentos, hay acciones sin GBM, instrumentos vencidos o el horizonte no cubre los flujos de algún bono, y `502` si el motor no está disponible.
 
----
+`GET /portfolios/{idPortfolio}/simulaciones` lista el historial de corridas del portfolio, ordenadas por fecha descendente, como un array de resúmenes con la misma forma que la respuesta de `POST .../simular`. `GET /simulaciones/{id}` devuelve la cabecera de una simulación puntual —fecha, horizonte, semilla y métricas agregadas, incluidos los parámetros de escenario del snapshot—, o `404`.
 
-### `GET /portfolios/{idPortfolio}/simulaciones`
-Lista el historial de corridas del portfolio, ordenadas por fecha descendente.
+`GET /simulaciones/{id}/resultados` devuelve todos los resultados estadísticos (stats JSONB) de una simulación, opcionalmente filtrados por ámbito vía query param — `?ambito=portfolio_ars` o `?ambito=portfolio_usd` para un sub-portfolio, `?ambito=accion_1` para un instrumento puntual; sin filtro, devuelve todos los ámbitos. Cada fila tiene la forma:
 
-**Response 200:** array de `SimulacionResumenResponse`
-
----
-
-### `GET /simulaciones/{id}`
-Cabecera de una simulación: fecha, horizonte, semilla y métricas agregadas.
-
-**Response 200:** `SimulacionDetalleResponse` (incluye los parámetros de escenario del snapshot)
-
-**Errores:** `404`
-
----
-
-### `GET /simulaciones/{id}/resultados`
-Devuelve todos los resultados estadísticos (stats JSONB) de una simulación. Acepta filtrado por ámbito.
-
-**Query params:**
-- `?ambito=portfolio_ars` — solo el sub-portfolio ARS
-- `?ambito=portfolio_usd` — solo el sub-portfolio USD
-- `?ambito=accion_1` — solo el instrumento con ese ID de ámbito
-
-Sin filtro, devuelve todos los ámbitos (portfolio_ars, portfolio_usd y todos los instrumentos individuales).
-
-**Response 200:**
 ```json
-[{
+{
   "idResultado": 1,
   "idSimulacion": 42,
   "ambito": "portfolio_ars",
@@ -655,9 +172,9 @@ Sin filtro, devuelve todos los ámbitos (portfolio_ars, portfolio_usd y todos lo
     "minimo":  [100000, 90000,  82000,  ...],
     "maximo":  [100000, 115000, 132000, ...]
   }
-}, ...]
+}
 ```
 
-Cada array tiene largo `T_meses + 1`. El índice 0 es siempre `t = 0` (el momento de la inversión).
+donde cada array tiene largo `T_meses + 1` y el índice 0 corresponde siempre a `t = 0`, el momento de la inversión. Responde `404` si la simulación no existe o no pertenece al usuario.
 
-**Errores:** `404`
+`DELETE /simulaciones/{id}` elimina una simulación y sus datos asociados (resultados y snapshot de instrumentos, por cascada), como acción explícita y separada de la ejecución. Responde `204` sin cuerpo, o `404`.

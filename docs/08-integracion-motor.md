@@ -20,7 +20,8 @@ POST /portfolios/{id}/simular
 │
 ├── [4] Construir payload del motor (MotorPayloadBuilder.Build)
 │
-├── [5] POST http://localhost:5050/simular
+├── [5] POST {MotorSimulacion:BaseUrl}/simular
+│       │     (http://localhost:5050 en desarrollo, https://proyectofinal-simuladorfinanciero.onrender.com en producción)
 │       └── Error no 2xx → ExternalApiException → 502 Bad Gateway
 │
 ├── [6] Extraer métricas agregadas del response
@@ -34,13 +35,9 @@ POST /portfolios/{id}/simular
 └── [8] Retornar SimulacionResumenResponse (201 Created)
 ```
 
----
+## 2. Construcción del payload
 
-## 2. Construcción del payload (MotorPayloadBuilder)
-
-`MotorPayloadBuilder` es una clase interna estática en `SimulacionService.cs`. Recibe las tenencias del portfolio y los escenarios vigentes, y produce el JSON que el motor Python espera en su endpoint `POST /simular`.
-
-### Estructura del payload
+`MotorPayloadBuilder`, una clase interna estática de `SimulacionService.cs`, recibe las tenencias del portfolio y los escenarios vigentes, y produce el JSON que el motor Python espera en `POST /simular`:
 
 ```json
 {
@@ -55,128 +52,15 @@ POST /portfolios/{id}/simular
 }
 ```
 
-Los escenarios se obtienen de la tabla `escenario_economico` (solo los vigentes: `vigente_hasta IS NULL`). El nombre del escenario se convierte a minúsculas (`e.Codigo.ToLowerInvariant()`).
+Los escenarios se obtienen de la tabla `escenario_economico`, solo los vigentes (`vigente_hasta IS NULL`), con el nombre convertido a minúsculas (`e.Codigo.ToLowerInvariant()`). Cada elemento de `instrumentos` se arma según el tipo de tenencia:
 
-### Mapeo de instrumentos por tipo
+Una acción (`tipo = "accion"`) se serializa como `{ "id": "accion_{idAccion}", "tipo": "accion", "monto", "mu", "sigma", "rho" }`, donde `monto` es `cantidad × precioCompra` (el precio de compra ingresado por el usuario, no el precio de mercado actual) y `mu`/`sigma`/`rho` son los parámetros GBM mensuales del catálogo, estimados por `AccionCatalogoService`.
 
-#### Acciones (`tipo = "accion"`)
+Una letra del Tesoro (`tipo = "lecap"` o `"lecer"`) se serializa como `{ "id": "letra_{idLetra}", "tipo", "monto", "tna", "t_venc_meses" }`, con `monto = cantidad × precioCompra`, `tna` como la tasa nominal anual en decimal del catálogo, y `t_venc_meses` calculado como `(año_venc - año_hoy) × 12 + (mes_venc - mes_hoy)`.
 
-```json
-{
-  "id":    "accion_1",
-  "tipo":  "accion",
-  "monto": 1952.25,
-  "mu":    0.015,
-  "sigma": 0.062,
-  "rho":   0.72
-}
-```
+Un bono a tasa fija (`tipo = "bono_tasa_fija"`) se serializa como `{ "id": "bono_{idBono}", "tipo", "monto", "flujos": [{ "mes", "monto" }, ...], "tir" }`, donde `flujos` incluye solo los flujos futuros (`fecha_pago > hoy`) convertidos a `mes` relativo desde hoy, con `monto = monto_cupon + monto_capital`, y `tir` es la tasa interna de retorno del catálogo (campo `tasa_descuento`). Un bono indexado CER (`tipo = "bono_indexado"`) sigue la misma lógica pero con `flujos_base: [{ "mes", "capital_adj", "interest_adj" }, ...]` — capital e interés separados en vez de sumados — y `tir_real` en lugar de `tir`, la TIR real del catálogo sobre los flujos base, antes del ajuste CER.
 
-- `id`: `"accion_{idAccion}"`
-- `monto`: `cantidad × precioCompra` (precio de compra ingresado por el usuario)
-- `mu`, `sigma`, `rho`: parámetros GBM mensuales del catálogo (estimados por `AccionCatalogoService`)
-
----
-
-#### Letras del Tesoro (`tipo = "lecap"` o `"lecer"`)
-
-```json
-{
-  "id":           "letra_3",
-  "tipo":         "lecap",
-  "monto":        92.50,
-  "tna":          0.45,
-  "t_venc_meses": 6
-}
-```
-
-- `id`: `"letra_{idLetra}"`
-- `monto`: `cantidad × precioCompra`
-- `tna`: tasa nominal anual en decimal del catálogo
-- `t_venc_meses`: meses hasta el vencimiento calculados como `(año_venc - año_hoy) × 12 + (mes_venc - mes_hoy)`
-
----
-
-#### Bonos tasa fija (`tipo = "bono_tasa_fija"`)
-
-```json
-{
-  "id":     "bono_2",
-  "tipo":   "bono_tasa_fija",
-  "monto":  4900.00,
-  "flujos": [
-    { "mes": 3, "monto": 92.50 },
-    { "mes": 6, "monto": 92.50 },
-    { "mes": 9, "monto": 1092.50 }
-  ],
-  "tir": 0.12
-}
-```
-
-- `id`: `"bono_{idBono}"`
-- `monto`: `cantidad × precioCompra`
-- `flujos`: solo los flujos **futuros** (`fecha_pago > hoy`), convertidos a `mes` relativo desde hoy; `monto` = `monto_cupon + monto_capital`
-- `tir`: tasa interna de retorno del catálogo (campo `tasa_descuento`)
-
----
-
-#### Bonos indexados CER (`tipo = "bono_indexado"`)
-
-```json
-{
-  "id":          "bono_5",
-  "tipo":        "bono_indexado",
-  "monto":       4900.00,
-  "flujos_base": [
-    { "mes": 6,  "capital_adj": 250.00, "interest_adj": 30.00 },
-    { "mes": 12, "capital_adj": 750.00, "interest_adj": 28.50 }
-  ],
-  "tir_real": 0.05
-}
-```
-
-- `flujos_base`: flujos futuros del catálogo, con `capital_adj` y `interest_adj` separados
-- `tir_real`: TIR real del catálogo (sobre los flujos base, antes de ajuste CER)
-
----
-
-#### Plazos fijos tradicionales (`tipo = "plazo_fijo_tradicional"`)
-
-```json
-{
-  "id":           "plazo_fijo_7",
-  "tipo":         "plazo_fijo_tradicional",
-  "monto":        50000.00,
-  "tna":          0.42,
-  "t_venc_meses": 6,
-  "reinvertir":   false
-}
-```
-
-- `id`: `"plazo_fijo_{idPortfolioPlazoFijo}"`
-- `monto`: `monto_invertido` de la tenencia
-- `tna`: `tna_pactada` de la tenencia
-- `t_venc_meses`: calculado como `MesesEntre(fecha_inicio, fecha_inicio.AddDays(duracion_dias))` (la duración se persiste en días; se convierte a meses únicamente para el payload del motor)
-- `reinvertir`: `reinvertir_al_vencimiento` de la tenencia
-
----
-
-#### Plazos fijos UVA (`tipo = "plazo_fijo_uva"`)
-
-```json
-{
-  "id":              "plazo_fijo_8",
-  "tipo":            "plazo_fijo_uva",
-  "monto":           50000.00,
-  "tasa_real_anual": 0.01,
-  "t_venc_meses":    6,
-  "reinvertir":      true
-}
-```
-
-La diferencia con el plazo fijo tradicional es `tasa_real_anual` en lugar de `tna`. El backend detecta que es UVA por el campo `tipo_codigo = "UVA"` de la tabla `tipo_plazo_fijo`.
-
----
+Un plazo fijo tradicional (`tipo = "plazo_fijo_tradicional"`) se serializa como `{ "id": "plazo_fijo_{idPortfolioPlazoFijo}", "tipo", "monto", "tna", "t_venc_meses", "reinvertir" }`, con `monto = monto_invertido`, `tna = tna_pactada` y `reinvertir = reinvertir_al_vencimiento` de la tenencia; `t_venc_meses` se calcula como `MesesEntre(fecha_inicio, fecha_inicio.AddDays(duracion_dias))`, ya que la duración se persiste en días y se convierte a meses únicamente para este payload. Un plazo fijo UVA (`tipo = "plazo_fijo_uva"`) tiene la misma forma pero con `tasa_real_anual` en lugar de `tna`; el backend detecta que un plazo fijo es UVA por el campo `tipo_codigo = "UVA"` de la tabla `tipo_plazo_fijo`.
 
 ## 3. Manejo de la semilla
 
@@ -184,13 +68,9 @@ La diferencia con el plazo fijo tradicional es `tasa_real_anual` en lugar de `tn
 var semilla = req.Semilla ?? new Random().NextInt64(1, long.MaxValue);
 ```
 
-Si el request incluye `"semilla"`, se usa ese valor. Si no, se genera uno aleatorio en el rango `[1, long.MaxValue)`.
+Si el request incluye `"semilla"`, el backend usa ese valor; si no, genera uno aleatorio en el rango `[1, long.MaxValue)` y lo incluye en el payload enviado al motor. Sin embargo, el motor no lee ese campo del payload en ningún caso: siempre genera su propia semilla internamente y la devuelve en el response (ver la sección sobre generación de aleatoriedad en `docs/02-orquestador-montecarlo.md`). El backend persiste la semilla que el motor devolvió — no la que generó antes de llamarlo —, así que el valor guardado en `simulacion.seed_aleatoria` sí corresponde exactamente a la secuencia de números aleatorios que produjo esa corrida, aunque no haya sido el backend quien la eligió.
 
-La semilla generada se envía en el payload al motor. El motor la usa para inicializar su RNG determinístico y la devuelve en el response. El backend persiste la semilla devuelta por el motor (no la generada antes de llamar) para garantizar que el valor almacenado corresponde exactamente a la secuencia de números aleatorios usada.
-
-**Reproducibilidad:** la semilla almacenada en `simulacion.seed_aleatoria` junto a los parámetros de escenario del snapshot (`simulacion_parametro_escenario`) permiten replicar los resultados llamando al motor con `"semilla": <seed>` y los mismos parámetros de inflación.
-
----
+En consecuencia, la semilla almacenada funciona como registro de auditoría — permite saber con qué secuencia aleatoria se generó cada simulación —, pero no como mecanismo de reproducibilidad: el motor no ofrece hoy una forma de recibir una semilla y regenerar exactamente las mismas trayectorias a partir de ella. La reproducibilidad de las métricas mostradas al usuario se logra por una vía distinta — persistir las estadísticas completas en `resultado_simulacion` (sección 6) y leerlas directamente en cada visualización, sin reinvocar al motor —, no por resembrar el generador aleatorio.
 
 ## 4. Validaciones que bloquean la simulación
 
@@ -205,92 +85,23 @@ El servicio realiza estas validaciones antes de llamar al motor:
 | Plazo fijo vencido sin reinversión | `422` — igual que letra |
 | Menos de 3 escenarios vigentes configurados | `422` — "No hay escenarios económicos vigentes configurados." |
 
----
-
 ## 5. Métricas agregadas de la cabecera
 
-Después de recibir el response del motor, el servicio extrae métricas resumen para la cabecera de la simulación. Todas toman el **último valor** (mes T) de las estadísticas globales del portfolio:
+Después de recibir el response del motor, el servicio extrae métricas resumen para la cabecera de la simulación, todas tomando el último valor (mes `T`) de las estadísticas globales del portfolio. `valor_inicial` es la suma de todos los `monto` calculados durante la construcción del payload (`Σ monto` de cada instrumento). `valor_esperado` (y su desglose `valor_esperado_usd`) suma la media global de ambos sub-portfolios en `t=T` — `portfolio_ars.patrimonio.global.media[T] + portfolio_usd.patrimonio.global.media[T]`, donde el término USD es cero si no hay instrumentos en esa moneda —, y `valor_minimo`/`valor_maximo` se calculan igual pero leyendo los campos `minimo`/`maximo` del response en lugar de `media`.
 
-### `valor_inicial`
-
-```
-valor_inicial = Σ monto de todos los instrumentos del payload
-```
-
-Suma de todos los `monto` calculados durante la construcción del payload.
-
-### `valor_esperado` y `valor_esperado_usd`
-
-```
-valor_esperado = portfolio_ars.patrimonio.global.media[T]
-               + portfolio_usd.patrimonio.global.media[T]
-```
-
-Los dos sub-portfolios se suman. Si no hay instrumentos USD, `portfolio_usd.patrimonio.global.media[T]` es cero.
-
-### `valor_minimo` y `valor_maximo`
-
-Igual que `valor_esperado` pero usando los campos `minimo` y `maximo` del response global.
-
-### `retorno_esperado_pct`
-
-```
-retorno_esperado_pct = (valor_esperado - valor_inicial) / valor_inicial
-```
-
-Si `valor_inicial = 0`, el campo se guarda como `null`.
-
-### `rendimiento_real_pct`
-
-```
-rendimiento_real_pct = (portfolio_ars.ganancias_reales.global.media[T]
-                       + portfolio_usd.ganancias_reales.global.media[T]) / valor_inicial
-```
-
-Mide si el portfolio preservó (o no) el poder adquisitivo. Un valor negativo indica pérdida real aunque haya ganancia nominal.
-
----
+`retorno_esperado_pct` es `(valor_esperado - valor_inicial) / valor_inicial` (guardado como `null` si `valor_inicial = 0`), y mide el retorno nominal esperado. `rendimiento_real_pct` es `(portfolio_ars.ganancias_reales.global.media[T] + portfolio_usd.ganancias_reales.global.media[T]) / valor_inicial`, y mide si el portfolio preservó o no el poder adquisitivo: un valor negativo indica pérdida real aunque haya ganancia nominal.
 
 ## 6. Persistencia en transacción
 
-La escritura a base de datos se realiza en una única transacción para garantizar consistencia: si cualquier INSERT falla, ninguno se persiste.
+La escritura a base de datos se realiza en una única transacción, de modo que si cualquier `INSERT` falla, ninguno se persiste. La tabla `simulacion` recibe una fila por ejecución, con los metadatos y las métricas agregadas de la sección 5. `simulacion_parametro_escenario` recibe una fila por escenario (tres por simulación), registrando los rangos de inflación exactos que el motor usó en esa corrida, tomados de `escenario_economico` en el momento de la ejecución — necesario porque esos rangos pueden cambiar con el tiempo, y el snapshot garantiza que el historial de simulaciones siga siendo reproducible aunque los escenarios vigentes cambien después. `simulacion_instrumento` recibe una fila por instrumento del portfolio en el momento de la simulación, con el JSON del payload enviado al motor, lo que permite reconstruir exactamente qué parámetros se usaron.
 
-### Tabla `simulacion` (cabecera)
+`resultado_simulacion` recibe una fila por combinación de ámbito, escenario y métrica. Para un portfolio con cinco instrumentos, por ejemplo, hay 7 ámbitos (`portfolio_ars`, `portfolio_usd` y los cinco instrumentos individuales), 4 escenarios (`global`, `favorable`, `moderado`, `desfavorable`) y 3 métricas (`patrimonio`, `ganancias_nominales`, `ganancias_reales`) — 7 × 4 × 3 = 84 filas por simulación. Cada fila contiene el campo `stats` en JSONB con los seis vectores de estadísticas (media, mediana, p25, p75, mínimo, máximo), cada uno de largo `T_meses + 1`, y el índice `(id_simulacion, ambito)` permite al frontend recuperar los resultados de un instrumento específico eficientemente.
 
-Una fila por ejecución con los metadatos y métricas agregadas.
+## 7. Ejemplo de payload completo
 
-### Tabla `simulacion_parametro_escenario` (snapshot)
+Para un portfolio de tres instrumentos (una acción AAPL, un bono AL30 y un plazo fijo tradicional), el payload enviado al motor tiene la forma:
 
-Una fila por escenario (3 filas por simulación). Registra los rangos de inflación exactos que el motor usó en esa corrida, tomados de `escenario_economico` en el momento de la ejecución.
-
-**Por qué:** los rangos de inflación vigentes pueden cambiar (actualización del seed). El snapshot garantiza que el historial de simulaciones sea reproducible incluso si los escenarios vigentes cambian.
-
-### Tabla `simulacion_instrumento` (snapshot de tenencias)
-
-Una fila por instrumento del portfolio en el momento de la simulación, con el JSON del payload enviado al motor. Permite reconstruir exactamente qué parámetros se usaron.
-
-### Tabla `resultado_simulacion` (stats JSONB)
-
-Una fila por combinación `(ámbito, escenario, métrica)`. Para un portfolio con 5 instrumentos:
-
-- Ámbitos: `portfolio_ars`, `portfolio_usd`, `accion_1`, `letra_3`, `bono_2`, `bono_5`, `plazo_fijo_7` = 7 ámbitos
-- Escenarios: `global`, `favorable`, `moderado`, `desfavorable` = 4
-- Métricas: `patrimonio`, `ganancias_nominales`, `ganancias_reales` = 3
-
-Total: 7 × 4 × 3 = **84 filas** por simulación.
-
-Cada fila contiene el campo `stats` JSONB con los 6 vectores de estadísticas (media, mediana, p25, p75, mínimo, máximo), cada uno de largo `T_meses + 1`.
-
-El índice `(id_simulacion, ambito)` en la tabla permite al frontend recuperar los resultados de un instrumento específico eficientemente.
-
----
-
-## 7. Diagrama del payload completo (ejemplo)
-
-```
-Portfolio de 3 instrumentos (AAPL, AL30, PF Tradicional):
-
-Payload enviado al motor:
+```json
 {
   "T_meses": 12,
   "semilla": 42,
@@ -316,8 +127,6 @@ Payload enviado al motor:
     }
   ]
 }
-
-Resultado: 3 ámbitos × 4 escenarios × 3 métricas = 36 filas en resultado_simulacion
-           + portfolio_ars, portfolio_usd = +8 filas
-           = 44 filas totales
 ```
+
+y produce, en `resultado_simulacion`, 3 ámbitos por instrumento × 4 escenarios × 3 métricas = 36 filas, más `portfolio_ars` y `portfolio_usd` (8 filas adicionales), 44 filas en total para esta simulación.

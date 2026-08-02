@@ -1,355 +1,170 @@
-# Modelos financieros — Decisiones de diseño
+# Modelos financieros
 
 **Motor de simulación:** `motor-simulacion/app/simulacion/`
 
 ---
 
-## Principios generales aplicados a todos los instrumentos
+## 1. Principios generales aplicados a todos los instrumentos
 
-Antes de documentar cada instrumento, se describen tres principios de diseño que aplican a todos ellos de forma uniforme. Estos principios fueron definidos antes de implementar el primer instrumento y se mantuvieron sin excepción.
+Tres principios de diseño, definidos antes de implementar el primer instrumento, se aplican de forma uniforme a todas las funciones de instrumento (`simular_plazo_fijo_tradicional`, `simular_accion_vectorizado`, etc.) y se mantuvieron sin excepción.
 
----
+Cada función de instrumento es una función pura: recibe todos sus inputs como parámetros y devuelve las trayectorias de evolución del patrimonio, sin generar aleatoriedad internamente ni acceder a ningún estado externo. La aleatoriedad se centraliza en el orquestador (`docs/02-orquestador-montecarlo.md`), que es el único responsable de la semilla y del RNG; si cada instrumento generara sus propios números aleatorios, sería imposible controlar las correlaciones entre activos — por ejemplo, que todas las acciones reaccionen al mismo shock de mercado. Las funciones puras son además mucho más simples de testear, porque no requieren un setup de portfolio completo para verificar que, por ejemplo, una función de plazo fijo calcula correctamente el interés compuesto.
 
-### Principio 1: las funciones de instrumento son funciones puras
+Las funciones devuelven valor de mercado (patrimonio), no ganancias: la trayectoria `[V(0), V(1), ..., V(T)]`, donde `V(t)` es el valor de mercado del instrumento en el mes `t` y `V(0)` es siempre igual a `monto` (lo que el usuario pagó). Las ganancias nominales (`V(t) - monto`) y reales (`V(t) / factor_acum(t) - monto`) son métricas derivadas que calcula el orquestador sobre las trayectorias ya computadas. Esta separación entre "qué vale el instrumento" y "cuánto ganó" mantiene los modelos independientes de los escenarios económicos: solo los instrumentos indexados reciben inflación como input, porque es la única familia cuyo valor nominal depende de ella. Los no indexados (LECAP, bono tasa fija, plazo fijo tradicional) son completamente determinísticos y no conocen los escenarios.
 
-**Decisión:** cada función de instrumento (`simular_plazo_fijo_tradicional`, `simular_accion_vectorizado`, etc.) recibe todos sus inputs como parámetros y devuelve las trayectorias de evolución del patrimonio. No genera aleatoriedad internamente ni accede a ningún estado externo.
+En la misma línea, las funciones devuelven siempre valores nominales (en pesos corrientes de cada mes); el rendimiento real lo calcula el orquestador dividiendo el valor nominal por el factor de inflación acumulada de esa trayectoria concreta. El cálculo del rendimiento real requiere la inflación acumulada, que es una variable estocástica generada por el orquestador — si las funciones de instrumento tuvieran que devolver directamente el valor real, necesitarían recibir la inflación como input incluso cuando no la usan para su propia valoración, como el plazo fijo tradicional. Mantener esta separación acota cada función a lo que genuinamente necesita.
 
-**Justificación:** la aleatoriedad se centraliza en el orquestador, que es el único responsable de la semilla y del RNG. Si los instrumentos generaran sus propios números aleatorios, sería imposible controlar las correlaciones entre activos (por ejemplo, que todas las acciones reaccionen al mismo shock de mercado). Además, las funciones puras son mucho más simples de testear: no se necesita un setup de portfolio completo para verificar que una función de plazo fijo calcula correctamente el interés compuesto.
+## 2. Rezago T-2 del CER: mecanismo y validación
 
----
+Tres instrumentos —la letra LECER, el bono indexado por inflación y el plazo fijo UVA— ajustan su valor por el Coeficiente de Estabilización de Referencia (CER), que sigue la inflación con un rezago real de aproximadamente dos meses: el INDEC publica el IPC de cada mes hacia la mitad del mes siguiente, y el BCRA lo incorpora al coeficiente con demora adicional. El CER vigente en el mes `t` refleja, en la práctica, la inflación acumulada hasta aproximadamente `t-2`, no la del mes corriente.
 
-### Principio 2: las funciones devuelven valor de mercado (patrimonio), no ganancias
+El motor incorpora este rezago sustituyendo, en la fórmula de valuación de los tres instrumentos, el factor de inflación acumulada `factor_acum[t]` por un factor desplazado dos meses:
 
-**Decisión:** las funciones devuelven la trayectoria `[V(0), V(1), ..., V(T)]` donde `V(t)` es el valor de mercado del instrumento en el mes `t`. `V(0)` es siempre igual a `monto` (lo que el usuario pagó).
+```
+factor_cer[t] = factor_acum[max(0, t-2)]
+```
 
-Las ganancias nominales (`V(t) - monto`) y reales (`V(t) / factor_acum(t) - monto`) son métricas derivadas que calcula el orquestador sobre las trayectorias ya computadas.
+En el orquestador esto se implementa desplazando la matriz de inflación acumulada dos posiciones:
 
-**Justificación:** separar "qué vale el instrumento" de "cuánto ganó" hace que los modelos sean independientes de los escenarios económicos. Solo los instrumentos indexados reciben inflación como input porque la inflación afecta directamente su valor nominal. Los no indexados (LECAP, bono tasa fija, plazo fijo tradicional) son completamente determinísticos y no saben nada de escenarios.
+```python
+factor_cer_matrix = np.ones((N_SIMULACIONES, T_meses + 1))
+factor_cer_matrix[:, 2:] = factor_acum_matrix[:, :-2]
+```
 
----
+Los meses `t=0` y `t=1` quedan con `factor_cer = 1`, porque la inflación simulada de esos meses todavía no fue publicada por el INDEC al momento de valuar el instrumento; la inflación anterior a `t=0` ya estaba incorporada en el precio que pagó el inversor, de modo que el invariante `V(0) = monto` se mantiene sin ningún caso especial. Cada instrumento indexado recibe `factor_cer_matrix` (o el slice correspondiente a su vencimiento) en el lugar donde antes recibía `factor_acum_matrix` sin rezagar; las secciones 8, 9 y 4 detallan dónde entra este factor en la fórmula de cada uno.
 
-### Principio 3: separación nominal / real
+## 3. Plazo fijo tradicional
 
-**Decisión:** las funciones devuelven valores **nominales** (en pesos corrientes de cada mes). El rendimiento real (poder adquisitivo deflactado) lo calcula el orquestador dividiendo el valor nominal por el factor de inflación acumulada de esa trayectoria concreta.
-
-**Justificación:** el cálculo del rendimiento real requiere la inflación acumulada, que es una variable estocástica generada por el orquestador. Si los instrumentos tuvieran que devolver directamente el valor real, necesitarían recibir la inflación como input incluso cuando no la usan para su valoración (como el plazo fijo tradicional). Esta separación mantiene cada función acotada a lo que genuinamente necesita.
-
----
-
-## 1. Plazo fijo tradicional
-
-**Archivo:** `motor-simulacion/app/simulacion/plazo_fijo.py`  
+**Archivo:** `motor-simulacion/app/simulacion/plazo_fijo.py`
 **Función:** `simular_plazo_fijo_tradicional`
-
-### Qué es
 
 Depósito a plazo en una entidad financiera a una tasa nominal anual (TNA) pactada. El banco devuelve el capital más intereses al vencimiento. El valor del instrumento crece de forma completamente determinística: no depende de ninguna variable macroeconómica.
 
-### Modelo matemático adoptado
+La TNA se convierte a tasa mensual `r_m = TNA / 12`, y el valor en el mes `t` es:
 
-La TNA se convierte a tasa mensual: `r_m = TNA / 12`
-
-Valor en el mes `t`:
 ```
 V(t) = monto × (1 + r_m)^t          si t ≤ t_venc  (o reinvertir = True)
 V(t) = monto × (1 + r_m)^t_venc     si t > t_venc  y reinvertir = False
 ```
 
-### Decisiones de diseño
+Se usa tasa mensual en lugar de diaria porque el motor opera con pasos de tiempo mensuales; la alternativa (`VF = M × (1 + TNA/365)^d`, aproximando 1 mes = 30 días) agrega complejidad sin ganancia de precisión relevante para el simulador, ya que la diferencia entre ambas convenciones para plazos de 1 a 24 meses es menor al 0.1%. Cuando `t_venc < T` y `reinvertir = True`, el capital más intereses se reinvierten automáticamente en un plazo idéntico; matemáticamente esto equivale a un crecimiento compuesto continuo, por lo que la fórmula `V(t) = monto × (1 + r_m)^t` es válida para todo `t` sin necesidad de casos especiales.
 
-**Tasa mensual en lugar de diaria.** El motor opera con pasos de tiempo mensuales. La alternativa era usar la fórmula con días (`VF = M × (1 + TNA/365)^d`) y aproximar 1 mes = 30 días. Esto agrega complejidad sin ganancia de precisión para el propósito del simulador: la diferencia entre ambas convenciones para plazos de 1 a 24 meses es menor al 0.1%.
+## 4. Plazo fijo UVA
 
-**Lógica de reinversión.** Cuando `t_venc < T` (el depósito vence antes del horizonte) y `reinvertir = True`, el capital más intereses se reinvierten automáticamente en un plazo idéntico. Matemáticamente esto equivale a un crecimiento compuesto continuo, por lo que la fórmula `V(t) = monto × (1 + r_m)^t` es válida para todo `t` sin casos especiales.
-
----
-
-## 2. Plazo fijo UVA
-
-**Archivo:** `motor-simulacion/app/simulacion/plazo_fijo.py`  
+**Archivo:** `motor-simulacion/app/simulacion/plazo_fijo.py`
 **Función:** `simular_plazo_fijo_uva_vectorizado`
 
-### Qué es
+Igual que el plazo fijo tradicional, pero el capital se ajusta mes a mes por la inflación mediante el mecanismo UVA (Unidad de Valor Adquisitivo). La tasa pactada es una tasa real, que se aplica sobre el capital ya indexado, y garantiza al inversor mantener el poder adquisitivo más un rendimiento real positivo.
 
-Igual que el plazo fijo tradicional, pero el capital se ajusta mes a mes por la inflación mediante el mecanismo UVA (Unidad de Valor Adquisitivo). La tasa pactada es una **tasa real**: se aplica sobre el capital ya indexado. Garantiza al inversor mantener el poder adquisitivo más un rendimiento real positivo.
+Con tasa mensual real `r_m = tasa_real_anual / 12` y el factor de inflación acumulada rezagado según la sección 2 (`factor_cer[t] = factor_acum[max(0, t-2)]`), el valor en el mes `t` es:
 
-### Modelo matemático adoptado
-
-Tasa mensual real: `r_m = tasa_real_anual / 12`
-
-Factor de inflación acumulado hasta el mes `t`:
 ```
-factor_acum[0] = 1
-factor_acum[t] = (1 + π₁)(1 + π₂) ··· (1 + πt)
+V(t) = monto × factor_cer[t] × (1 + r_m)^t                si t ≤ t_venc (o reinvertir = True)
+V(t) = monto × factor_cer[t_venc] × (1 + r_m)^t_venc       si t > t_venc y reinvertir = False
 ```
 
-Valor en el mes `t`:
-```
-V(t) = monto × factor_acum[t] × (1 + r_m)^t      si t ≤ t_venc (o reinvertir = True)
-V(t) = monto × factor_acum[t_venc] × (1+r_m)^t_venc   si t > t_venc y reinvertir = False
-```
+El factor de inflación y el factor de crecimiento real son independientes y se multiplican: esta estructura refleja la mecánica real del instrumento, donde la inflación ajusta el capital y la tasa real remunera ese capital ya ajustado. La función recibe el factor de inflación como un array ya calculado por el orquestador (no sortea inflación internamente ni conoce si está rezagado o no), consistente con el principio de función pura de la sección 1 y con la vectorización sobre matrices `(N, T+1)`.
 
-### Decisiones de diseño
+## 5. Plazo fijo en dólares
 
-**Separación entre factor de inflación y tasa real.** El factor de inflación y el factor de crecimiento real son independientes y se multiplican. Esta estructura refleja correctamente la mecánica del instrumento: la inflación ajusta el capital y la tasa real remunera ese capital ajustado.
+**Archivo:** `motor-simulacion/app/simulacion/orquestador.py` (tipo `plazo_fijo_usd`)
+**Función:** `simular_plazo_fijo_tradicional` (reutilizada)
 
-**Input de inflación como vector.** La función recibe el array `inflacion_mensual` (un vector de `T_meses` valores) generado por el orquestador. No sortea inflación internamente. Este diseño es consistente con el Principio 1 (función pura) y con la vectorización: la función opera sobre matrices `(N, T+1)` donde `N` es el número de simulaciones.
+Depósito a plazo denominado y pactado en dólares. En términos de cálculo nominal es idéntico al plazo fijo tradicional — el orquestador invoca la misma función `simular_plazo_fijo_tradicional` con `monto` y `tna` expresados en USD, sin ningún modelo matemático adicional. La diferencia está exclusivamente en qué factor de inflación se usa para deflactar y obtener la ganancia real: el orquestador clasifica el instrumento como USD (`_es_usd(inst)` devuelve `True` para `tipo in ("accion", "plazo_fijo_usd")`) y por lo tanto divide su trayectoria nominal por `factor_acum_usd_matrix` en lugar de `factor_acum_matrix` al calcular `ganancias_reales`, y lo agrega al sub-portfolio `portfolio_usd` en lugar de `portfolio_ars` (ver `docs/02-orquestador-montecarlo.md`, sección de separación de portfolios por moneda). No existe una variante UVA en dólares: solo se modela la versión tradicional a tasa fija.
 
-> **Pregunta abierta — Rezago T-2 del UVA**
->
-> El índice UVA es calculado diariamente por el BCRA a partir del CER, que a su vez usa el IPC publicado por el INDEC con aproximadamente dos meses de rezago. Esto significa que el ajuste que se aplica hoy sobre el capital del plazo fijo UVA incorpora la inflación de hace ~2 meses, no la inflación del mes corriente.
->
-> **Enfoque propuesto:** reemplazar `factor_acum[t]` por `factor_cer[t] = factor_acum[max(0, t-2)]` en el cálculo de `V(t)`. En el orquestador esto se implementa con un shift de 2 posiciones:
-> ```python
-> factor_cer_matrix = np.ones((N_SIMULACIONES, T_meses + 1))
-> factor_cer_matrix[:, 2:] = factor_acum_matrix[:, :-2]
-> ```
-> Los meses `t=0` y `t=1` quedan con `factor_cer = 1` porque la inflación simulada de esos meses aún no fue publicada. Esto es correcto: la inflación anterior a t=0 ya estaba incorporada en el precio que el inversor pagó.
->
-> **¿Funciona así realmente?** Validar que el comportamiento del plazo fijo UVA con `factor_cer_matrix` es coherente con el mecanismo real del instrumento.
+## 6. Restricciones y supuestos generales para bonos y letras
 
----
+Las siguientes restricciones se definieron antes de implementar los modelos de renta fija de mercado, para acotar el alcance del simulador.
 
-## Restricciones y suposiciones generales para bonos y letras
+El vencimiento de un bono o letra es independiente del horizonte de simulación `T`: no hay ninguna restricción al agregar el instrumento al portfolio, y `T` se elige recién al correr cada simulación (`docs/07-portfolio-reglas-negocio.md`). Cuando `t_venc > T`, el motor trunca la trayectoria en `T` sin proyectar el instrumento hasta su vencimiento real (ver la sección de tratamiento de vencimientos en `docs/02-orquestador-montecarlo.md`); las funciones de instrumento siempre calculan contra el vencimiento real, para descontar correctamente cuánto falta, pero es el orquestador quien decide hasta qué mes emitir la trayectoria.
 
-Las siguientes restricciones fueron definidas antes de implementar los modelos para acotar el alcance del simulador.
+Se asume que el precio y la tasa/TIR de cada instrumento reflejan la cotización de mercado secundario vigente al momento de la consulta — no el resultado de una licitación primaria del Tesoro. El diseño original de esta sección preveía comprar en licitación primaria, pero al integrar las fuentes de datos reales (`docs/04-apis-datos-mercado.md`) se usó cotización de mercado secundario: BYMA Open Data y ArgentinaDatos exponen precios de cotización refrescados cada 15 minutos en horario bursátil (terminología de liquidación T1/T2, propia de mercado secundario), no resultados de licitación, que son eventos puntuales sin una API pública utilizable para simular en cualquier fecha. Se mantiene la simplificación de no modelar spread bid/ask ni comisiones, porque BYMA expone un único precio de referencia por instrumento, no una punta compradora y otra vendedora.
 
-### Vencimiento fuera del horizonte (`t_venc > T`)
+El precio y la tasa/TIR provienen además de fuentes independientes entre sí — el precio de BYMA/ArgentinaDatos, la tasa del endpoint de yields de Docta Capital (`docs/04-apis-datos-mercado.md`, sección 3.3) — sin que el sistema derive una a partir de la otra. No hay ninguna garantía de que ambas reflejen exactamente el mismo instante de mercado, ya que cada una se refresca de forma independiente.
 
-El vencimiento de un bono o letra es independiente del horizonte de simulación `T`: no hay ninguna
-restricción al agregar el instrumento al portfolio, y `T` se elige recién al correr cada simulación
-(ver `docs/07-portfolio-reglas-negocio.md`). Cuando `t_venc > T`, el motor trunca la trayectoria en `T`
-sin proyectar el instrumento hasta su vencimiento real — ver Decisión 7 en
-`docs/02-orquestador-montecarlo.md`. Las funciones de instrumento siempre calculan contra el vencimiento
-real (para descontar correctamente "cuánto falta"), pero el orquestador decide hasta qué mes emitir.
+Las funciones del motor reciben los flujos de caja como parámetros; es responsabilidad del backend consultar la API de mercado para obtener el calendario de pagos y convertir fechas de pago a índices de mes relativos al inicio de la simulación. Esto mantiene el motor como función pura, sin I/O, más simple de testear e independiente de fuentes de datos externas.
 
-### Compra en licitación primaria
+## 7. Letra LECAP (tasa fija, cupón cero)
 
-Se asume que el usuario compra los instrumentos en la licitación del Tesoro, no en el mercado secundario.
-
-**Implicancias:**
-- El precio pagado es el precio de licitación, sin spread bid/ask ni comisiones.
-- La TIR implícita resulta directamente del precio pagado y los flujos del instrumento.
-
-Esta suposición simplifica el modelo y es coherente con el perfil de usuario objetivo del simulador: inversores que participan en licitaciones primarias.
-
-### Flujos de caja provistos por el backend
-
-Las funciones del motor reciben los flujos de caja como parámetros. El backend es responsable de:
-1. Consultar la API de mercado para obtener el calendario de pagos.
-2. Convertir fechas de pago a índices de mes relativos al inicio de la simulación.
-
-Esto mantiene el motor como función pura (sin I/O), más simple de testear e independiente de fuentes de datos externas.
-
----
-
-## 3. Letra LECAP (tasa fija, cupón cero)
-
-**Archivo:** `motor-simulacion/app/simulacion/letras.py`  
+**Archivo:** `motor-simulacion/app/simulacion/letras.py`
 **Función:** `simular_letra_lecap`
-
-### Qué es
 
 Letra del Tesoro Nacional a tasa fija. Es un instrumento cupón cero: el usuario compra a descuento y recibe el valor nominal completo al vencimiento, sin pagos intermedios. El valor del instrumento crece monotónicamente desde el precio de compra hasta el nominal a medida que se acerca el vencimiento.
 
-### Modelo matemático adoptado
+El valor nominal implícito, cobrado al vencimiento, es `VN = monto × (1 + tna × t_venc / 12)`, y el valor en el mes `t` es:
 
-Valor nominal implícito (cobrado al vencimiento):
-```
-VN = monto × (1 + tna × t_venc / 12)
-```
-
-Valor en el mes `t`:
 ```
 V(t) = VN / (1 + tna × (t_venc - t) / 12)     para t ∈ [0, t_venc]
 ```
 
-**Verificación de invariantes:**
-- En `t = 0`: `V(0) = VN / (1 + tna × t_venc/12) = monto` ✓
-- En `t = t_venc`: denominador = 1 → `V(t_venc) = VN` ✓
+Se verifica que en `t = 0`, `V(0) = VN / (1 + tna × t_venc/12) = monto`, y que en `t = t_venc` el denominador vale 1 y `V(t_venc) = VN`.
 
-### Decisiones de diseño
+Se usa interés simple en lugar de capitalización compuesta: la propuesta cita a Hull (2014) para instrumentos de corto plazo, donde la convención de mercado para cupones cero de corto plazo es interés simple (`1 + r × T`) y no capitalización compuesta (`(1+r)^T`). Para plazos de hasta 12 meses la diferencia numérica es mínima, pero la fórmula de interés simple es la que usan los participantes del mercado argentino para pricear LECAPs. La función devuelve un vector de largo `t_venc + 1`, no de largo `T + 1`: si el instrumento vence antes del horizonte de simulación, el orquestador aplica padding, y si vence después, lo trunca a `T + 1` — esta separación de responsabilidades evita que la función de la letra necesite conocer el horizonte total de la simulación. A diferencia del plazo fijo, la LECAP no tiene flag de reinversión: al vencer, el nominal cobrado queda disponible como efectivo en el portfolio, y reinvertirlo en otro instrumento es una decisión del usuario que excede el alcance de esta función.
 
-**Interés simple en lugar de capitalización compuesta.** La propuesta cita a Hull (2014) para instrumentos de corto plazo: la convención del mercado para cupones cero de corto plazo es interés simple (`1 + r × T`) y no capitalización compuesta (`(1+r)^T`). Para plazos de hasta 12 meses la diferencia numérica es mínima, pero la fórmula de interés simple es la que usan los participantes del mercado argentino para pricear LECAPs.
+## 8. Letra LECER (indexada por inflación, cupón cero)
 
-**La trayectoria termina en `t_venc`.** La función devuelve un vector de largo `t_venc + 1`, no de largo `T + 1`. Si el instrumento vence antes del horizonte de simulación, el orquestador aplica padding; si vence después, el orquestador trunca la salida a `T + 1`. Esta separación de responsabilidades evita que la función de la letra necesite conocer el horizonte total de la simulación.
-
-**Sin opción de reinversión.** A diferencia del plazo fijo, la LECAP no tiene flag `reinvertir`. Al vencer, el nominal cobrado queda disponible como efectivo en el portfolio. La reinversión en otro instrumento es una decisión del usuario que excede el alcance de esta función.
-
-
----
-
-## 4. Letra LECER (indexada por inflación, cupón cero)
-
-**Archivo:** `motor-simulacion/app/simulacion/letras.py`  
+**Archivo:** `motor-simulacion/app/simulacion/letras.py`
 **Función:** `simular_letra_lecer_vectorizado`
 
-### Qué es
+Igual que la LECAP, pero el valor nominal se ajusta por el CER, que sigue la inflación mensual con el rezago de dos meses descripto en la sección 2. El usuario compra a descuento sobre un nominal que crecerá con la inflación acumulada hasta el vencimiento; es el instrumento de renta fija de corto plazo que mejor protege el poder adquisitivo.
 
-Igual que la LECAP, pero el valor nominal se ajusta por el Coeficiente de Estabilización de Referencia (CER), que sigue la inflación mensual. El usuario compra a descuento sobre un nominal que crecerá con la inflación acumulada hasta el vencimiento. Es el instrumento de renta fija de corto plazo que mejor protege el poder adquisitivo.
+Con el valor nominal original (antes del ajuste CER) `VN₀ = monto × (1 + tna × t_venc / 12)` y el factor rezagado `factor_cer[t] = factor_acum[max(0, t-2)]`, el valor en el mes `t` es:
 
-### Modelo matemático adoptado
-
-Factor de inflación acumulado hasta el mes `t`:
 ```
-factor_acum[0] = 1
-factor_acum[t] = (1 + π₁)(1 + π₂) ··· (1 + πt)
+V(t) = VN₀ × factor_cer[t] / (1 + tna × (t_venc - t) / 12)     para t ∈ [0, t_venc]
 ```
 
-Valor nominal original (antes del ajuste CER): `VN₀ = monto × (1 + tna × t_venc / 12)`
+En `t = 0`, `factor_cer[0] = 1` siempre, así que la inflación futura no afecta el precio de entrada y `V(0) = VN₀ / (1 + tna × t_venc/12) = monto`, correctamente independiente de la inflación que todavía no ocurrió. En `t = t_venc`, el denominador vale 1 y `V(t_venc) = VN₀ × factor_cer[t_venc]`, el nominal ajustado por toda la inflación acumulada (rezagada) durante la vida del instrumento. El orquestador pasa `factor_cer[:t_venc]` — solo la porción de la matriz correspondiente a la vida del instrumento —, lo que explicita el contrato entre orquestador y función y evita que esta acceda por error a inflación de meses posteriores a su propio vencimiento.
 
-Valor en el mes `t`:
-```
-V(t) = VN₀ × factor_acum[t] / (1 + tna × (t_venc - t) / 12)     para t ∈ [0, t_venc]
-```
+## 9. Bono a tasa fija
 
-**Verificación de invariantes:**
-- En `t = 0`: `factor_acum[0] = 1` siempre → `V(0) = VN₀ / (1 + tna × t_venc/12) = monto` ✓  
-  La inflación **futura** no afecta el precio de entrada, lo que es correcto: el usuario pagó `monto` en t=0.
-- En `t = t_venc`: denominador = 1 → `V(t_venc) = VN₀ × factor_acum[t_venc]` (nominal ajustado por toda la inflación acumulada) ✓
-
-### Decisiones de diseño
-
-**El vector de inflación tiene exactamente `t_venc` elementos.** El orquestador pasa `inflacion_mensual[:t_venc]` — solo la inflación durante la vida del instrumento. Esto explicita el contrato entre el orquestador y la función y evita que la función acceda por error a inflación de meses posteriores a su vencimiento.
-
-> **Pregunta abierta — Rezago T-2 del CER**
->
-> El CER incorpora el IPC con ~2 meses de rezago: el INDEC publica el IPC de cada mes alrededor de la mitad del mes siguiente, y el BCRA lo incorpora al coeficiente con demora adicional. El CER vigente en el mes `t` refleja la inflación acumulada hasta aproximadamente `t-2`.
->
-> **Enfoque propuesto:** reemplazar `factor_acum[t]` por `factor_cer[t] = factor_acum[max(0, t-2)]` en el numerador de la fórmula de valuación. La fórmula quedaría:
-> ```
-> V(t) = VN₀ × factor_cer[t] / (1 + tna × (t_venc - t) / 12)
-> ```
-> Los meses `t=0` y `t=1` tienen `factor_cer = 1` porque la inflación simulada de esos meses aún no fue publicada por el INDEC. La inflación anterior a t=0 ya está incorporada en el precio de compra.
->
-> **¿Funciona así realmente?** Validar que la valuación de la LECER con `factor_cer` es coherente con el comportamiento real del instrumento, en particular que `V(0) = monto` se mantiene (se mantiene porque `factor_cer[0] = 1` siempre).
-
----
-
-## 5. Bono a tasa fija
-
-**Archivo:** `motor-simulacion/app/simulacion/bonos.py`  
+**Archivo:** `motor-simulacion/app/simulacion/bonos.py`
 **Función:** `simular_bono_tasa_fija`
 
-### Qué es
+Bono soberano con flujos de caja nominales fijos (cupones periódicos más amortizaciones de capital). El precio de compra refleja la cotización de mercado secundario vigente al consultar (sección 6). La trayectoria es completamente determinística: como los flujos son fijos y la TIR es conocida en `t=0`, no hay estocasticidad en ninguna trayectoria.
 
-Bono soberano con flujos de caja nominales fijos (cupones periódicos más amortizaciones de capital). El usuario compra en la licitación primaria del Tesoro. La trayectoria es completamente **determinística**: como los flujos son fijos y la TIR es conocida en t=0, no hay estocasticidad en ninguna trayectoria.
-
-### Modelo matemático adoptado — Descuento de Flujos (DCF)
-
-El valor del bono en el mes `t` considera tanto los flujos ya cobrados como el valor presente de los flujos restantes:
+El valor del bono en el mes `t`, por descuento de flujos (DCF), considera tanto los flujos ya cobrados como el valor presente de los flujos restantes:
 
 ```
 V(t) = Σ_{mᵢ ≤ t}  flujoᵢ                                     ← ya cobrado: valor nominal pleno
      + Σ_{mᵢ > t}  flujoᵢ / (1 + TIR)^((mᵢ - t) / 12)       ← futuro: descontado a TIR
 ```
 
-**Verificación de invariantes:**
-- En `t = 0`: todos los flujos son futuros → `V(0) = Σ flujoᵢ / (1+TIR)^(mᵢ/12) = monto` (por definición de TIR) ✓
-- En `t = t_venc`: todos los flujos cobrados, factor = 1 → `V(t_venc) = Σ flujoᵢ` ✓
+En `t = 0` todos los flujos son futuros, y por definición de TIR, `V(0) = Σ flujoᵢ / (1+TIR)^(mᵢ/12) = monto`. En `t = t_venc` todos los flujos están cobrados y el factor de descuento vale 1, así que `V(t_venc) = Σ flujoᵢ`.
 
-### Decisiones de diseño
+Una vez que un flujo es cobrado, se suma a `V(t)` por su valor nominal completo, sin suponer que fue reinvertido — modelar la reinversión requeriría asumir a qué tasa y en qué instrumento, una decisión del usuario y no del simulador. El motor recibe la lista de flujos `[{"mes": int, "monto": float}, ...]` como parámetro; es responsabilidad del backend consultar la API de mercado, convertir fechas de pago a índices de mes relativos al inicio de la simulación y verificar que el vencimiento caiga dentro del horizonte `T`, lo que mantiene el motor como función pura sin I/O. El precio pagado `monto` refleja la cotización de mercado secundario vigente al consultar (sección 6); la TIR se obtiene por separado, directamente del endpoint de yields de Docta Capital.
 
-**Flujos cobrados a valor nominal, sin reinversión.** Una vez que un flujo es cobrado, se suma a `V(t)` por su valor nominal completo sin suponer que fue reinvertido. Modelar la reinversión requeriría asumir a qué tasa y en qué instrumento — una decisión del usuario, no del simulador.
+## 10. Bono indexado por inflación (CER)
 
-**Los flujos los provee el backend, no el motor.** El motor recibe la lista de flujos `[{"mes": int, "monto": float}, ...]` como parámetro. El backend es responsable de consultar la API de mercado, convertir fechas de pago a índices de mes relativos al inicio de la simulación y verificar que el vencimiento caiga dentro del horizonte `T`. Esto mantiene el motor como función pura sin I/O.
-
-**TIR implícita del precio de licitación.** Se asume compra en mercado primario (licitación), por lo que el precio pagado `monto` ya tiene la TIR implícita correcta. La TIR también se obtiene de la API.
-
----
-
-## 6. Bono indexado por inflación (CER)
-
-**Archivo:** `motor-simulacion/app/simulacion/bonos.py`  
+**Archivo:** `motor-simulacion/app/simulacion/bonos.py`
 **Función:** `simular_bono_indexado_vectorizado`
 
-### Qué es
+Bono soberano cuyos flujos de caja se ajustan por el CER con el rezago de dos meses descripto en la sección 2. Los flujos crecen con la inflación acumulada, protegiendo el poder adquisitivo más un rendimiento real. La trayectoria es estocástica, porque depende de la inflación simulada en cada trayectoria Monte Carlo.
 
-Bono soberano cuyos flujos de caja se ajustan por el Coeficiente de Estabilización de Referencia (CER), que sigue la inflación. Los flujos crecen con la inflación acumulada, protegiendo el poder adquisitivo más un rendimiento real. La trayectoria es **estocástica** porque depende de la inflación simulada en cada trayectoria Monte Carlo.
-
-### Modelo matemático adoptado
-
-Los `flujos_base` representan los flujos en pesos de t=0 (antes de cualquier ajuste CER). La inflación simulada los reajusta hacia adelante.
-
-Factor de inflación acumulado:
-```
-factor_acum[0] = 1
-factor_acum[t] = (1 + π₁)(1 + π₂) ··· (1 + πt)
-```
-
-La valuación combina DCF en términos reales con conversión a nominal:
+Los `flujos_base` representan los flujos en pesos de `t=0`, antes de cualquier ajuste CER; la inflación simulada (rezagada) los reajusta hacia adelante. La valuación combina DCF en términos reales con conversión a nominal:
 
 ```
-V(t) = Σ_{mᵢ ≤ t}  baseᵢ × factor_acum[mᵢ]                                   ← cobrado en mᵢ
-     + Σ_{mᵢ > t}  baseᵢ × (1 + TIR_real)^(-(mᵢ - t)/12) × factor_acum[t]   ← futuro: DCF real → nominal
+V(t) = Σ_{mᵢ ≤ t}  baseᵢ × factor_cer[mᵢ]
+     + Σ_{mᵢ > t}  baseᵢ × (1 + TIR_real)^(-(mᵢ - t)/12) × factor_cer[t]
 ```
 
-**Verificación de invariantes:**
-- En `t = 0`: `factor_acum[0] = 1` siempre, independiente de la inflación futura → `V(0) = Σ baseᵢ × (1+TIR_real)^(-mᵢ/12) = monto` ✓  
-  El precio de entrada es el mismo en todas las trayectorias, lo que es correcto: el usuario pagó `monto` en t=0 sin conocer la inflación futura.
-- En `t = t_venc`: todos cobrados → `V(t_venc) = Σ baseᵢ × factor_acum[mᵢ]` ✓
+`factor_cer[0] = 1` siempre, independientemente de la inflación futura, así que `V(0) = Σ baseᵢ × (1+TIR_real)^(-mᵢ/12) = monto`: el precio de entrada es el mismo en todas las trayectorias, correctamente, porque el usuario pagó `monto` en `t=0` sin conocer la inflación futura. En `t = t_venc`, con todos los flujos cobrados, `V(t_venc) = Σ baseᵢ × factor_cer[mᵢ]`.
 
-### Decisiones de diseño
+La tasa de descuento es la TIR real sobre los flujos base, no una TIR nominal sobre flujos ya ajustados por inflación — mezclar ambas distorsionaría la valuación. La TIR real proviene directamente del endpoint de yields de Docta Capital (sección 6), sin ajuste inflacionario adicional de este lado. Esta separación explícita entre lo real y lo nominal refleja el mecanismo del CER: el instrumento promete un rendimiento real, y la inflación determina cuántos pesos nominales representa ese rendimiento en cada momento.
 
-**Separación real/nominal explícita.** Los flujos base están en pesos de t=0 (reales). El factor de inflación acumulada convierte ese valor real a nominal en cada mes. Esta separación refleja exactamente el mecanismo del CER: el instrumento promete un rendimiento real, y la inflación determina cuántos pesos nominales representa ese rendimiento en cada momento.
+## 11. Acciones — Movimiento Browniano Geométrico (GBM)
 
-**TIR real, no nominal.** La tasa de descuento es `TIR_real` sobre los flujos base. Usar una TIR nominal sobre flujos ya ajustados por inflación mezclaría dos tipos de tasas y distorsionaría la valuación. La TIR real es la TIR implícita del precio de licitación sobre los flujos base (sin ajuste inflacionario).
-
-> **Pregunta abierta — Rezago T-2 del CER**
->
-> Igual que la LECER, el bono CER ajusta sus flujos por el coeficiente CER, que incorpora la inflación con ~2 meses de rezago. En la fórmula de valuación esto afecta dos lugares:
-> - Los **flujos cobrados**: `baseᵢ × factor_cer[mᵢ]` en lugar de `baseᵢ × factor_acum[mᵢ]`
-> - Los **flujos futuros**: `baseᵢ × (1 + TIR_real)^(-(mᵢ-t)/12) × factor_cer[t]` en lugar de `factor_acum[t]`
->
-> La fórmula completa con rezago:
-> ```
-> V(t) = Σ_{mᵢ ≤ t}  baseᵢ × factor_cer[mᵢ]
->      + Σ_{mᵢ > t}  baseᵢ × (1 + TIR_real)^(-(mᵢ - t)/12) × factor_cer[t]
-> ```
-> El invariante `V(0) = monto` se mantiene porque `factor_cer[0] = 1` siempre.
->
-> **¿Funciona así realmente?** Validar que la valuación del bono CER con `factor_cer` es coherente con el comportamiento real del instrumento. En particular, verificar que los flujos cobrados antes de `t=2` (cuando `factor_cer = 1`) resultan en valores razonables.
-
----
-
-## 7. Acciones — Movimiento Browniano Geométrico (GBM)
-
-**Archivo:** `motor-simulacion/app/simulacion/acciones.py`  
+**Archivo:** `motor-simulacion/app/simulacion/acciones.py`
 **Función:** `simular_accion_vectorizado`
 
-### Qué es
+Instrumento de renta variable. El precio futuro de una acción es incierto y se modela con GBM: el precio sigue una trayectoria multiplicativa donde cada paso tiene una componente de deriva (tendencia esperada) y una componente aleatoria (volatilidad). El universo de acciones se limita al mercado estadounidense, con el S&P 500 como índice de referencia (`SR-01`).
 
-Instrumento de renta variable. El precio futuro de una acción es incierto y se modela con GBM: el precio sigue una trayectoria multiplicativa donde cada paso tiene una componente de deriva (tendencia esperada) y una componente aleatoria (volatilidad). El universo de acciones se limita al mercado estadounidense (S&P 500).
+El GBM en tiempo continuo está dado por la ecuación diferencial estocástica `dS = μ·S·dt + σ·S·dW`. En forma discreta con paso mensual (`Δt = 1/12`), aplicando el esquema de Euler-Maruyama:
 
-### Modelo matemático adoptado — GBM en tiempo discreto
-
-El GBM en tiempo continuo está dado por la ecuación diferencial estocástica:
-```
-dS = μ·S·dt + σ·S·dW
-```
-
-En forma discreta con paso mensual (Δt = 1/12), aplicando el esquema de Euler-Maruyama:
 ```
 S(t + 1) = S(t) × exp( (μ - 0.5σ²)/12  +  σ/√12 × z[t] )
 ```
 
-El patrimonio acumula esos retornos logarítmicos:
-```
-V(t) = monto × exp( Σ_{k=1}^{t} retorno_log[k] )
-```
+y el patrimonio acumula esos retornos logarítmicos: `V(t) = monto × exp( Σ_{k=1}^{t} retorno_log[k] )`. Los parámetros `μ` (drift anualizado) y `σ` (volatilidad anualizada) son estimados por el backend a partir de retornos logarítmicos diarios históricos: `μ_anual = media(r_t) × 252`, `σ_anual = std(r_t) × √252`.
 
-Los parámetros `μ` (drift anualizado) y `σ` (volatilidad anualizada) son estimados por el backend a partir de retornos logarítmicos diarios históricos: `μ_anual = media(r_t) × 252`, `σ_anual = std(r_t) × √252`.
-
-
-### Decisión: shocks generados externamente (función pura)
-
-**Contexto:** las acciones requieren aleatoriedad, pero también deben estar correlacionadas entre sí a través de un factor de mercado compartido (ver Decisión 6 del orquestador).
-
-**Decisión:** la función recibe el vector `z_accion` (shocks ya combinados, largo `T_meses`) como parámetro. No genera aleatoriedad internamente.
-
-El orquestador construye ese vector como:
-```
-z_accion[t] = ρ × z_indice[t] + √(1 - ρ²) × z_propio[t]
-```
-donde `z_indice` es el shock sistemático compartido por todas las acciones en ese paso de tiempo, y `z_propio` es el shock idiosincrático exclusivo de esa acción.
-
-**Justificación:** centralizar la generación de aleatoriedad en el orquestador permite controlar la estructura de correlaciones del portfolio completo. Si cada función generara sus propios shocks, sería imposible garantizar que dos acciones del mismo portfolio reaccionen al mismo shock de mercado.
+La función recibe el vector `z_accion` (shocks ya combinados, largo `T_meses`) como parámetro y no genera aleatoriedad internamente. El orquestador lo construye como `z_accion[t] = ρ × z_indice[t] + √(1 - ρ²) × z_propio[t]`, donde `z_indice` es el shock sistemático compartido por todas las acciones del portfolio en ese paso de tiempo y `z_propio` es el shock idiosincrático exclusivo de esa acción (ver el modelo de mercado en `docs/02-orquestador-montecarlo.md`). Centralizar la generación de aleatoriedad en el orquestador permite controlar la estructura de correlaciones del portfolio completo: si cada función generara sus propios shocks, sería imposible garantizar que dos acciones del mismo portfolio reaccionen al mismo shock de mercado.

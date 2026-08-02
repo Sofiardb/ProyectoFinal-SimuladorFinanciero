@@ -49,7 +49,7 @@ graph TD
     end
 
     FE -->|"HTTP/S REST (JSON)"| API
-    API -->|"HTTP REST (JSON)\nlocalhost:5050"| MOTOR
+    API -->|"HTTP REST (JSON)"| MOTOR
     API -->|"Dapper + Npgsql"| DB
 ```
 
@@ -59,7 +59,9 @@ graph TD
 | **Backend API** | Gestionar usuarios, portfolios e instrumentos; invocar el motor; persistir resultados en base de datos. |
 | **Motor de simulación** | Ejecutar el cálculo numérico: Monte Carlo, GBM para acciones, DCF para bonos, modelos de renta fija indexada. |
 
-El motor corre como microservicio HTTP independiente (`localhost:5050`). Esta separación está justificada por evidencia experimental: Python/NumPy resultó entre **2,4× y 3,4× más rápido** que la implementación equivalente en C# para el rango de portfolios típicos del sistema. El estudio completo se encuentra en [`estudio-pilotos/INFORME_BENCHMARKS.md`](estudio-pilotos/INFORME_BENCHMARKS.md).
+El motor corre como microservicio HTTP independiente (`localhost:5050` en desarrollo, [`https://proyectofinal-simuladorfinanciero.onrender.com`](https://proyectofinal-simuladorfinanciero.onrender.com) en producción). Esta separación está justificada por evidencia experimental: Python/NumPy resultó entre **2,4× y 3,4× más rápido** que la implementación equivalente en C# para el rango de portfolios típicos del sistema. El estudio completo se encuentra en [`estudio-pilotos/INFORME_BENCHMARKS.md`](estudio-pilotos/INFORME_BENCHMARKS.md).
+
+El backend queda publicado en [`https://proyectofinal-simuladorfinanciero-1.onrender.com`](https://proyectofinal-simuladorfinanciero-1.onrender.com) y el frontend en [`https://proyectofinal-investlab.vercel.app`](https://proyectofinal-investlab.vercel.app).
 
 ---
 
@@ -156,7 +158,7 @@ Las decisiones técnicas, matemáticas y de arquitectura tomadas durante el desa
 
 | Documento | Contenido |
 |---|---|
-| [docs/01-modelos-financieros.md](docs/01-modelos-financieros.md) | Modelo matemático de cada instrumento, corrección de Itô, rezago T-2 del CER/UVA, suposiciones sobre licitación primaria y flujos del backend. |
+| [docs/01-modelos-financieros.md](docs/01-modelos-financieros.md) | Modelo matemático de cada instrumento, corrección de Itô, rezago T-2 del CER/UVA, precio de mercado secundario (no licitación primaria) y flujos del backend. |
 | [docs/02-orquestador-montecarlo.md](docs/02-orquestador-montecarlo.md) | Diseño del motor: escenarios, pre-generación de aleatoriedad, modelo de correlaciones, vectorización (5× speedup), separación ARS/USD, estadísticas p25/mediana/p75. |
 | [docs/03-base-datos.md](docs/03-base-datos.md) | Decisiones del schema PostgreSQL: tipos de datos, persistencia de estadísticas en JSONB, snapshot de escenarios e instrumentos, restricción de perfiles de riesgo, valores seed de escenarios económicos. |
 | [docs/04-apis-datos-mercado.md](docs/04-apis-datos-mercado.md) | APIs externas: BYMA Open Data (letras), Docta Capital (bonos soberanos), Alpha Vantage (acciones USA y S&P 500). Endpoints, campos y derivación de parámetros del motor. |

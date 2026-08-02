@@ -2,10 +2,6 @@
 
 Este documento describe las fuentes de datos externas que consume el backend para construir los inputs del motor de simulación. Para cada instrumento se detalla qué API provee cada dato, el endpoint exacto, los campos relevantes y cómo se derivan los parámetros que el motor necesita.
 
----
-
-## Resumen por instrumento
-
 | Instrumento | API | Datos obtenidos |
 |---|---|---|
 | Plazo fijo tradicional | — | Sin datos externos (el usuario ingresa la TNA) |
@@ -16,52 +12,19 @@ Este documento describe las fuentes de datos externas que consume el backend par
 | Bono CER | ArgentinaDatos + Docta Capital | ArgentinaDatos: precio de cotización. Docta: catálogo, flujos base, TIR real |
 | Acciones USA | Alpha Vantage | Histórico de precios ajustados → μ, σ, S₀, ρ |
 
----
-
 ## 1. BYMA Open Data — Letras del Tesoro
 
-**URL base:** `https://open.bymadata.com.ar`  
-**Autenticación:** Sesión implícita (cookie establecida en el primer GET a la home). Sin credenciales explícitas.  
-**Librería de referencia:** [PyOBD](https://github.com/franco-lamas/PyOBD) (Python, sin autenticación)
+**URL base:** `https://open.bymadata.com.ar`
+**Autenticación:** sesión implícita (cookie establecida en el primer GET a la home), sin credenciales explícitas.
 
-### Endpoint
+El catálogo de letras se obtiene de un único endpoint:
 
 ```
 POST /vanoms-be-core/rest/api/bymadata/free/lebacs
 
-Body:
-{
-  "excludeZeroPxAndQty": false,
-  "T2": false,
-  "T1": true,
-  "T0": false,
-  "Content-Type": "application/json"
-}
-```
+De la respuesta, el backend usa `symbol` como identificador, `settlementPrice` como precio de mercado (`closingPrice` siempre viene en 0, por lo que no es utilizable), `maturityDate` como fecha de vencimiento, `daysToMaturity` como referencia pre-calculada de días al vencimiento y `denominationCcy` para distinguir la moneda de denominación (`"ARS"`, `"USD"`, `"EXT"`). El backend filtra `denominationCcy == "ARS" AND settlementPrice > 0 AND symbol[0] in ('S', 'X')` antes de persistir.
 
-> **Nota sobre settlement:** Los datos con precio disponible están en `T1` (liquidación 24hs). `T2` devuelve array vacío durante la sesión bursátil.
-
-### Campos relevantes
-
-| Campo API | Tipo | Uso |
-|---|---|---|
-| `symbol` | string | Identificador del instrumento |
-| `settlementPrice` | number | Precio de mercado (usar este; `closingPrice` siempre es 0) |
-| `maturityDate` | string (YYYY-MM-DD) | Fecha de vencimiento |
-| `daysToMaturity` | integer | Días al vencimiento (pre-calculado por BYMA) |
-| `denominationCcy` | string | Moneda: `"ARS"` = pesos, `"USD"`, `"EXT"` |
-
-### Filtros aplicados por el backend
-
-```
-denominationCcy == "ARS"
-AND settlementPrice > 0
-AND symbol[0] in ('S', 'X')
-```
-
-### Convención de nomenclatura de tickers
-
-La Secretaría de Finanzas asigna el ticker en cada licitación publicada en [argentina.gob.ar](https://www.argentina.gob.ar/economia/finanzas). La primera letra identifica el tipo:
+El prefijo del ticker identifica el tipo de letra, según la convención que asigna la Secretaría de Finanzas en cada licitación publicada en [argentina.gob.ar](https://www.argentina.gob.ar/economia/finanzas):
 
 | Prefijo | Tipo | Descripción |
 |---|---|---|
@@ -70,63 +33,22 @@ La Secretaría de Finanzas asigna el ticker en cada licitación publicada en [ar
 | `M` | LETAMAR | Letra a Tasa TAMAR |
 | `D` | LELINK | Letra Vinculada al Dólar |
 
-El simulador procesa únicamente LECAP (`S`) y LECER (`X`). El resto se ignora.
+El simulador procesa únicamente LECAP (`S`) y LECER (`X`); el resto se ignora.
 
-### Derivación de parámetros del motor
-
-**Para LECAP** — la TNA no puede derivarse del precio de BYMA asumiendo cara 100: al ser capitalizables, su valor técnico crece por sobre 100 durante toda su vida, así que `settlementPrice > 100` es el caso normal (no una excepción cerca del vencimiento) y una fórmula de descuento ingenua invierte el signo de la tasa. En su lugar, el backend consulta el endpoint de yields de Docta Capital (ver sección 3.3) y usa el campo `tna` directamente.
-
-**Para LECER** — la TNA real (spread sobre CER) tampoco puede derivarse del precio de BYMA sin conocer el factor CER diario del BCRA. El backend consulta el mismo endpoint de yields de Docta Capital y usa el campo `tir` como spread real.
-
-Para ambos, si Docta no devuelve yield para un ticker, ese instrumento se omite del catálogo (la columna `tasa` en DB es NOT NULL).
-
----
+Ni la TNA de la LECAP ni el spread real de la LECER pueden derivarse del precio de BYMA por sí solo. Para la LECAP, al ser un instrumento capitalizable, su valor técnico crece por sobre 100 durante toda su vida — `settlementPrice > 100` es el caso normal, no una excepción cerca del vencimiento —, así que una fórmula de descuento ingenua invertiría el signo de la tasa; el backend en cambio consulta el endpoint de yields de Docta Capital (sección 3.3) y usa el campo `tna` directamente. Para la LECER, la TNA real (spread sobre CER) tampoco puede derivarse del precio sin conocer el factor CER diario del BCRA, así que el backend consulta el mismo endpoint de Docta y usa el campo `tir` como spread real. En ambos casos, si Docta no devuelve yield para un ticker, ese instrumento se omite del catálogo, porque la columna `tasa` en la base de datos es `NOT NULL`.
 
 ## 2. ArgentinaDatos — Precio de cotización de bonos del Tesoro
 
-El precio de cotización del bono (precio al que el usuario compra, input del motor) se obtiene de
-ArgentinaDatos. Docta Capital no provee precio de mercado directamente (solo TIR/TEA a partir de un
-precio objetivo, es decir la dirección inversa — ver sección 3.3).
+El precio de cotización del bono — el precio al que el usuario compra, input del motor — se obtiene de ArgentinaDatos, una API pública no oficial que agrega datos de mercado argentino (`https://argentinadatos.com`, sin autenticación). Docta Capital no provee precio de mercado directamente, solo TIR/TEA a partir de un precio objetivo (la dirección inversa; ver sección 3.3), y BYMA Open Data —usado para letras en la sección 1— no cotiza LECAP/BONTE/BONCER en sus endpoints gratuitos: `/lebacs` y `/public-bonds` cubren únicamente bonos soberanos reestructurados (AL/AE/AN/AO), deuda provincial/municipal y letras de corto plazo, ningún ticker de los que Docta lista como `FIXED_RATE`/`CER`. Esto se verificó cruzando ambos endpoints de BYMA contra el catálogo completo de Docta, con cero coincidencias — por eso el precio de bonos se toma de una fuente distinta a la de letras.
 
-> **Por qué no BYMA:** BYMA Open Data (usado para letras, ver sección 1) no cotiza LECAP/BONTE/BONCER
-> en sus endpoints gratuitos (`/lebacs` y `/public-bonds`) — ambos cubren únicamente bonos soberanos
-> reestructurados (AL/AE/AN/AO), deuda provincial/municipal y letras de corto plazo, ningún ticker de
-> los que Docta lista como `FIXED_RATE`/`CER`. Se verificó cruzando ambos endpoints de BYMA contra el
-> catálogo completo de Docta: cero coincidencias. Por eso el precio de bonos se toma de una fuente
-> distinta a la de letras.
+El endpoint `GET https://api.argentinadatos.com/v1/finanzas/letras` cubre, a pesar del nombre, LECAP y BONTE (tasa fija) — todo lo que Docta lista bajo `FIXED_RATE` —, con el precio en el campo `vpv` (valor por VN 100). El endpoint `GET https://api.argentinadatos.com/v1/finanzas/bonos-cer` cubre BONCER (ajustados por CER) — lo que Docta lista bajo `CER` —, con respuesta `{ bonos: [...] }` y precio en `precioArs` (también por VN 100). El backend arma un diccionario `{ ticker → precio }` combinando ambos endpoints y lo cruza contra el catálogo de Docta, que es la fuente de verdad de qué tickers existen, su TIR y sus flujos.
 
-**API:** ArgentinaDatos (`https://argentinadatos.com`) — API pública **no oficial** que agrega datos de
-mercado argentino. Sin autenticación.
-
-**Endpoints:**
-
-```
-GET https://api.argentinadatos.com/v1/finanzas/letras
-```
-A pesar del nombre, cubre LECAP y BONTE (tasa fija) — todo lo que Docta lista bajo `FIXED_RATE`.
-**Campo de precio:** `vpv` (valor por VN 100).
-
-```
-GET https://api.argentinadatos.com/v1/finanzas/bonos-cer
-```
-Cubre BONCER (ajustados por CER) — lo que Docta lista bajo `CER`. Respuesta: `{ bonos: [...] }`.
-**Campo de precio:** `precioArs` (valor por VN 100).
-
-**Uso:** el backend arma un diccionario `{ ticker → precio }` combinando ambos endpoints y lo cruza
-contra el catálogo de Docta (que es la fuente de verdad de qué tickers existen, su TIR y sus flujos).
-
-**Regla de `activo`:** Docta se consulta primero — es la fuente de verdad de qué instrumentos existen.
-Un bono solo queda `activo = TRUE` si aparece en **ambas** fuentes (Docta *y* ArgentinaDatos con
-precio). Si Docta deja de listar un ticker (venció, fue delisteado), o lo lista pero ArgentinaDatos no
-tiene precio para él, el bono se desactiva en el próximo refresh (`BonoRepository.DesactivarNoListadosAsync`).
-Esto evita instrumentos huérfanos con datos stale que ninguna fuente vuelve a tocar.
-
----
+Docta se consulta primero por ser la fuente de verdad de qué instrumentos existen, y un bono solo queda `activo = TRUE` si aparece en ambas fuentes — Docta y ArgentinaDatos con precio. Si Docta deja de listar un ticker (venció, fue delisteado), o lo lista pero ArgentinaDatos no tiene precio para él, el bono se desactiva en el próximo refresh (`BonoRepository.DesactivarNoListadosAsync`), lo que evita instrumentos huérfanos con datos stale que ninguna fuente vuelve a tocar.
 
 ## 3. Docta Capital — Bonos soberanos argentinos
 
-**URL base:** `https://api.doctacapital.com.ar`  
-**Documentación:** `https://docs.doctacapital.com.ar`  
+**URL base:** `https://api.doctacapital.com.ar`
+**Documentación:** `https://docs.doctacapital.com.ar`
 **Autenticación:** OAuth 2.0 client credentials con cuerpo JSON (no form-encoded):
 
 ```
@@ -142,57 +64,19 @@ Content-Type: application/json
 → { "access_token": "...", "expires_in": 3600, ... }
 ```
 
-El token se reutiliza hasta 60 segundos antes de su expiración. Credenciales guardadas en .NET User Secrets, nunca en `appsettings.json`.
-
-Todas las llamadas posteriores incluyen:
-```
-Authorization: Bearer {access_token}
-```
+El token se reutiliza hasta 60 segundos antes de su expiración, y las credenciales se guardan en .NET User Secrets, nunca en `appsettings.json`. Todas las llamadas posteriores incluyen `Authorization: Bearer {access_token}`.
 
 ### 3.1 Catálogo de bonos disponibles
 
-```
-GET /api/v1/bonds/instruments?sub_asset_class={tipo}&limit=100
-```
-
-| `sub_asset_class` | Instrumento del simulador |
-|---|---|
-| `FIXED_RATE` | Bono soberano tasa fija |
-| `CER` | Bono soberano ajustado por CER |
-
-**Campos relevantes:**
-
-| Campo | Uso |
-|---|---|
-| `ticker` | Identificador del bono |
-| `sub_asset_class` | Confirma el tipo del instrumento |
+`GET /api/v1/bonds/instruments?sub_asset_class={tipo}&limit=100` devuelve el catálogo por tipo: `sub_asset_class=FIXED_RATE` para bono soberano tasa fija, `sub_asset_class=CER` para bono soberano ajustado por CER. De la respuesta se usan `ticker` como identificador del bono y `sub_asset_class` para confirmar el tipo del instrumento.
 
 ### 3.2 Flujos de caja
 
-```
-GET /api/v1/bonds/analytics/{symbol}/cashflow?nominal_units=100
-```
-
-Los flujos vienen normalizados a $100 de valor nominal. El backend los almacena así en la tabla `flujo_bono`. La escala a pesos reales (monto invertido / precio) ocurre en `SimulacionService` al construir el input del motor.
-
-**Campos relevantes:**
-
-| Campo | Uso en bono tasa fija | Uso en bono CER |
-|---|---|---|
-| `payment_date` | Fecha de pago del cupón | Fecha de pago del cupón |
-| `cash_flow` | Flujo total (capital + interés) → `monto_cupon` | — |
-| `adj_capital` | — | Capital ajustado base → `monto_capital` |
-| `adj_interest_amount` | — | Interés ajustado base → `monto_cupon` |
-
-La frecuencia de cupón (`frecuencia_cupon_meses`) se deduce del intervalo entre las primeras dos fechas de pago.
+`GET /api/v1/bonds/analytics/{symbol}/cashflow?nominal_units=100` devuelve los flujos normalizados a $100 de valor nominal; el backend los almacena así en la tabla `flujo_bono`, y la escala a pesos reales (monto invertido / precio) ocurre recién en `SimulacionService` al construir el input del motor. De la respuesta se usa `payment_date` como fecha de pago del cupón en ambos tipos de bono; para bono tasa fija, `cash_flow` (flujo total, capital + interés) alimenta `monto_cupon`; para bono CER, `adj_capital` alimenta `monto_capital` y `adj_interest_amount` alimenta `monto_cupon`. La frecuencia de cupón (`frecuencia_cupon_meses`) se deduce del intervalo entre las primeras dos fechas de pago.
 
 ### 3.3 TIR y spread del instrumento
 
-```
-GET /api/v1/bonds/yields/{symbol}/intraday
-```
-
-**Estructura de respuesta:**
+`GET /api/v1/bonds/yields/{symbol}/intraday` devuelve la estructura:
 
 ```json
 {
@@ -208,36 +92,16 @@ GET /api/v1/bonds/yields/{symbol}/intraday
 }
 ```
 
-**Campos usados:**
-
-| Campo | Uso |
-|---|---|
-| `tir` | Tasa interna de retorno → `tasa_descuento` del bono en DB |
-| `dtm` | Días al vencimiento — referencia para filtrar por horizonte T |
-
-> Para bonos CER, se asume que la `tir` devuelta es real (calculada sobre los flujos base ajustados por CER). Para LECER (`X`), esta misma tasa se usa como spread real.
-
----
+De ahí se usa `tir` (tasa interna de retorno) como `tasa_descuento` del bono en la base de datos, y `dtm` (días al vencimiento) como referencia para filtrar por horizonte `T`. Para bonos CER se asume que la `tir` devuelta es real, calculada sobre los flujos base ya ajustados por CER; para LECER (`X`), esa misma tasa se reutiliza como spread real (sección 1).
 
 ## 4. Alpha Vantage — Acciones estadounidenses y S&P 500
 
-**URL base:** `https://www.alphavantage.co`  
-**Autenticación:** API key como query parameter (`&apikey={KEY}`). Guardada en .NET User Secrets.  
-**Plan requerido:** Premium (el free tier limita a 25 requests por día, insuficiente para recalcular los 20 tickers semanalmente).
+**URL base:** `https://www.alphavantage.co`
+**Autenticación:** API key como query parameter (`&apikey={KEY}`), guardada en .NET User Secrets.
 
 ### 4.1 Histórico de precios ajustados (por acción)
 
-```
-GET /query
-  ?function=TIME_SERIES_DAILY_ADJUSTED
-  &symbol={TICKER}
-  &outputsize=full
-  &apikey={KEY}
-```
-
-Devuelve hasta 20 años de datos diarios OHLCV ajustados por splits y dividendos.
-
-**Estructura de respuesta:**
+`GET /query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={TICKER}&outputsize=full&apikey={KEY}` devuelve hasta 20 años de datos diarios OHLCV ajustados por splits y dividendos:
 
 ```json
 {
@@ -252,13 +116,9 @@ Devuelve hasta 20 años de datos diarios OHLCV ajustados por splits y dividendos
 }
 ```
 
-**Campo usado:** `5. adjusted close` — precio ajustado por splits y dividendos. Correcto para retornos logarítmicos.
+Se usa el campo `5. adjusted close` — precio ajustado por splits y dividendos, correcto para calcular retornos logarítmicos. Alpha Vantage devuelve `"Note"` o `"Information"` en el JSON (con HTTP 200, sin marcar error) cuando se excede el rate limit; el backend detecta ambas claves y registra el warning correspondiente.
 
-> Alpha Vantage devuelve `"Note"` o `"Information"` en el JSON (con HTTP 200) cuando se excede el rate limit. El backend detecta ambas claves y registra el warning.
-
-**Cálculo de parámetros GBM:**
-
-El motor trabaja con paso de tiempo mensual (21 días bursátiles). Los parámetros se calculan en escala diaria y se escalan a mensual:
+El motor trabaja con paso de tiempo mensual (21 días bursátiles); los parámetros GBM se calculan en escala diaria sobre los últimos 10 años de retornos logarítmicos y se escalan a mensual:
 
 ```python
 retornos_log = np.diff(np.log(precios_ajustados))   # últimos 10 años
@@ -270,29 +130,11 @@ mu_mensual    = mu_diario    * 21         # E[R] en 21 días
 sigma_mensual = sigma_diario * sqrt(21)   # volatilidad en 21 días
 ```
 
-Los tres parámetros (`mu_retorno_esperado`, `sigma_volatilidad`, `rho_correlacion_indice`) y `precio_actual` se almacenan en la tabla `accion`.
-
-**Frecuencia de recálculo:** semanal, via `CatalogoRefreshJob` (7 días) o manualmente vía `POST /admin/catalogo/refresh/acciones/{ticker}`.
+Los tres parámetros (`mu_retorno_esperado`, `sigma_volatilidad`, `rho_correlacion_indice`) y `precio_actual` se almacenan en la tabla `accion`, con recálculo semanal vía `CatalogoRefreshJob` (cada 7 días) o manual vía `POST /admin/catalogo/refresh/acciones/{ticker}`.
 
 ### 4.2 Índice S&P 500 (benchmark para ρ)
 
-El orquestador usa el S&P 500 para modelar el shock sistemático compartido por todas las acciones:
-
-```
-z_accion[t] = ρ × z_indice[t] + √(1 − ρ²) × z_propio[t]
-```
-
-El backend usa el índice SPX real (no el ETF SPY) a través del endpoint `INDEX_DATA`:
-
-```
-GET /query
-  ?function=INDEX_DATA
-  &symbol=SPX
-  &interval=daily
-  &apikey={KEY}
-```
-
-**Estructura de respuesta:**
+El orquestador usa el S&P 500 para modelar el shock sistemático compartido por todas las acciones (`z_accion[t] = ρ × z_indice[t] + √(1 − ρ²) × z_propio[t]`, ver `docs/02-orquestador-montecarlo.md`). El backend usa el índice SPX real, no el ETF SPY, a través de `GET /query?function=INDEX_DATA&symbol=SPX&interval=daily&apikey={KEY}`:
 
 ```json
 {
@@ -305,15 +147,12 @@ GET /query
 }
 ```
 
-**Campo usado:** `close` (índice sin ajuste de dividendos, correcto para un índice de precio).
-
-**Cálculo de ρ:**
+Se usa el campo `close` — índice sin ajuste de dividendos, que es lo correcto para un índice de precio. `ρ` se calcula alineando por fecha los retornos logarítmicos de la acción y del SPX (no todos los días bursátiles coinciden entre ambas series) y tomando su coeficiente de correlación:
 
 ```python
 retornos_accion = np.diff(np.log(precios_accion))
 retornos_spx    = np.diff(np.log(precios_spx))
 
-# Alinear por fecha antes de calcular correlación (no todos los días coinciden)
 rho = np.corrcoef(retornos_accion_alineados, retornos_spx_alineados)[0, 1]
 ```
 
@@ -321,7 +160,7 @@ La serie SPX se cachea 24 horas en memoria para evitar una llamada a la API por 
 
 ### 4.3 Universo de acciones disponibles
 
-El catálogo de acciones es fijo: 50 instrumentos sembrados directamente en `db/01_schema.sql` en la tabla `accion`. No se usa el endpoint `LISTING_STATUS`.
+El catálogo de acciones es fijo: 50 instrumentos sembrados directamente en `db/01_schema.sql`, en la tabla `accion`. No se usa el endpoint `LISTING_STATUS` de Alpha Vantage para descubrir tickers dinámicamente.
 
 | Ticker | Empresa | Sector |
 |---|---|---|
@@ -376,27 +215,13 @@ El catálogo de acciones es fijo: 50 instrumentos sembrados directamente en `db/
 | PEP | PepsiCo, Inc. | Alimentos y bebidas |
 | DIS | The Walt Disney Company | Entretenimiento |
 
----
+## 5. Operación y mantenimiento
 
-## Notas de implementación
+Cada dato de mercado se refresca a una frecuencia acorde a su volatilidad: los precios de letras (TNA LECAP, TIR LECER) y los yields de bonos (TIR) se actualizan cada 15 minutos en horario bursátil; los flujos de caja de bonos, cada 24 horas; y los parámetros GBM de acciones (μ, σ, ρ, S₀), cada 7 días — todo a través de `CatalogoRefreshJob`. Un refresco manual inmediato está disponible vía `POST /admin/catalogo/refresh/*` (requiere JWT). El horario bursátil considerado es de lunes a viernes, 11:00–17:00 ART (America/Argentina/Buenos_Aires); fuera de ese rango, `CatalogoRefreshJob` omite el ciclo.
 
-**Frecuencias de actualización:**
+Un instrumento sin precio no puede incluirse en un portfolio: para letras se filtra `settlementPrice > 0` en BYMA antes de persistir, y para bonos se filtra `vpv`/`precioArs > 0` en ArgentinaDatos, activando el ticker solo si Docta también lo lista (sección 2). La serie histórica del S&P 500 se mantiene en caché de memoria durante 24 horas, de modo que el recálculo semanal de los 50 tickers del catálogo solo necesita una llamada a la API por la serie SPX.
 
-| Dato | Frecuencia | Mecanismo |
-|---|---|---|
-| Precios de letras (TNA LECAP, TIR LECER) | Cada 15 min en horario bursátil | `CatalogoRefreshJob` |
-| Yields de bonos (TIR) | Cada 15 min en horario bursátil | `CatalogoRefreshJob` |
-| Flujos de caja de bonos | Cada 24 h | `CatalogoRefreshJob` |
-| Parámetros GBM de acciones (μ, σ, ρ, S₀) | Cada 7 días | `CatalogoRefreshJob` |
-| Refresco manual | Inmediato | `POST /admin/catalogo/refresh/*` (requiere JWT) |
-
-**Horario bursátil:** lunes a viernes, 11:00–17:00 ART (America/Argentina/Buenos_Aires). Fuera de este rango, `CatalogoRefreshJob` omite el ciclo.
-
-**Instrumentos sin precio:** para letras se filtra `settlementPrice > 0` en BYMA antes de persistir; para bonos, se filtra `vpv`/`precioArs > 0` en ArgentinaDatos y solo se activa el ticker si Docta también lo lista (ver sección 2). Un instrumento sin precio no puede incluirse en un portfolio.
-
-**Caché de SPX:** la serie histórica del índice S&P 500 se mantiene en memoria durante 24 horas. Durante el recálculo semanal (20 tickers), solo se hace una llamada a la API por la serie SPX.
-
-**Credenciales:** `DoctaCapital:ClientId`, `DoctaCapital:ClientSecret` y `AlphaVantage:ApiKey` se configuran exclusivamente vía .NET User Secrets:
+Las credenciales (`DoctaCapital:ClientId`, `DoctaCapital:ClientSecret`, `AlphaVantage:ApiKey`) se configuran exclusivamente vía .NET User Secrets:
 
 ```bash
 dotnet user-secrets set "DoctaCapital:ClientId"     "<id>"
