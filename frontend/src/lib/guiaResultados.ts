@@ -17,7 +17,7 @@ export const GUIA_RESULTADOS: GuiaSeccion[] = [
     items: [
       {
         term: 'Monto invertido',
-        texto: 'Es la plata que invertiste al armar esta simulación: la suma de lo que elegiste destinar a cada instrumento del portfolio en el momento cero, antes de que pase ningún mes. Sirve como punto de partida para comparar contra el valor final.\n\nSi tu portfolio combina instrumentos en pesos y en dólares, vas a ver esta tarjeta duplicada: una con el monto invertido en ARS (sumando solo los instrumentos en pesos) y otra con el monto invertido en USD (sumando solo los instrumentos en dólares). No se mezclan en un solo total porque son unidades distintas — sumar pesos y dólares directamente no tendría sentido.',
+        texto: 'Es la plata que invertiste al armar esta simulación: la suma de lo que elegiste destinar a cada instrumento del portfolio en el momento cero, antes de que pase ningún mes. Sirve como punto de partida para comparar contra el valor final.\n\nSi tu portfolio combina instrumentos en pesos y en dólares, vas a ver esta tarjeta duplicada: una con el monto invertido en ARS (sumando solo los instrumentos en pesos) y otra con el monto invertido en USD (sumando solo los instrumentos en dólares). No se mezclan en un solo total porque son unidades distintas — sumar pesos y dólares directamente implicaría estimar una tasa de cambio en el horizonte desconocida por el simulador.',
         selector: '[data-guia="kpi-monto-invertido"]',
         slot: 'kpis',
       },
@@ -69,7 +69,7 @@ export const GUIA_RESULTADOS: GuiaSeccion[] = [
         slot: 'panel-portfolio',
       },
       {
-        term: 'Comparar nominal vs. real',
+        term: 'Comparar nominal vs. real - Para activarlo debes tener seleccionado un único ámbito y la métrica de ganancias',
         texto: 'Es un modo del gráfico que superpone, para el mismo instrumento o portfolio, la curva de ganancias nominales y la de ganancias reales una al lado de la otra (con sus propias bandas p25–p75). Es la forma más directa de ver, para tu caso puntual, cuánta diferencia hace la inflación entre "lo que parece que ganaste" y "lo que efectivamente ganaste en poder de compra" — sobre todo útil cuando esa diferencia es grande o cuando una de las dos curvas cruza el cero y la otra no.',
         selector: '[data-guia="panel-nominal-real"]',
         slot: 'panel-portfolio',

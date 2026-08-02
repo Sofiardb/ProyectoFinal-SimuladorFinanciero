@@ -18,18 +18,6 @@ def calcular_estadisticas(matriz):
     }
 
 
-def _factor_frozen(factor_base, t_congelamiento):
-    """factor_base tal cual hasta t_congelamiento; a partir de ahí, congelado en su valor en
-    t_congelamiento. Se usa para que 'ganancia real' de un instrumento no siga empeorando después
-    de su vencimiento solo porque el efectivo (ya cobrado) queda parado mientras la inflación
-    sigue corriendo — la ganancia real queda fija en lo que valía al momento de vencer."""
-    if t_congelamiento is None:
-        return factor_base
-    f = factor_base.copy()
-    f[:, t_congelamiento + 1:] = factor_base[:, t_congelamiento:t_congelamiento + 1]
-    return f
-
-
 N_SIMULACIONES = 1000
 
 
@@ -100,7 +88,6 @@ def simular_portfolio(parametros: dict) -> dict:
         return inst["tipo"] in ("accion", "plazo_fijo_usd")
 
     matrices_trayectorias = {}
-    t_congelamiento = {}  # id_inst -> mes en que se congela el deflactor de "ganancia real" (None = nunca)
 
     for inst in instrumentos:
         tipo  = inst["tipo"]
@@ -112,7 +99,6 @@ def simular_portfolio(parametros: dict) -> dict:
             matrices_trayectorias[id_inst] = simular_accion_vectorizado(
                 inst["monto"], inst["mu"], inst["sigma"], T_meses, z_accion
             )
-            t_congelamiento[id_inst] = None
 
         elif tipo == "lecap":
             tray_1d = simular_letra_lecap(inst["monto"], inst["tna"], inst["t_venc_meses"])
@@ -121,7 +107,6 @@ def simular_portfolio(parametros: dict) -> dict:
             elif len(tray_1d) < T_meses + 1:
                 tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
-            t_congelamiento[id_inst] = inst["t_venc_meses"] if inst["t_venc_meses"] < T_meses else None
 
         elif tipo == "lecer":
             meses_venc = inst["t_venc_meses"]
@@ -134,7 +119,6 @@ def simular_portfolio(parametros: dict) -> dict:
                 padding = np.repeat(tray_2d[:, -1:], T_meses - t_emit, axis=1)
                 tray_2d = np.hstack([tray_2d, padding])
             matrices_trayectorias[id_inst] = tray_2d
-            t_congelamiento[id_inst] = meses_venc if meses_venc < T_meses else None
 
         elif tipo == "bono_tasa_fija":
             tray_1d = simular_bono_tasa_fija(inst["monto"], inst["flujos"], inst["tir"])
@@ -143,8 +127,6 @@ def simular_portfolio(parametros: dict) -> dict:
             elif len(tray_1d) < T_meses + 1:
                 tray_1d = tray_1d + [tray_1d[-1]] * (T_meses + 1 - len(tray_1d))
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
-            meses_venc = max(f["mes"] for f in inst["flujos"])
-            t_congelamiento[id_inst] = meses_venc if meses_venc < T_meses else None
 
         elif tipo == "bono_indexado":
             meses_venc = max(f["mes"] for f in inst["flujos_base"])
@@ -157,24 +139,17 @@ def simular_portfolio(parametros: dict) -> dict:
                 padding = np.repeat(tray_2d[:, -1:], T_meses - t_emit, axis=1)
                 tray_2d = np.hstack([tray_2d, padding])
             matrices_trayectorias[id_inst] = tray_2d
-            t_congelamiento[id_inst] = meses_venc if meses_venc < T_meses else None
 
         elif tipo == "plazo_fijo_tradicional":
             tray_1d = simular_plazo_fijo_tradicional(
                 inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
             )
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
-            t_congelamiento[id_inst] = (
-                inst["t_venc_meses"] if not inst["reinvertir"] and inst["t_venc_meses"] < T_meses else None
-            )
 
         elif tipo == "plazo_fijo_uva":
             matrices_trayectorias[id_inst] = simular_plazo_fijo_uva_vectorizado(
                 inst["monto"], inst["tasa_real_anual"], inst["t_venc_meses"],
                 inst["reinvertir"], T_meses, factor_cer_matrix
-            )
-            t_congelamiento[id_inst] = (
-                inst["t_venc_meses"] if not inst["reinvertir"] and inst["t_venc_meses"] < T_meses else None
             )
 
         elif tipo == "plazo_fijo_usd":
@@ -182,9 +157,6 @@ def simular_portfolio(parametros: dict) -> dict:
                 inst["monto"], inst["tna"], inst["t_venc_meses"], inst["reinvertir"], T_meses
             )
             matrices_trayectorias[id_inst] = np.tile(tray_1d, (N_simulaciones, 1))
-            t_congelamiento[id_inst] = (
-                inst["t_venc_meses"] if not inst["reinvertir"] and inst["t_venc_meses"] < T_meses else None
-            )
 
     corte_favorable    = slice(0, n_favorable)
     corte_moderado     = slice(n_favorable, n_favorable + n_moderado)
@@ -205,19 +177,14 @@ def simular_portfolio(parametros: dict) -> dict:
             "ganancias_reales":    estadisticas_por_escenario(matriz_real - monto),
         }
 
-    # factor de deflación por instrumento, congelado en su propio vencimiento (si vence antes de
-    # T_meses) — así "ganancia real" no sigue empeorando después de vencer solo por inflación
-    # corriendo sobre efectivo ya cobrado.
-    factor_frozen = {
-        inst["id"]: _factor_frozen(
-            factor_acum_usd_matrix if _es_usd(inst) else factor_acum_matrix,
-            t_congelamiento[inst["id"]],
+    # deflactor de inflación por instrumento (sin congelar en el vencimiento): el capital que
+    # queda parado como efectivo después de vencer sigue expuesto a la inflación corriendo, así
+    # que "ganancia real" sigue cayendo aunque el nominal ya esté planchado por padding (Decisión 7).
+    matriz_real_por_instrumento = {
+        inst["id"]: matrices_trayectorias[inst["id"]] / (
+            factor_acum_usd_matrix if _es_usd(inst) else factor_acum_matrix
         )
         for inst in instrumentos
-    }
-    matriz_real_por_instrumento = {
-        id_inst: matrices_trayectorias[id_inst] / factor_frozen[id_inst]
-        for id_inst in matrices_trayectorias
     }
 
     estadisticas_instrumentos = {}
@@ -241,10 +208,6 @@ def simular_portfolio(parametros: dict) -> dict:
     matriz_ars, monto_ars = _agregar_portfolio(insts_ars)
     matriz_usd, monto_usd = _agregar_portfolio(insts_usd)
 
-    # A nivel portfolio el deflactor NO se congela — el capital ocioso post-vencimiento sigue
-    # perdiendo poder adquisitivo de verdad, y el total del portfolio debe reflejarlo. El
-    # congelamiento por vencimiento es solo para aislar "qué tan bueno fue el instrumento" en la
-    # vista por instrumento; a nivel portfolio se ve el efecto completo, congelamiento incluido.
     matriz_real_ars = matriz_ars / factor_acum_matrix
     matriz_real_usd = matriz_usd / factor_acum_usd_matrix
 

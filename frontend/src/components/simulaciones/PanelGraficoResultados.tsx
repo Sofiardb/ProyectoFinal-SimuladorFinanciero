@@ -127,11 +127,13 @@ export default function PanelGraficoResultados({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ambitosSeleccionados, metrica])
 
+  const esVistaPortfolio = ambitosSeleccionados.includes('portfolio_ars') || ambitosSeleccionados.includes('portfolio_usd')
+
   const vencimientos: VencimientoMarcador[] = useMemo(() => {
     if (!instrumentos || ambitosSeleccionados.length === 0) return []
     const relevantes = instrumentos.filter((inst) => {
       if (inst.tVencMeses == null) return false
-      if (ambitosSeleccionados.includes('portfolio_ars') || ambitosSeleccionados.includes('portfolio_usd')) return true
+      if (esVistaPortfolio) return true
       return ambitosSeleccionados.includes(inst.ambito)
     })
     const porMes = new Map<number, string[]>()
@@ -270,6 +272,16 @@ export default function PanelGraficoResultados({
           )}
           {!modoA && (
             <div className="flex flex-wrap items-center gap-1" data-guia={guiaAnchors ? 'panel-escenarios' : undefined}>
+              <button
+                onClick={() => setEscenario('global')}
+                className={
+                  escenario === 'global'
+                    ? 'rounded-full bg-navy-950 px-2.5 py-1 text-[11px] font-semibold text-white'
+                    : 'rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-ink-muted'
+                }
+              >
+                Global
+              </button>
               {ESCENARIOS.map((e) => (
                 <button
                   key={e.key}
