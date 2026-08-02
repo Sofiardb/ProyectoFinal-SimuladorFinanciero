@@ -9,14 +9,18 @@ namespace SimuladorFinanciero.Api.Controllers;
 public class HealthController : ControllerBase
 {
     private readonly IDbConnectionFactory _db;
+    private readonly ILogger<HealthController> _log;
 
-    public HealthController(IDbConnectionFactory db) => _db = db;
+    public HealthController(IDbConnectionFactory db, ILogger<HealthController> log)
+    {
+        _db  = db;
+        _log = log;
+    }
 
     /// <summary>Verifica que la API y la base de datos responden correctamente.</summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Get()
     {
         try
@@ -27,7 +31,10 @@ public class HealthController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(503, new { estado = "ok", db = "error", detalle = ex.Message });
+            // El detalle (puede incluir el connection string) queda solo en los logs del server,
+            // nunca en la respuesta — este endpoint es público y sin autenticación.
+            _log.LogError(ex, "Health check: la base de datos no respondió.");
+            return StatusCode(503, new { estado = "ok", db = "error" });
         }
     }
 }
