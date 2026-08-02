@@ -98,6 +98,7 @@ function PortfolioForm({
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
+    mode: 'onChange',
     defaultValues: {
       nombre: portfolio?.nombre ?? '',
       descripcion: portfolio?.descripcion ?? '',
@@ -235,7 +236,7 @@ function PortfolioForm({
             <Button
               type="submit"
               className="bg-navy-950 text-white hover:bg-navy-900"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || Object.keys(form.formState.errors).length > 0}
             >
               {mutation.isPending ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear portfolio'}
             </Button>
