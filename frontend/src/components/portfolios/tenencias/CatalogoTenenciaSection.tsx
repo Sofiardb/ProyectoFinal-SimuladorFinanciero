@@ -1,11 +1,29 @@
-import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import TruncatedText from '@/components/portfolios/TruncatedText'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
+import { Form } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
+import SelectFormField from '@/components/forms/SelectFormField'
 import { useEditableSectionState } from '@/hooks/useEditableSectionState'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
+
+const cantidadSchema = z
+  .string()
+  .refine((v) => v.trim() !== '' && Number.isInteger(Number(v)) && Number(v) > 0, 'Ingresá una cantidad válida.')
+
+const addSchema = z.object({
+  idCatalogo: z.string().min(1, 'Elegí una opción válida.'),
+  cantidad: cantidadSchema,
+})
+type AddValues = z.infer<typeof addSchema>
+
+const editSchema = z.object({ cantidad: cantidadSchema })
+type EditValues = z.infer<typeof editSchema>
 
 export interface CatalogoOpcion {
   id:            number
@@ -160,42 +178,47 @@ function EditExistingRow({
   cantidadTooltip?: string
   onSave: (cantidad: number) => void
 }) {
-  const [cantidad, setCantidad] = useState(() => String(tenencia.cantidadActual))
-  const cantidadNum = Number(cantidad)
-  const canSave = cantidadNum > 0 && Number.isInteger(cantidadNum)
+  const form = useForm<EditValues>({
+    resolver: zodResolver(editSchema),
+    mode: 'onChange',
+    defaultValues: { cantidad: String(tenencia.cantidadActual) },
+  })
+
+  const onSubmit = (values: EditValues) => onSave(Number(values.cantidad))
 
   return (
-    <div className="compare-card gap-2.5">
-      <div className="grid grid-cols-2 gap-2">
-        {tenencia.previewFields.map((f) => (
-          <div key={f.label}>
-            <span className="field-label inline-flex items-center gap-1">
-              {f.label}
-              {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
-            </span>
-            <div className="readonly-chip">{f.value}</div>
-          </div>
-        ))}
-        <div>
-          <span className="field-label inline-flex items-center gap-1">
-            {cantidadLabel}
-            {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
-          </span>
-          <input
-            type="number"
-            step="1"
-            className="field-input"
-            value={cantidad}
-            placeholder="0"
-            onChange={(e) => setCantidad(e.target.value)}
+    <Form {...form}>
+      <div className="compare-card gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
+          {tenencia.previewFields.map((f) => (
+            <div key={f.label}>
+              <span className="field-label inline-flex items-center gap-1">
+                {f.label}
+                {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+              </span>
+              <div className="readonly-chip">{f.value}</div>
+            </div>
+          ))}
+          <TextFormField
+            control={form.control}
+            name="cantidad"
+            label={
+              <span className="inline-flex items-center gap-1">
+                {cantidadLabel}
+                {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
+              </span>
+            }
+            inputProps={{ type: 'number', step: '1', placeholder: '0' }}
           />
-          {cantidadNum > 0 && !Number.isInteger(cantidadNum) && (
-            <p className="mt-1 text-[11px] text-danger">Tiene que ser un número entero.</p>
-          )}
         </div>
+        <RowFormFooter
+          onCancel={onCancel}
+          isMutating={isMutating}
+          canSave={Object.keys(form.formState.errors).length === 0}
+          onSave={form.handleSubmit(onSubmit)}
+        />
       </div>
-      <RowFormFooter onCancel={onCancel} isMutating={isMutating} canSave={canSave} onSave={() => onSave(cantidadNum)} />
-    </div>
+    </Form>
   )
 }
 
@@ -218,76 +241,69 @@ function AddRow({
   cantidadTooltip?: string
   onSave: (idCatalogo: number, cantidad: number, precioCompra: number) => void
 }) {
-  const [selectedId, setSelectedId] = useState('')
-  const [cantidad, setCantidad] = useState('')
-  const selected = catalogo.find((c) => String(c.id) === selectedId)
-  const cantidadNum = Number(cantidad)
-  const canSave = !!selected && cantidadNum > 0 && Number.isInteger(cantidadNum)
+  const form = useForm<AddValues>({
+    resolver: zodResolver(addSchema),
+    mode: 'onChange',
+    defaultValues: { idCatalogo: '', cantidad: '' },
+  })
+  const idCatalogo = form.watch('idCatalogo')
+  const selected = catalogo.find((c) => String(c.id) === idCatalogo)
+
+  const onSubmit = (values: AddValues) => {
+    if (!selected) return
+    onSave(selected.id, Number(values.cantidad), selected.precioActual)
+  }
 
   return (
-    <div className="compare-card gap-2.5">
-      {catalogo.length === 0 ? (
-        <div className="banner-warning">
-          {emptyMessage}
-        </div>
-      ) : (
-        <div>
-          <span className="field-label">{pickLabel}</span>
-          <select
-            className="field-input"
-            value={selectedId}
-            onChange={(e) => {
-              setSelectedId(e.target.value)
-              setCantidad('')
-            }}
-          >
-            <option value="">Seleccionar…</option>
-            {catalogo.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {selected && (
-        <div className="grid grid-cols-2 gap-2">
-          {selected.previewFields.map((f) => (
-            <div key={f.label}>
-              <span className="field-label inline-flex items-center gap-1">
-                {f.label}
-                {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
-              </span>
-              <div className="readonly-chip">{f.value}</div>
-            </div>
-          ))}
-          <div>
-            <span className="field-label inline-flex items-center gap-1">
-              {cantidadLabel}
-              {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
-            </span>
-            <input
-              type="number"
-              step="1"
-              className="field-input"
-              value={cantidad}
-              placeholder="0"
-              onChange={(e) => setCantidad(e.target.value)}
-            />
-            {cantidadNum > 0 && !Number.isInteger(cantidadNum) && (
-              <p className="mt-1 text-[11px] text-danger">Tiene que ser un número entero.</p>
-            )}
+    <Form {...form}>
+      <div className="compare-card gap-2.5">
+        {catalogo.length === 0 ? (
+          <div className="banner-warning">
+            {emptyMessage}
           </div>
-        </div>
-      )}
+        ) : (
+          <SelectFormField
+            control={form.control}
+            name="idCatalogo"
+            label={pickLabel}
+            placeholder="Seleccionar…"
+            options={catalogo.map((c) => ({ value: String(c.id), label: c.etiqueta }))}
+            onValueChange={() => form.setValue('cantidad', '')}
+          />
+        )}
 
-      <RowFormFooter
-        onCancel={onCancel}
-        isMutating={isMutating}
-        canSave={canSave}
-        onSave={() => selected && onSave(selected.id, cantidadNum, selected.precioActual)}
-      />
-    </div>
+        {selected && (
+          <div className="grid grid-cols-2 gap-2">
+            {selected.previewFields.map((f) => (
+              <div key={f.label}>
+                <span className="field-label inline-flex items-center gap-1">
+                  {f.label}
+                  {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+                </span>
+                <div className="readonly-chip">{f.value}</div>
+              </div>
+            ))}
+            <TextFormField
+              control={form.control}
+              name="cantidad"
+              label={
+                <span className="inline-flex items-center gap-1">
+                  {cantidadLabel}
+                  {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
+                </span>
+              }
+              inputProps={{ type: 'number', step: '1', placeholder: '0' }}
+            />
+          </div>
+        )}
+
+        <RowFormFooter
+          onCancel={onCancel}
+          isMutating={isMutating}
+          canSave={!!selected && Object.keys(form.formState.errors).length === 0}
+          onSave={form.handleSubmit(onSubmit)}
+        />
+      </div>
+    </Form>
   )
 }

@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm, useWatch, type Control } from 'react-hook-form'
+import { z } from 'zod'
 import TruncatedText from '@/components/portfolios/TruncatedText'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -12,10 +16,30 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import TextFormField from '@/components/forms/TextFormField'
+import SelectFormField from '@/components/forms/SelectFormField'
 import { useEditableSectionState } from '@/hooks/useEditableSectionState'
 import { formatFecha, formatMoneda, formatPorcentaje, hoyISO } from '@/lib/format'
 import { capitalAlVencimiento, capitalHoy, esVencido, fechaVencimiento, mesesEntre } from '@/lib/plazoFijo'
 import type { PortfolioPlazoFijo, TipoPlazoFijo } from '@/types'
+
+const plazoFijoSchema = z.object({
+  idTipoPlazoFijo: z.string().min(1, 'Elegí un tipo válido.'),
+  entidadFinanciera: z.string().min(1, 'Ingresá un alias válido.'),
+  montoInvertido: z
+    .string()
+    .refine((v) => v.trim() !== '' && !Number.isNaN(Number(v)) && Number(v) > 0, 'Ingresá un monto válido.'),
+  tnaPactada: z
+    .string()
+    .refine((v) => v.trim() !== '' && !Number.isNaN(Number(v)) && Number(v) >= 0, 'Ingresá una tasa válida.'),
+  fechaInicio: z.string().min(1, 'Elegí una fecha válida.'),
+  duracionDias: z
+    .string()
+    .refine((v) => v.trim() !== '' && Number.isInteger(Number(v)) && Number(v) >= 1, 'Ingresá un plazo válido.'),
+  reinvertirAlVencimiento: z.boolean(),
+})
+type PlazoFijoValues = z.infer<typeof plazoFijoSchema>
 
 export interface NuevoPlazoFijo {
   idTipoPlazoFijo:          number
@@ -253,128 +277,79 @@ function RenovarButton({
   )
 }
 
-function plazoFijoFormFields(defaults?: Partial<EditarPlazoFijo>) {
-  return {
-    entidadFinanciera: defaults?.entidadFinanciera ?? '',
-    montoInvertido: defaults?.montoInvertido !== undefined ? String(defaults.montoInvertido) : '',
-    tnaPactada: defaults?.tnaPactada !== undefined ? String(defaults.tnaPactada) : '',
-    fechaInicio: defaults?.fechaInicio ?? '',
-    duracionDias: defaults?.duracionDias !== undefined ? String(defaults.duracionDias) : '',
-    reinvertirAlVencimiento: defaults?.reinvertirAlVencimiento ?? false,
-  }
-}
-
-function TipoField({
-  tipos,
-  idTipoPlazoFijo,
-  onChange,
-}: {
-  tipos: TipoPlazoFijo[]
-  idTipoPlazoFijo: string
-  onChange: (id: string) => void
-}) {
-  if (tipos.length <= 1) {
-    return <div className="readonly-chip">{tipos[0]?.nombre ?? '—'}</div>
-  }
-  return (
-    <select className="field-input" value={idTipoPlazoFijo} onChange={(e) => onChange(e.target.value)}>
-      {tipos.map((t) => (
-        <option key={t.idTipoPlazoFijo} value={t.idTipoPlazoFijo}>
-          {t.nombre}
-        </option>
-      ))}
-    </select>
-  )
-}
-
 function FormGrid({
   moneda,
   tipos,
-  idTipoPlazoFijo,
-  setIdTipoPlazoFijo,
-  fields,
-  setFields,
+  control,
 }: {
   moneda: string
   tipos: TipoPlazoFijo[]
-  idTipoPlazoFijo: string
-  setIdTipoPlazoFijo: (v: string) => void
-  fields: ReturnType<typeof plazoFijoFormFields>
-  setFields: React.Dispatch<React.SetStateAction<ReturnType<typeof plazoFijoFormFields>>>
+  control: Control<PlazoFijoValues>
 }) {
+  const idTipoPlazoFijo = useWatch({ control, name: 'idTipoPlazoFijo' })
   const tipoSeleccionado = tipos.find((t) => String(t.idTipoPlazoFijo) === idTipoPlazoFijo) ?? tipos[0]
   const tasaLabel = tasaLabelPara(tipoSeleccionado?.codigo)
 
   return (
     <>
-      <div>
-        <span className="field-label">Alias</span>
-        <input
-          type="text"
-          className="field-input"
-          value={fields.entidadFinanciera}
-          placeholder="Ej: Banco Galicia"
-          onChange={(e) => setFields((f) => ({ ...f, entidadFinanciera: e.target.value }))}
-        />
-      </div>
+      <TextFormField
+        control={control}
+        name="entidadFinanciera"
+        label="Alias"
+        inputProps={{ placeholder: 'Ej: Banco Galicia' }}
+      />
       <div className="grid grid-cols-2 gap-2">
-        <div>
-          <span className="field-label">Tipo</span>
-          <TipoField tipos={tipos} idTipoPlazoFijo={idTipoPlazoFijo} onChange={setIdTipoPlazoFijo} />
-        </div>
-        <div>
-          <span className="field-label">Monto ({moneda})</span>
-          <input
-            type="number"
-            className="field-input"
-            value={fields.montoInvertido}
-            placeholder="0"
-            onChange={(e) => setFields((f) => ({ ...f, montoInvertido: e.target.value }))}
+        {tipos.length <= 1 ? (
+          <div>
+            <span className="field-label">Tipo</span>
+            <div className="readonly-chip">{tipos[0]?.nombre ?? '—'}</div>
+          </div>
+        ) : (
+          <SelectFormField
+            control={control}
+            name="idTipoPlazoFijo"
+            label="Tipo"
+            options={tipos.map((t) => ({ value: String(t.idTipoPlazoFijo), label: t.nombre }))}
           />
-        </div>
-        <div>
-          <span className="field-label">{tasaLabel} (ej: 0.42)</span>
-          <input
-            type="number"
-            className="field-input"
-            value={fields.tnaPactada}
-            placeholder="0"
-            onChange={(e) => setFields((f) => ({ ...f, tnaPactada: e.target.value }))}
-          />
-        </div>
-        <div>
-          <span className="field-label">Plazo (días)</span>
-          <input
-            type="number"
-            min={1}
-            className="field-input"
-            value={fields.duracionDias}
-            placeholder="180"
-            onChange={(e) => setFields((f) => ({ ...f, duracionDias: e.target.value }))}
-          />
-        </div>
-        <div>
-          <span className="field-label">Fecha de inicio</span>
-          <input
-            type="date"
-            min={hoyISO()}
-            className="field-input"
-            value={fields.fechaInicio}
-            onChange={(e) => setFields((f) => ({ ...f, fechaInicio: e.target.value }))}
-          />
-        </div>
-        <div className="flex items-center gap-1.5 pb-1">
-          <input
-            type="checkbox"
-            id="reinvertir"
-            checked={fields.reinvertirAlVencimiento}
-            onChange={(e) => setFields((f) => ({ ...f, reinvertirAlVencimiento: e.target.checked }))}
-            className="size-4 accent-navy-950"
-          />
-          <label htmlFor="reinvertir" className="text-[11px] text-ink-muted">
-            Reinvertir al vencimiento
-          </label>
-        </div>
+        )}
+        <TextFormField
+          control={control}
+          name="montoInvertido"
+          label={`Monto (${moneda})`}
+          inputProps={{ type: 'number', placeholder: '0' }}
+        />
+        <TextFormField
+          control={control}
+          name="tnaPactada"
+          label={`${tasaLabel} (ej: 0.42)`}
+          inputProps={{ type: 'number', placeholder: '0' }}
+        />
+        <TextFormField
+          control={control}
+          name="duracionDias"
+          label="Plazo (días)"
+          inputProps={{ type: 'number', min: 1, placeholder: '180' }}
+        />
+        <TextFormField
+          control={control}
+          name="fechaInicio"
+          label="Fecha de inicio"
+          inputProps={{ type: 'date', min: hoyISO() }}
+        />
+        <FormField
+          control={control}
+          name="reinvertirAlVencimiento"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center gap-1.5 space-y-0 pb-1">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormLabel className="text-[11px] font-normal text-ink-muted">
+                Reinvertir al vencimiento
+              </FormLabel>
+            </FormItem>
+          )}
+        />
       </div>
     </>
   )
@@ -395,45 +370,43 @@ function EditRow({
   onCancel: () => void
   onSave: (payload: EditarPlazoFijo) => void
 }) {
-  const [idTipoPlazoFijo, setIdTipoPlazoFijo] = useState(String(tenencia.idTipoPlazoFijo))
-  const [fields, setFields] = useState(() => plazoFijoFormFields(tenencia))
-  const montoNum = Number(fields.montoInvertido)
-  const tnaNum = Number(fields.tnaPactada)
-  const duracionNum = Number(fields.duracionDias)
-  const isValid =
-    fields.entidadFinanciera.trim().length > 0 &&
-    montoNum > 0 &&
-    tnaNum >= 0 &&
-    !!fields.fechaInicio &&
-    duracionNum >= 1
+  const form = useForm<PlazoFijoValues>({
+    resolver: zodResolver(plazoFijoSchema),
+    mode: 'onChange',
+    defaultValues: {
+      idTipoPlazoFijo: String(tenencia.idTipoPlazoFijo),
+      entidadFinanciera: tenencia.entidadFinanciera,
+      montoInvertido: String(tenencia.montoInvertido),
+      tnaPactada: String(tenencia.tnaPactada),
+      fechaInicio: tenencia.fechaInicio,
+      duracionDias: String(tenencia.duracionDias),
+      reinvertirAlVencimiento: tenencia.reinvertirAlVencimiento,
+    },
+  })
+
+  const onSubmit = (values: PlazoFijoValues) =>
+    onSave({
+      entidadFinanciera: values.entidadFinanciera,
+      montoInvertido: Number(values.montoInvertido),
+      tnaPactada: Number(values.tnaPactada),
+      fechaInicio: values.fechaInicio,
+      duracionDias: Number(values.duracionDias),
+      reinvertirAlVencimiento: values.reinvertirAlVencimiento,
+    })
 
   return (
-    <div className="compare-card gap-2">
-      <FormGrid
-        moneda={moneda}
-        tipos={tipos}
-        idTipoPlazoFijo={idTipoPlazoFijo}
-        setIdTipoPlazoFijo={setIdTipoPlazoFijo}
-        fields={fields}
-        setFields={setFields}
-      />
-      <RowFormFooter
-        className="mt-0.5 flex justify-end gap-2"
-        onCancel={onCancel}
-        isMutating={isMutating}
-        canSave={isValid}
-        onSave={() =>
-          onSave({
-            entidadFinanciera: fields.entidadFinanciera,
-            montoInvertido: montoNum,
-            tnaPactada: tnaNum,
-            fechaInicio: fields.fechaInicio,
-            duracionDias: duracionNum,
-            reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
-          })
-        }
-      />
-    </div>
+    <Form {...form}>
+      <div className="compare-card gap-2">
+        <FormGrid moneda={moneda} tipos={tipos} control={form.control} />
+        <RowFormFooter
+          className="mt-0.5 flex justify-end gap-2"
+          onCancel={onCancel}
+          isMutating={isMutating}
+          canSave={Object.keys(form.formState.errors).length === 0}
+          onSave={form.handleSubmit(onSubmit)}
+        />
+      </div>
+    </Form>
   )
 }
 
@@ -450,46 +423,43 @@ function AddRow({
   onCancel: () => void
   onSave: (payload: NuevoPlazoFijo) => void
 }) {
-  const [idTipoPlazoFijo, setIdTipoPlazoFijo] = useState(String(tipos[0]?.idTipoPlazoFijo ?? ''))
-  const [fields, setFields] = useState(() => plazoFijoFormFields())
-  const montoNum = Number(fields.montoInvertido)
-  const tnaNum = Number(fields.tnaPactada)
-  const duracionNum = Number(fields.duracionDias)
-  const isValid =
-    !!idTipoPlazoFijo &&
-    fields.entidadFinanciera.trim().length > 0 &&
-    montoNum > 0 &&
-    tnaNum >= 0 &&
-    !!fields.fechaInicio &&
-    duracionNum >= 1
+  const form = useForm<PlazoFijoValues>({
+    resolver: zodResolver(plazoFijoSchema),
+    mode: 'onChange',
+    defaultValues: {
+      idTipoPlazoFijo: String(tipos[0]?.idTipoPlazoFijo ?? ''),
+      entidadFinanciera: '',
+      montoInvertido: '',
+      tnaPactada: '',
+      fechaInicio: '',
+      duracionDias: '',
+      reinvertirAlVencimiento: false,
+    },
+  })
+
+  const onSubmit = (values: PlazoFijoValues) =>
+    onSave({
+      idTipoPlazoFijo: Number(values.idTipoPlazoFijo),
+      entidadFinanciera: values.entidadFinanciera,
+      montoInvertido: Number(values.montoInvertido),
+      tnaPactada: Number(values.tnaPactada),
+      fechaInicio: values.fechaInicio,
+      duracionDias: Number(values.duracionDias),
+      reinvertirAlVencimiento: values.reinvertirAlVencimiento,
+    })
 
   return (
-    <div className="compare-card gap-2">
-      <FormGrid
-        moneda={moneda}
-        tipos={tipos}
-        idTipoPlazoFijo={idTipoPlazoFijo}
-        setIdTipoPlazoFijo={setIdTipoPlazoFijo}
-        fields={fields}
-        setFields={setFields}
-      />
-      <RowFormFooter
-        className="mt-0.5 flex justify-end gap-2"
-        onCancel={onCancel}
-        isMutating={isMutating}
-        canSave={isValid}
-        onSave={() =>
-          onSave({
-            idTipoPlazoFijo: Number(idTipoPlazoFijo),
-            entidadFinanciera: fields.entidadFinanciera,
-            montoInvertido: montoNum,
-            tnaPactada: tnaNum,
-            fechaInicio: fields.fechaInicio,
-            duracionDias: duracionNum,
-            reinvertirAlVencimiento: fields.reinvertirAlVencimiento,
-          })
-        }
-      />
-    </div>
+    <Form {...form}>
+      <div className="compare-card gap-2">
+        <FormGrid moneda={moneda} tipos={tipos} control={form.control} />
+        <RowFormFooter
+          className="mt-0.5 flex justify-end gap-2"
+          onCancel={onCancel}
+          isMutating={isMutating}
+          canSave={Object.keys(form.formState.errors).length === 0}
+          onSave={form.handleSubmit(onSubmit)}
+        />
+      </div>
+    </Form>
   )
 }

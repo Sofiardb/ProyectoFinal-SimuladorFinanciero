@@ -4,12 +4,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import ValorPorMoneda from '@/components/simulaciones/ValorPorMoneda'
 import DeleteSimulacionDialog from '@/components/simulaciones/DeleteSimulacionDialog'
-import { usePerfilesRiesgo, useTodasLasSimulaciones, type SimulacionConPortfolio } from '@/api/hooks'
+import { usePerfilesRiesgo, usePortfolios, useTodasLasSimulaciones, type SimulacionConPortfolio } from '@/api/hooks'
 import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 export default function HistorialPage() {
   const { data: perfiles } = usePerfilesRiesgo()
+  const { data: portfolios } = usePortfolios()
   const { data: simulaciones, isLoading } = useTodasLasSimulaciones()
   const [perfilFiltro, setPerfilFiltro] = useState<number | null>(null)
   const [seleccionadas, setSeleccionadas] = useState<number[]>([])
@@ -17,6 +18,9 @@ export default function HistorialPage() {
   const navigate = useNavigate()
 
   const filtradas = perfilFiltro == null ? simulaciones : simulaciones.filter((s) => s.idPerfilRiesgo === perfilFiltro)
+  const sinPortfolios = (portfolios?.length ?? 0) === 0
+  const sinSimulacionesEnAbsoluto = simulaciones.length === 0
+  const perfilSeleccionado = perfiles?.find((p) => p.idPerfilRiesgo === perfilFiltro)
 
   function toggleSeleccion(idSimulacion: number) {
     setSeleccionadas((prev) => {
@@ -88,11 +92,41 @@ export default function HistorialPage() {
         </div>
       ) : filtradas.length === 0 ? (
         <div className="card text-[13.5px] text-ink-muted">
-          Todavía no corriste ninguna simulación.{' '}
-          <Link to="/simulaciones/nueva" className="font-semibold text-navy-950 underline">
-            Lanzá una
-          </Link>
-          .
+          {sinPortfolios ? (
+            <>
+              Todavía no tenés portfolios.{' '}
+              <Link to="/portfolios" className="font-semibold text-navy-950 underline">
+                Creá uno
+              </Link>{' '}
+              para poder simular.
+            </>
+          ) : sinSimulacionesEnAbsoluto ? (
+            <>
+              Todavía no corriste ninguna simulación.{' '}
+              <Link to="/simulaciones/nueva" className="font-semibold text-navy-950 underline">
+                Lanzá una
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              No tenés simulaciones con perfil{' '}
+              <span className="font-semibold text-navy-950">{perfilSeleccionado?.nombre.toLowerCase() ?? 'seleccionado'}</span>
+              .{' '}
+              <Link to="/simulaciones/nueva" className="font-semibold text-navy-950 underline">
+                Lanzá una
+              </Link>{' '}
+              o{' '}
+              <button
+                type="button"
+                onClick={() => setPerfilFiltro(null)}
+                className="font-semibold text-navy-950 underline"
+              >
+                mirá todas
+              </button>
+              .
+            </>
+          )}
         </div>
       ) : (
         <div className="card overflow-x-auto p-0">

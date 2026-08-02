@@ -92,7 +92,7 @@ export default function PortfoliosPage() {
               >
                 <span className={cn('size-3.5 rounded-full', estilo.dotBg)} />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="mb-1 font-display text-base font-semibold text-navy-950">
                   Perfil {perfilActivo.nombre}
                 </p>
@@ -100,6 +100,16 @@ export default function PortfoliosPage() {
                   {perfilActivo.descripcion}
                 </p>
               </div>
+
+              {portfoliosDelPerfil.length >= 3 && (
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className="btn-primary shrink-0 self-center"
+                >
+                  + Crear portfolio
+                </button>
+              )}
             </div>
           )}
 
