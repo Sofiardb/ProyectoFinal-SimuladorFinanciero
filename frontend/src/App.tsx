@@ -8,6 +8,7 @@ import LandingPage from '@/pages/auth/LandingPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
+import VerifyEmailPage from '@/pages/auth/VerifyEmailPage'
 import BienvenidaPage from '@/pages/dashboard/BienvenidaPage'
 import PortfoliosPage from '@/pages/portfolios/PortfoliosPage'
 import PortfolioDetallePage from '@/pages/portfolios/PortfolioDetallePage'
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
           </Route>
 
           {/* Authenticated app routes */}

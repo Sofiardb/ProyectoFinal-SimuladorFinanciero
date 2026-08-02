@@ -25,7 +25,18 @@ export function useLogin() {
 export function useRegister() {
   return useMutation({
     mutationFn: (payload: RegisterPayload) =>
-      api.post<AuthResponse>('/auth/register', payload),
+      api.post<{ message: string }>('/auth/register', payload),
+  })
+}
+
+export interface ResendVerificationPayload {
+  identificador: string
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: (payload: ResendVerificationPayload) =>
+      api.post<{ message: string }>('/auth/resend-verification', payload),
   })
 }
 

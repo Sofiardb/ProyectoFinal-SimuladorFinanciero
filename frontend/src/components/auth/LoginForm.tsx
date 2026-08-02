@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
 import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
-import { useLogin } from '@/api/hooks'
+import { ApiError } from '@/api/client'
+import { useLogin, useResendVerification } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
 
 const loginSchema = z.object({
@@ -21,19 +24,32 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
   const { login } = useAuth()
   const navigate = useNavigate()
   const loginMutation = useLogin()
+  const resendVerification = useResendVerification()
+  const [reenviado, setReenviado] = useState(false)
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identificador: '', password: '' },
   })
 
+  const noVerificado =
+    loginMutation.error instanceof ApiError && loginMutation.error.status === 403
+
   const onSubmit = (values: LoginValues) => {
+    setReenviado(false)
     loginMutation.mutate(values, {
       onSuccess: (auth) => {
         login(auth)
         navigate('/bienvenida')
       },
     })
+  }
+
+  const onReenviar = () => {
+    resendVerification.mutate(
+      { identificador: form.getValues('identificador') },
+      { onSuccess: () => setReenviado(true) },
+    )
   }
 
   return (
@@ -73,7 +89,27 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
           )}
         />
 
-        <MutationErrorAlert error={loginMutation.error} />
+        {noVerificado ? (
+          <Alert variant="destructive">
+            <AlertDescription className="space-y-2">
+              <p>{loginMutation.error?.message}</p>
+              {reenviado ? (
+                <p>Te reenviamos el enlace de verificación. Revisá tu bandeja de entrada.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onReenviar}
+                  disabled={resendVerification.isPending}
+                  className="font-semibold underline underline-offset-2"
+                >
+                  {resendVerification.isPending ? 'Reenviando…' : 'Reenviar email de verificación'}
+                </button>
+              )}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <MutationErrorAlert error={loginMutation.error} />
+        )}
 
         <Button
           type="submit"

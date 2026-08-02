@@ -1,14 +1,14 @@
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
 import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import { useRegister } from '@/api/hooks'
-import { useAuth } from '@/contexts/AuthContext'
 import { confirmPasswordFieldSchema, passwordFieldSchema, refinePasswordsMatch } from '@/lib/validation'
 
 const registerSchema = refinePasswordsMatch(
@@ -33,8 +33,7 @@ const itemClass = 'space-y-1.5'
 const labelClass = 'text-navy-950'
 
 export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
-  const { login } = useAuth()
-  const navigate = useNavigate()
+  const [registrado, setRegistrado] = useState(false)
   const registerMutation = useRegister()
 
   const form = useForm<RegisterValues>({
@@ -59,12 +58,22 @@ export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () 
         nombre: values.nombre || undefined,
         apellido: values.apellido || undefined,
       },
-      {
-        onSuccess: (auth) => {
-          login(auth)
-          navigate('/bienvenida')
-        },
-      },
+      { onSuccess: () => setRegistrado(true) },
+    )
+  }
+
+  if (registrado) {
+    return (
+      <div className="space-y-4">
+        <Alert className="border-green-brand bg-[#eaf7f0] text-[#1c6b45]">
+          <AlertDescription className="text-[#1c6b45]">
+            Te mandamos un email para verificar la dirección provista — hacé clic en el enlace para que se efectúe la creación de tu cuenta.
+          </AlertDescription>
+        </Alert>
+        <Button size="lg" className="btn-auth-submit" onClick={onSwitchToLogin}>
+          Ir a iniciar sesión
+        </Button>
+      </div>
     )
   }
 

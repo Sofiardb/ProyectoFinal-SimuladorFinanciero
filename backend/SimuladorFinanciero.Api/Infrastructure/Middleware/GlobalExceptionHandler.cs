@@ -34,6 +34,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log) 
     {
         NotFoundException    => (StatusCodes.Status404NotFound,            "No encontrado"),
         ConflictException    => (StatusCodes.Status409Conflict,            "Conflicto"),
+        ForbiddenException   => (StatusCodes.Status403Forbidden,           "Prohibido"),
         ExternalApiException => (StatusCodes.Status502BadGateway,          "Error de API externa"),
         ValidationException  => (StatusCodes.Status422UnprocessableEntity, "Error de validación"),
         _                    => (StatusCodes.Status500InternalServerError,  "Error interno del servidor")
