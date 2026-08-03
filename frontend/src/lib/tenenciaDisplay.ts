@@ -1,5 +1,5 @@
 import { formatFecha, formatFechaCorta, formatMoneda, formatPorcentaje } from '@/lib/format'
-import { GBM_TOOLTIPS, PRECIO_VN_TOOLTIP } from '@/lib/tooltips'
+import { GBM_TOOLTIPS, PRECIO_VN_TOOLTIP, TASA_TOOLTIP, TIPO_TASA_TOOLTIP } from '@/lib/tooltips'
 import type {
   AccionCatalogo,
   BonoCatalogo,
@@ -76,7 +76,12 @@ export function bonoPreview(b: {
 }): CampoPreview[] {
   return [
     { label: 'Vencimiento', value: formatFechaCorta(b.fechaVencimiento) },
-    { label: 'Tasa', value: tasaTexto(b.tipoBono === 'TASA_FIJA' ? 'Fija' : 'CER', b.tasaDescuento) },
+    { label: 'Tasa', value: formatPorcentaje(b.tasaDescuento * 100), tooltip: TASA_TOOLTIP },
+    {
+      label: 'Tipo',
+      value: b.tipoBono === 'TASA_FIJA' ? 'Tasa fija' : 'Indexado por inflación (CER)',
+      tooltip: TIPO_TASA_TOOLTIP,
+    },
     precioVnField(b.precioActual),
   ]
 }
@@ -94,7 +99,12 @@ export function letraPreview(l: {
 }): CampoPreview[] {
   return [
     { label: 'Vencimiento', value: formatFechaCorta(l.fechaVencimiento) },
-    { label: 'Tasa', value: tasaTexto(l.tipoLetra === 'LECAP' ? 'Fija' : 'CER', l.tasa) },
+    { label: 'Tasa', value: formatPorcentaje(l.tasa * 100), tooltip: TASA_TOOLTIP },
+    {
+      label: 'Tipo',
+      value: l.tipoLetra === 'LECAP' ? 'Tasa fija' : 'Indexado por inflación (CER)',
+      tooltip: TIPO_TASA_TOOLTIP,
+    },
     precioVnField(l.precioActual),
   ]
 }

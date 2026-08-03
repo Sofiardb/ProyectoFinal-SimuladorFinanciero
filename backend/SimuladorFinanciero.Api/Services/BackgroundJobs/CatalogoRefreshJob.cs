@@ -34,6 +34,8 @@ public sealed class CatalogoRefreshJob : BackgroundService
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _log.LogInformation("CatalogoRefreshJob: servicio iniciado.");
+
         if (!_config.GetValue("CatalogoRefresh:Habilitado", true))
         {
             _log.LogInformation("CatalogoRefreshJob deshabilitado por configuración (CatalogoRefresh:Habilitado=false).");
@@ -59,9 +61,15 @@ public sealed class CatalogoRefreshJob : BackgroundService
 
             _log.LogInformation("CatalogoRefreshJob: iniciando actualización diaria del catálogo.");
 
+            var pausaEntrePasos = TimeSpan.FromSeconds(
+                _config.GetValue("CatalogoRefresh:PausaEntrePasosSegundos", 120));
+
             await EjecutarSeguroAsync(() => _letras.RefrescarPreciosAsync(stoppingToken),        "letras precios",  stoppingToken);
+            await PausarAsync(pausaEntrePasos, stoppingToken);
             await EjecutarSeguroAsync(() => _bonos.RefrescarYieldsAsync(stoppingToken),          "bonos yields",    stoppingToken);
+            await PausarAsync(pausaEntrePasos, stoppingToken);
             await EjecutarSeguroAsync(() => _bonos.RefrescarFlujosCajaAsync(stoppingToken),      "bonos flujos",    stoppingToken);
+            await PausarAsync(pausaEntrePasos, stoppingToken);
             await EjecutarSeguroAsync(() => _acciones.RecalcularGbmTodosAsync(stoppingToken),    "acciones GBM",    stoppingToken);
 
             _log.LogInformation("CatalogoRefreshJob: actualización diaria completada.");
@@ -92,11 +100,33 @@ public sealed class CatalogoRefreshJob : BackgroundService
         return TimeZoneInfo.ConvertTimeToUtc(candidata, tz) - ahoraUtc;
     }
 
+    /// <summary>
+    /// Espacia los pasos del refresh diario (letras → bonos yields → bonos flujos → acciones) para
+    /// no acumular en una misma ventana de rpm los requests de dos pasos consecutivos contra Docta
+    /// (plan de 120 rpm). Configurable vía CatalogoRefresh:PausaEntrePasosSegundos (default 120s);
+    /// no aplica a los refrescos manuales de /admin/catalogo, que siguen siendo instantáneos.
+    /// </summary>
+    private async Task PausarAsync(TimeSpan duracion, CancellationToken ct)
+    {
+        _log.LogInformation("CatalogoRefreshJob: pausa de {Segundos:F0}s antes del próximo paso (rate limit Docta).",
+            duracion.TotalSeconds);
+        try
+        {
+            await Task.Delay(duracion, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Apagado normal
+        }
+    }
+
     private async Task EjecutarSeguroAsync(Func<Task> tarea, string nombre, CancellationToken ct)
     {
+        var cronometro = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             await tarea();
+            _log.LogInformation("CatalogoRefreshJob: '{Nombre}' OK ({Ms} ms).", nombre, cronometro.ElapsedMilliseconds);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -104,7 +134,7 @@ public sealed class CatalogoRefreshJob : BackgroundService
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "CatalogoRefreshJob: error en '{Nombre}'.", nombre);
+            _log.LogError(ex, "CatalogoRefreshJob: error en '{Nombre}' ({Ms} ms).", nombre, cronometro.ElapsedMilliseconds);
         }
     }
 }

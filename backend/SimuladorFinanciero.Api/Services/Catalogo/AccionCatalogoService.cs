@@ -50,6 +50,8 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
             var r = await RecalcularGbmAsync(ticker, ct);
             if (r is not null) resultados.Add(r);
         }
+
+        _log.LogInformation("AccionCatalogoService: {Count}/{Total} acciones recalculadas.", resultados.Count, tickers.Count);
         return resultados;
     }
 

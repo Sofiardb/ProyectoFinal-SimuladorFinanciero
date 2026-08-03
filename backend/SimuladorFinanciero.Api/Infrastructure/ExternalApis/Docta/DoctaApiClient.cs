@@ -1,9 +1,21 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
+
+/// <summary>
+/// Estadísticas de uso de la API de Docta para diagnosticar el límite de 120 rpm del plan.
+/// <see cref="RequestsUltimoMinuto"/> es una ventana deslizante calculada al momento de la consulta,
+/// no un valor cacheado; <see cref="Total429"/> es acumulado desde que arrancó el proceso.
+/// </summary>
+public sealed record DoctaRateLimitStats(
+    int RequestsUltimoMinuto,
+    int Total429,
+    DateTime? Ultimo429Utc,
+    string? UltimoDetalle429);
 
 // ── DTOs internos ─────────────────────────────────────────────────────────────
 
@@ -69,6 +81,9 @@ public interface IDoctaApiClient
     /// Útil para diagnosticar conectividad sin consumir requests del plan.
     /// </summary>
     Task<(bool Ok, string Detalle)> VerificarConexionAsync(CancellationToken ct = default);
+
+    /// <summary>Estadísticas de rpm del proceso actual — ver <see cref="DoctaRateLimitStats"/>.</summary>
+    DoctaRateLimitStats ObtenerEstadisticasRateLimit();
 }
 
 // ── Implementación ────────────────────────────────────────────────────────────
@@ -82,6 +97,12 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
 
     private string?  _token;
     private DateTime _tokenExpiry = DateTime.MinValue;
+
+    // Diagnóstico de rpm (ver DoctaRateLimitStats) — no protege nada, solo lo miden los admins.
+    private readonly ConcurrentQueue<DateTime> _timestampsRequests = new();
+    private int      _total429;
+    private DateTime? _ultimo429Utc;
+    private string?  _ultimoDetalle429;
 
     public DoctaApiClient(IConfiguration config, ILogger<DoctaApiClient> log)
     {
@@ -99,6 +120,7 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
         await AsegurarTokenAsync(ct);
         var url      = $"/api/v1/bonds/instruments?sub_asset_class={subAssetClass}&limit=100";
         var response = await _http.GetAsync(url, ct);
+        RegistrarRequest(response);
         response.EnsureSuccessStatusCode();
         var result   = await response.Content.ReadFromJsonAsync<DoctaInstrumentosResponseDto>(cancellationToken: ct);
         return result?.Data ?? [];
@@ -108,6 +130,7 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
     {
         await AsegurarTokenAsync(ct);
         var response = await _http.GetAsync($"/api/v1/bonds/yields/{ticker}/intraday", ct);
+        RegistrarRequest(response, ticker);
         if (!response.IsSuccessStatusCode)
         {
             _log.LogDebug("Docta: no hay yield para {Ticker} ({Status}).", ticker, response.StatusCode);
@@ -123,6 +146,7 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
         await AsegurarTokenAsync(ct);
         var response = await _http.GetAsync(
             $"/api/v1/bonds/analytics/{ticker}/cashflow?nominal_units=100", ct);
+        RegistrarRequest(response, ticker);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<DoctaFlujoCajaResponseDto>(cancellationToken: ct);
         return result?.Data ?? [];
@@ -143,6 +167,7 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
         {
             var url      = "/api/v1/bonds/instruments?sub_asset_class=FIXED_RATE&limit=1";
             var response = await _http.GetAsync(url, ct);
+            RegistrarRequest(response);
             if (!response.IsSuccessStatusCode)
                 return (false, $"Token OK, pero el catálogo devolvió {(int)response.StatusCode}.");
 
@@ -166,6 +191,7 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
         });
 
         var response = await _http.PostAsync("/api/v1/auth/token", body, ct);
+        RegistrarRequest(response);
         response.EnsureSuccessStatusCode();
 
         var dto = await response.Content.ReadFromJsonAsync<DoctaTokenDto>(cancellationToken: ct)
@@ -178,6 +204,31 @@ public sealed class DoctaApiClient : IDoctaApiClient, IDisposable
             new AuthenticationHeaderValue("Bearer", _token);
 
         _log.LogInformation("Docta Capital: token renovado. Expira en {Seg}s.", dto.ExpiresIn);
+    }
+
+    /// <summary>Registra cada request para la ventana deslizante de rpm y cuenta los 429 aparte.</summary>
+    private void RegistrarRequest(HttpResponseMessage response, string? ticker = null)
+    {
+        _timestampsRequests.Enqueue(DateTime.UtcNow);
+
+        if ((int)response.StatusCode == 429)
+        {
+            Interlocked.Increment(ref _total429);
+            _ultimo429Utc     = DateTime.UtcNow;
+            _ultimoDetalle429 = ticker is null
+                ? $"{response.RequestMessage?.RequestUri}"
+                : $"{response.RequestMessage?.RequestUri} (ticker {ticker})";
+            _log.LogWarning("Docta: 429 Too Many Requests en {Uri}.", response.RequestMessage?.RequestUri);
+        }
+    }
+
+    public DoctaRateLimitStats ObtenerEstadisticasRateLimit()
+    {
+        var corte = DateTime.UtcNow.AddMinutes(-1);
+        while (_timestampsRequests.TryPeek(out var t) && t < corte)
+            _timestampsRequests.TryDequeue(out _);
+
+        return new DoctaRateLimitStats(_timestampsRequests.Count, _total429, _ultimo429Utc, _ultimoDetalle429);
     }
 
     public void Dispose() => _http.Dispose();

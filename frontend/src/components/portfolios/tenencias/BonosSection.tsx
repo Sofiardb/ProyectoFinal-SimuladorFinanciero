@@ -36,7 +36,7 @@ export default function BonosSection({
     .filter((b) => !detalle.bonos.some((existing) => existing.idBono === b.idBono))
     .map((b) => ({
       id: b.idBono,
-      etiqueta: `${b.ticker} - Vence ${formatFechaCorta(b.fechaVencimiento)}`,
+      etiqueta: `${b.ticker} - Vence ${formatFechaCorta(b.fechaVencimiento)} · ${b.tipoBono === 'TASA_FIJA' ? 'Tasa fija' : 'CER'}`,
       previewFields: bonoPreview(b),
       precioActual: b.precioActual ?? 0,
     }))

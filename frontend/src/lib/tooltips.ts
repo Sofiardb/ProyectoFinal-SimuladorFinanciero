@@ -20,6 +20,12 @@ export const GBM_TOOLTIPS = {
 export const PRECIO_VN_TOOLTIP =
   'El precio cotiza cada 100 de valor nominal (VN). Por ejemplo, $105 significa que pagás $105 por cada $100 de VN que comprás — no es el precio de "una unidad".'
 
+export const TASA_TOOLTIP =
+  'Tasa anual vigente hoy para este instrumento: la tasa nominal pactada si es a tasa fija, o el spread real sobre la inflación si ajusta por CER.'
+
+export const TIPO_TASA_TOOLTIP =
+  'Tasa fija: la tasa no cambia durante toda la vida del instrumento. Indexado por inflación (CER): el capital y/o los cupones ajustan por la inflación acumulada, además de la tasa.'
+
 export const SECCION_TOOLTIPS = {
   acciones: 'Participaciones de una empresa cotizante. Su valor sube o baja con el mercado; sin vencimiento.',
   bonos: 'Deuda emitida por el Estado o una empresa. Puede tener tasa fija o ajustar por CER (inflación).',

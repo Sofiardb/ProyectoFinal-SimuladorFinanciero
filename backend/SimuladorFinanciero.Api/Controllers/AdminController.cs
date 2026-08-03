@@ -78,14 +78,33 @@ public sealed class AdminController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Estadísticas de uso de Docta para diagnosticar el límite de 120 rpm del plan: requests
+    /// en la ventana deslizante del último minuto y conteo de 429 recibidos desde que arrancó
+    /// el proceso. Disparar un refresh manual (letras/yields/flujos) y consultar esto enseguida
+    /// después muestra el pico real de esa corrida.
+    /// </summary>
+    [HttpGet("docta-rate-limit")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult DoctaRateLimit()
+    {
+        return Ok(_docta.ObtenerEstadisticasRateLimit());
+    }
+
     /// <summary>Fuerza un refresco de precios y TNA de letras desde BYMA (+ LECER desde Docta).</summary>
     [HttpPost("refresh/letras")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RefreshLetras(CancellationToken ct)
     {
         _log.LogInformation("Admin: refresco manual de letras solicitado por {User}.", User.Identity?.Name);
-        await _letras.RefrescarPreciosAsync(ct);
-        return Ok(new { mensaje = "Letras actualizadas." });
+        var actualizadas = await _letras.RefrescarPreciosAsync(ct);
+        return Ok(new
+        {
+            actualizadas,
+            mensaje = actualizadas > 0
+                ? $"Se actualizaron {actualizadas} letras."
+                : "No se actualizó ninguna letra: BYMA no devolvió datos (probablemente fuera de horario de mercado) o Docta no tenía yield disponible para ninguna.",
+        });
     }
 
     /// <summary>Fuerza un refresco de yields de bonos desde Docta Capital.</summary>

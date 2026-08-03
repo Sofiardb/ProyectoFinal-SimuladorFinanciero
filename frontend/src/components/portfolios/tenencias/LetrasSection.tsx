@@ -35,7 +35,7 @@ export default function LetrasSection({
     .filter((l) => !detalle.letras.some((existing) => existing.idLetra === l.idLetra))
     .map((l) => ({
       id: l.idLetra,
-      etiqueta: `${l.ticker} - ${l.nombre}`,
+      etiqueta: `${l.ticker} - ${l.nombre} · ${l.tipoLetra === 'LECAP' ? 'Tasa fija' : 'CER'}`,
       previewFields: letraPreview(l),
       precioActual: l.precioActual ?? 0,
     }))

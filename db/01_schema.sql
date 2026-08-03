@@ -428,7 +428,8 @@ CREATE TABLE simulacion (
     -- Métricas agregadas sobre todas las trayectorias (para consultas rápidas). valor_esperado/
     -- valor_minimo/valor_maximo/retorno_esperado_pct/rendimiento_real_pct quedan NULL cuando el
     -- portfolio mezcla instrumentos ARS y USD a la vez — sumarlos sin proyectar el tipo de cambio a T
-    -- meses no es una cifra real (ver docs/02 Decisión 9). En ese caso se usan las columnas *_ars/*_usd,
+    -- meses no es una cifra real (ver docs/02-orquestador-montecarlo.md, separación de portfolios por
+    -- moneda). En ese caso se usan las columnas *_ars/*_usd,
     -- siempre pobladas por separado.
     valor_inicial            NUMERIC(20,6) NOT NULL,
     valor_esperado           NUMERIC(20,6),
@@ -454,8 +455,8 @@ CREATE TABLE simulacion (
 
 CREATE INDEX idx_simulacion_portfolio_fecha ON simulacion(id_portfolio, fecha_ejecucion DESC);
 
-COMMENT ON TABLE  simulacion IS 'Cabecera de una corrida Monte Carlo. Las trayectorias mensuales no se persisten; se regeneran bajo demanda a partir de seed_aleatoria y simulacion_parametro_escenario (RF-16).';
-COMMENT ON COLUMN simulacion.seed_aleatoria IS 'Semilla pseudoaleatoria que permite reproducir exactamente las trayectorias de la simulación (RF-16).';
+COMMENT ON TABLE  simulacion IS 'Cabecera de una corrida Monte Carlo. Las trayectorias mensuales no se persisten; las estadísticas agregadas quedan en resultado_simulacion, que se lee directamente al visualizar simulaciones pasadas sin reinvocar al motor.';
+COMMENT ON COLUMN simulacion.seed_aleatoria IS 'Semilla generada internamente por el motor para esa corrida. Se persiste como registro de auditoría (con qué secuencia aleatoria se generó la simulación), no como mecanismo de reproducibilidad: el motor no acepta una semilla de entrada para regenerar trayectorias.';
 
 
 -- Snapshot de los instrumentos usados en cada simulación.
@@ -491,7 +492,7 @@ CREATE TABLE simulacion_parametro_escenario (
     PRIMARY KEY (id_simulacion, id_tipo_escenario)
 );
 
-COMMENT ON TABLE simulacion_parametro_escenario IS 'Snapshot de los rangos de inflación utilizados en la simulación. Satisface RF-11 y garantiza reproducibilidad (RF-16) ante cambios futuros en escenario_economico.';
+COMMENT ON TABLE simulacion_parametro_escenario IS 'Snapshot de los rangos de inflación utilizados en la simulación. Satisface RF-11 y preserva el contexto de auditoría de cada corrida ante cambios futuros en escenario_economico.';
 
 
 -- Una trayectoria = una realización completa bajo un único tipo de escenario.

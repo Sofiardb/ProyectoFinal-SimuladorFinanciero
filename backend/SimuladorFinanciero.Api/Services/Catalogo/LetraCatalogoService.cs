@@ -7,8 +7,12 @@ namespace SimuladorFinanciero.Api.Services.Catalogo;
 
 public interface ILetraCatalogoService
 {
-    /// <summary>Refresca precios de BYMA y TIR de LECER desde Docta. Llamado cada 15 min.</summary>
-    Task RefrescarPreciosAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Refresca precios de BYMA y TIR de LECER desde Docta. Llamado cada 15 min.
+    /// Devuelve la cantidad de letras efectivamente actualizadas (puede ser 0 si BYMA no tiene
+    /// datos disponibles, típicamente fuera de horario de mercado).
+    /// </summary>
+    Task<int> RefrescarPreciosAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<LetraResponse>> ObtenerActivasAsync(CancellationToken ct = default);
     Task<LetraResponse?> ObtenerPorIdAsync(long id, CancellationToken ct = default);
@@ -33,7 +37,7 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
         _log   = log;
     }
 
-    public async Task RefrescarPreciosAsync(CancellationToken ct = default)
+    public async Task<int> RefrescarPreciosAsync(CancellationToken ct = default)
     {
         IReadOnlyList<BymaLetraDto> letras;
         try
@@ -43,16 +47,17 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
         catch (Exception ex)
         {
             _log.LogError(ex, "BYMA: error al obtener letras.");
-            return;
+            return 0;
         }
 
         if (letras.Count == 0)
         {
             _log.LogInformation("BYMA: respuesta vacía (mercado cerrado o sin datos).");
-            return;
+            return 0;
         }
 
         var hoy = DateOnly.FromDateTime(DateTime.Today);
+        var actualizadas = 0;
 
         foreach (var l in letras)
         {
@@ -93,9 +98,12 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
                 FechaVencimiento  = vencimiento,
                 PrecioActual      = l.SettlementPrice
             }, ct);
+
+            actualizadas++;
         }
 
-        _log.LogInformation("LetraCatalogo: {Count} letras procesadas desde BYMA.", letras.Count);
+        _log.LogInformation("LetraCatalogo: {Actualizadas}/{Count} letras actualizadas desde BYMA.", actualizadas, letras.Count);
+        return actualizadas;
     }
 
     public Task<IReadOnlyList<LetraResponse>> ObtenerActivasAsync(CancellationToken ct = default) =>
