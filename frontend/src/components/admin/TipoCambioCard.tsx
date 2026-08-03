@@ -1,17 +1,11 @@
 import { useRefreshTipoCambio } from '@/api/hooks'
-import { onErrorToast, onSuccessToastMensaje } from '@/lib/toast'
 import AdminCardHeader from './AdminCardHeader'
 import AdminActionRow, { resultText } from './AdminActionRow'
 
 export default function TipoCambioCard() {
   const refresh = useRefreshTipoCambio()
 
-  const handleClick = () => {
-    refresh.mutate(undefined, {
-      onSuccess: onSuccessToastMensaje,
-      onError: onErrorToast,
-    })
-  }
+  const handleClick = () => refresh.mutate()
 
   return (
     <div className="card">

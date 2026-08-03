@@ -1,5 +1,4 @@
 import { useRefreshBonosFlujos, useRefreshBonosYields } from '@/api/hooks'
-import { onErrorToast, onSuccessToastMensaje } from '@/lib/toast'
 import AdminCardHeader from './AdminCardHeader'
 import AdminActionRow, { resultText } from './AdminActionRow'
 
@@ -7,19 +6,9 @@ export default function BonosCard() {
   const yields_ = useRefreshBonosYields()
   const flujos = useRefreshBonosFlujos()
 
-  const handleYields = () => {
-    yields_.mutate(undefined, {
-      onSuccess: onSuccessToastMensaje,
-      onError: onErrorToast,
-    })
-  }
+  const handleYields = () => yields_.mutate()
 
-  const handleFlujos = () => {
-    flujos.mutate(undefined, {
-      onSuccess: onSuccessToastMensaje,
-      onError: onErrorToast,
-    })
-  }
+  const handleFlujos = () => flujos.mutate()
 
   return (
     <div className="card">

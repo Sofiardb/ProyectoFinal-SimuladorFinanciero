@@ -1,23 +1,11 @@
-import { toast } from 'sonner'
 import { useAdminCheck } from '@/api/hooks'
-import { onErrorToast } from '@/lib/toast'
 import AdminCardHeader from './AdminCardHeader'
 import EstadoBadge from './EstadoBadge'
 
 export default function ConectividadCard() {
   const check = useAdminCheck()
 
-  const handleCheck = () => {
-    check.mutate(undefined, {
-      onSuccess: (data) =>
-        toast.success(
-          data.byma.ok && data.docta.ok
-            ? 'Ambas APIs externas responden correctamente.'
-            : 'Verificación completa: alguna API externa no responde.',
-        ),
-      onError: onErrorToast,
-    })
-  }
+  const handleCheck = () => check.mutate()
 
   return (
     <div className="card">

@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { useRefreshAccion, useRefreshAcciones, type GbmRefreshResult } from '@/api/hooks'
 import { FormattedErrorMessage } from '@/lib/formatErrorMessage'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
-import { onErrorToast } from '@/lib/toast'
 import AdminCardHeader from './AdminCardHeader'
 import AdminActionRow, { resultText } from './AdminActionRow'
 
@@ -36,18 +34,11 @@ export default function AccionesCard() {
   const refreshTicker = useRefreshAccion()
   const [ticker, setTicker] = useState('')
 
-  const handleTodas = () => {
-    refreshTodas.mutate(undefined, {
-      onSuccess: (data) => toast.success(`Se recalcularon ${data.actualizadas} acciones.`),
-      onError: onErrorToast,
-    })
-  }
+  const handleTodas = () => refreshTodas.mutate()
 
   const handleTicker = () => {
     if (!ticker.trim()) return
-    refreshTicker.mutate(ticker.trim(), {
-      onSuccess: (data) => toast.success(`${data.ticker} actualizado.`),
-    })
+    refreshTicker.mutate(ticker.trim())
   }
 
   return (
