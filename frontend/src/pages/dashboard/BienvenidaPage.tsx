@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, LayoutDashboard, TrendingUp, History } from 'lucide-react'
 import { Card, CardContent, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import { usePortfolios } from '@/api/hooks'
 import { useAuth } from '@/contexts/AuthContext'
@@ -37,7 +39,7 @@ const ACCIONES = [
 export default function BienvenidaPage() {
   const navigate = useNavigate()
   const { usuario } = useAuth()
-  const { data: portfolios } = usePortfolios()
+  const { data: portfolios, isLoading: portfoliosLoading } = usePortfolios()
   const [createOpen, setCreateOpen] = useState(false)
   const { iniciarTour } = useTour()
 
@@ -83,8 +85,23 @@ export default function BienvenidaPage() {
         ))}
       </div>
 
+      {portfoliosLoading && (
+        <>
+          <Card className="mt-8">
+            <CardContent className="flex flex-col items-center gap-3 py-8 sm:flex-row sm:items-center sm:justify-between">
+              <div className="w-full space-y-2 sm:w-auto sm:min-w-[280px]">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <Skeleton className="h-10 w-40 shrink-0" />
+            </CardContent>
+          </Card>
+          <SlowLoadingHint isLoading={portfoliosLoading} />
+        </>
+      )}
+
       {tienePortfolios && (
-        <Card className="mt-8">
+        <Card className="fade-in-content mt-8">
           <CardContent className="flex flex-col items-center gap-3 py-8 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
             <div>
               <CardTitle>
@@ -106,7 +123,7 @@ export default function BienvenidaPage() {
       )}
 
       {sinPortfolios && (
-        <Card className="mt-8">
+        <Card className="fade-in-content mt-8">
           <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
             <CardTitle>Todavía no creaste ningún portfolio</CardTitle>
             <CardDescription>

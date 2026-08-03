@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useTour } from '@/contexts/TourContext'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import DeletePortfolioDialog from '@/components/portfolios/DeletePortfolioDialog'
 import HistorialSimulacionesCard from '@/components/portfolios/HistorialSimulacionesCard'
@@ -68,6 +69,7 @@ export default function PortfolioDetallePage() {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-40 w-full" />
         <Skeleton className="h-40 w-full" />
+        <SlowLoadingHint isLoading={isLoading} />
       </div>
     )
   }
@@ -99,7 +101,7 @@ export default function PortfolioDetallePage() {
   }
 
   return (
-    <div className="page-shell max-w-[1080px]">
+    <div className="page-shell fade-in-content max-w-[1080px]">
       <PortfolioDetalleHeader
         detalle={detalle}
         idPortfolio={idPortfolio}

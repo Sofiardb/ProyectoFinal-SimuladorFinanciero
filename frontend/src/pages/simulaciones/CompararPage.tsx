@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import { FilaComparacion } from '@/components/simulaciones/comparar/ComparacionGrid'
 import ComparacionSimulaciones from '@/components/simulaciones/comparar/ComparacionSimulaciones'
 import SelectorSimulacion, { type Grupo } from '@/components/simulaciones/comparar/SelectorSimulacion'
@@ -50,16 +51,17 @@ export default function CompararPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Skeleton className="h-11 w-full" />
           <Skeleton className="h-11 w-full" />
+          <SlowLoadingHint isLoading={isLoading} />
         </div>
       ) : (
-        <>
+        <div className="fade-in-content">
           <FilaComparacion>
             <SelectorSimulacion idSimulacion={idA} onChange={(id) => setId('a', id)} grupos={grupos} />
             <SelectorSimulacion idSimulacion={idB} onChange={(id) => setId('b', id)} grupos={grupos} />
           </FilaComparacion>
 
           <ComparacionSimulaciones idA={idA} idB={idB} />
-        </>
+        </div>
       )}
     </div>
   )

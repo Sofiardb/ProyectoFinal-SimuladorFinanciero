@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import AccionesComparacionMercado from '@/components/simulaciones/AccionesComparacionMercado'
 import FilaComparacionMercadoCard from '@/components/simulaciones/FilaComparacionMercadoCard'
 import { usePortfolio, usePortfolioPreview, useRefrescarMercado } from '@/api/hooks'
@@ -22,6 +23,7 @@ export default function ComparacionMercadoPage() {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-32 w-full" />
+        <SlowLoadingHint isLoading={loadingPortfolio || loadingPreview} />
       </div>
     )
   }
@@ -63,7 +65,7 @@ export default function ComparacionMercadoPage() {
   }
 
   return (
-    <div className="page-shell max-w-[920px] pb-32">
+    <div className="page-shell fade-in-content max-w-[920px] pb-32">
       <div className="breadcrumb-nav">
         <Link to={`/portfolios?perfil=${detalle.idPerfilRiesgo}`} className="hover:text-navy-950">
           Portfolios

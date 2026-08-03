@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import { useTour } from '@/contexts/TourContext'
 import DisabledButtonTooltip from '@/components/ui/disabled-button-tooltip'
 import RangosInflacionCard from '@/components/simulaciones/RangosInflacionCard'
@@ -57,6 +58,7 @@ function ConfigurarSimulacion({
       <div className="page-shell max-w-[920px] space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-40 w-full" />
+        <SlowLoadingHint isLoading={loadingDetalle || loadingPreview} />
       </div>
     )
   }
@@ -113,7 +115,7 @@ function ConfigurarSimulacion({
   }
 
   return (
-    <div className="page-shell max-w-[920px]">
+    <div className="page-shell fade-in-content max-w-[920px]">
       <div className="breadcrumb-nav">
         <Link to={`/portfolios?perfil=${detalle.idPerfilRiesgo}`} className="hover:text-navy-950">
           Portfolios

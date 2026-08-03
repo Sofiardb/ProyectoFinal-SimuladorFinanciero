@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import PerfilBadge from '@/components/portfolios/PerfilBadge'
 import ValorPorMoneda from '@/components/simulaciones/ValorPorMoneda'
 import DeleteSimulacionDialog from '@/components/simulaciones/DeleteSimulacionDialog'
@@ -89,9 +90,10 @@ export default function HistorialPage() {
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
+          <SlowLoadingHint isLoading={isLoading} />
         </div>
       ) : filtradas.length === 0 ? (
-        <div className="card text-[13.5px] text-ink-muted">
+        <div className="fade-in-content card text-[13.5px] text-ink-muted">
           {sinPortfolios ? (
             <>
               Todavía no tenés portfolios.{' '}
@@ -129,7 +131,7 @@ export default function HistorialPage() {
           )}
         </div>
       ) : (
-        <div className="card overflow-x-auto p-0">
+        <div className="fade-in-content card overflow-x-auto p-0">
           <table className="w-full text-[12.5px]">
             <thead>
               <tr className="border-b border-line text-left text-ink-soft">

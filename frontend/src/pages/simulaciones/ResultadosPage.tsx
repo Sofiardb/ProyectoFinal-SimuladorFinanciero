@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import InflacionChart from '@/components/charts/InflacionChart'
 import KpiCard from '@/components/simulaciones/KpiCard'
 import PanelGraficoResultados from '@/components/simulaciones/PanelGraficoResultados'
@@ -29,6 +30,7 @@ export default function ResultadosPage() {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-80 w-full" />
+        <SlowLoadingHint isLoading={v.isLoading} />
       </div>
     )
   }
@@ -48,7 +50,7 @@ export default function ResultadosPage() {
   const primerAmbitoConPercentiles = v.kpisPortfolio.find((k) => k.patrimonio && k.gananciasReales)?.ambito
 
   return (
-    <div className="page-shell max-w-[1080px]">
+    <div className="page-shell fade-in-content max-w-[1080px]">
       <div className="breadcrumb-nav">
         <Link to="/portfolios" className="hover:text-navy-950">Portfolios</Link>
         <span>/</span>

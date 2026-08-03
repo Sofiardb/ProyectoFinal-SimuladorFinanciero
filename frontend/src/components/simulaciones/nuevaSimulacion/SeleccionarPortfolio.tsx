@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import PortfolioCard from '@/components/portfolios/PortfolioCard'
 import { usePerfilesRiesgo, usePortfolios, usePortfoliosConInstrumentos } from '@/api/hooks'
 
@@ -38,9 +39,10 @@ export default function SeleccionarPortfolio() {
           <Skeleton className="h-52 w-full" />
           <Skeleton className="h-52 w-full" />
           <Skeleton className="h-52 w-full" />
+          <SlowLoadingHint isLoading={isLoading} />
         </div>
       ) : portfoliosOrdenados.length === 0 ? (
-        <div className="card text-[13.5px] text-ink-muted">
+        <div className="fade-in-content card text-[13.5px] text-ink-muted">
           {todosLosPortfolios && todosLosPortfolios.length > 0 ? (
             <>
               Todavía no tenés un portfolio activo con instrumentos cargados.{' '}
@@ -60,7 +62,7 @@ export default function SeleccionarPortfolio() {
           )}
         </div>
       ) : (
-        <>
+        <div className="fade-in-content">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             {visibles.map((portfolio) => (
               <PortfolioCard key={portfolio.idPortfolio} portfolio={portfolio} mostrarPerfil />
@@ -88,7 +90,7 @@ export default function SeleccionarPortfolio() {
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   )
