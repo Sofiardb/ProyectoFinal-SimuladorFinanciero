@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
@@ -76,9 +76,8 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
                 </Link>
               </div>
               <FormControl>
-                <Input
+                <PasswordInput
                   className="h-11 rounded-[9px]"
-                  type="password"
                   placeholder="••••••••"
                   autoComplete="current-password"
                   {...field}

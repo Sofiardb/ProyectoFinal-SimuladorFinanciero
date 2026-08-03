@@ -9,6 +9,10 @@ def simular_plazo_fijo_uva_vectorizado(
     T_meses: int,
     factor_acum_matrix: np.ndarray,  # (N, T_meses+1)
 ) -> np.ndarray:                     # (N, T_meses+1)
+    """
+    Plazo fijo UVA: el capital se ajusta por el índice CER/UVA (`factor_acum_matrix`) y además
+    devenga `tasa_real_anual` sobre el capital ya ajustado por inflación.
+    """
     r_m = tasa_real_anual / 12
     t = np.arange(T_meses + 1)
     trayectoria = monto * factor_acum_matrix * (1 + r_m) ** t

@@ -21,8 +21,16 @@ public interface IBonoCatalogoService
 
 public sealed class BonoCatalogoService : IBonoCatalogoService
 {
+    /// <summary>
+    /// No se consulta la clase genérica "SUB_SOBERANO" (sin sufijo): agrupaba subsoberanos con
+    /// TIRes sanas en la práctica, pero es una clase legacy de Docta cuyo tipo de tasa real no
+    /// podemos confirmar por ningún campo — asumir que es TASA_FIJA fue una inferencia, no un
+    /// dato. Si alguno de esos tickers en realidad ajusta por CER, quedaría mal clasificado y
+    /// el motor lo simularía sin indexar por inflación. Solo se consultan clases donde el tipo
+    /// viene explícito en el propio nombre de la clase.
+    /// </summary>
     private static readonly string[] SubAssetClasses =
-        ["FIXED_RATE", "CER", "SUB_SOBERANO", "SUB_SOBERANO_FIXED_RATE", "SUB_SOBERANO_CER"];
+        ["FIXED_RATE", "CER", "SUB_SOBERANO_FIXED_RATE", "SUB_SOBERANO_CER"];
 
     private readonly IArgentinaDatosApiClient _argentinaDatos;
     private readonly IBymaApiClient           _byma;
@@ -152,17 +160,22 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
 
                     bool esCer = EsCer(clase);
 
+                    // adj_capital/adj_interest_amount vienen desglosados para cualquier tipo de bono,
+                    // no solo CER — verificado con TO26 (tasa fija, 20 cupones): adj_capital da 0 en
+                    // los primeros 19 y 100 exacto en el último, sumando igual que cash_flow. Usar
+                    // cash_flow entero como "cupón" en tasa fija escondía la amortización de capital
+                    // dentro del cupón, mostrando monto_capital = 0 incluso en el pago de vencimiento.
                     var flujos = flujosDtos
                         .Select((f, i) =>
                         {
                             DateOnly.TryParse(f.PaymentDate, out var fechaPago);
                             return new FlujoBono
                             {
-                                NumeroCupon    = (short)(i + 1),
-                                FechaPago      = fechaPago,
-                                MontoCupon     = esCer ? f.AdjInterestAmount : f.CashFlow,
-                                MontoCapital   = esCer ? f.AdjCapital        : 0m,
-                                AmortizaCapital = esCer && f.AdjCapital > 0
+                                NumeroCupon     = (short)(i + 1),
+                                FechaPago       = fechaPago,
+                                MontoCupon      = f.AdjInterestAmount,
+                                MontoCapital    = f.AdjCapital,
+                                AmortizaCapital = f.AdjCapital > 0
                             };
                         })
                         .Where(f => f.FechaPago != DateOnly.MinValue)

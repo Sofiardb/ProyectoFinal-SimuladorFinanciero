@@ -25,7 +25,6 @@ export default function App() {
     <BrowserRouter>
       <TourProvider>
         <Routes>
-          {/* Public routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -34,7 +33,6 @@ export default function App() {
             <Route path="/verify-email" element={<VerifyEmailPage />} />
           </Route>
 
-          {/* Authenticated app routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/bienvenida" element={<BienvenidaPage />} />

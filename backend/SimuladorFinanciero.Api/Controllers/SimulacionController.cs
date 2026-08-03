@@ -88,7 +88,6 @@ public sealed class SimulacionController : ControllerBase
         [FromQuery] string? ambito,
         CancellationToken ct)
     {
-        // Verificar que la simulación existe y pertenece al usuario
         var existe = await _repo.ObtenerDetalleAsync(id, GetUserId(), ct);
         if (existe is null)
             throw new NotFoundException($"Simulación {id} no encontrada.");

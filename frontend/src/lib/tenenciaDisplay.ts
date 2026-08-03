@@ -34,7 +34,6 @@ function valorNominalField(cantidadLotes: number): CampoPreview {
   return { label: 'Valor nominal', value: `$${(cantidadLotes * 100).toLocaleString('es-AR')}` }
 }
 
-// ─── Acciones ──────────────────────────────────────────────────────────────
 export function accionPreview(a: {
   sector?:       string
   precioActual?: number
@@ -67,7 +66,6 @@ export function accionSubtitulo(a: { sector?: string }): string {
   return a.sector ?? ''
 }
 
-// ─── Bonos ─────────────────────────────────────────────────────────────────
 export function bonoPreview(b: {
   fechaVencimiento: string
   tipoBono: 'TASA_FIJA' | 'INDEXADO_INFLACION'
@@ -90,7 +88,6 @@ export function bonoSubtitulo(b: { fechaVencimiento: string }): string {
   return `Vence: ${formatFechaCorta(b.fechaVencimiento)}`
 }
 
-// ─── Letras ────────────────────────────────────────────────────────────────
 export function letraPreview(l: {
   fechaVencimiento: string
   tipoLetra: 'LECAP' | 'LECER'
@@ -113,7 +110,6 @@ export function letraSubtitulo(l: { fechaVencimiento: string }): string {
   return `Vence: ${formatFechaCorta(l.fechaVencimiento)}`
 }
 
-// ─── Resolución de catálogo completo (para tenencias existentes) ─────────────
 export function bonoCatalogoPorId(catalogo: BonoCatalogo[] | undefined): Map<number, BonoCatalogo> {
   return new Map((catalogo ?? []).map((b) => [b.idBono, b]))
 }
@@ -162,7 +158,6 @@ export function letraHeldPreview(l: PortfolioLetra, catalogo: Map<number, LetraC
   ]
 }
 
-// ─── Filas de tenencia ya cargada (detalle de portfolio y resumen de nueva simulación) ──────
 export interface TenenciaRowCore {
   titulo:        string
   subtitulo:     string
@@ -243,7 +238,6 @@ export function resolveAmbitoInfo(ambito: string, detalle: PortfolioDetalle): Am
   }
 }
 
-// ─── Filas mini para la card de la lista de portfolios ───────────────────────
 export interface CardDisplay {
   id:       string
   title:    string

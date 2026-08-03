@@ -88,10 +88,6 @@ interface InflacionChartProps {
   onAbrirGuia?:  () => void
 }
 
-/**
- * 4 mini-gráficos (mensual/acumulada × ARS/USD). Cada mini-gráfico compara los 3
- * escenarios con los mismos colores que el resto de la app.
- */
 export default function InflacionChart({ mensualArs, mensualUsd, acumuladaArs, acumuladaUsd, onAbrirGuia }: InflacionChartProps) {
   if (mensualArs.favorable.length === 0) return null
 

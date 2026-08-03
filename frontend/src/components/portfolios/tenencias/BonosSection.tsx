@@ -4,7 +4,7 @@ import { conCaptura } from '@/lib/mutationHelpers'
 import { bonoCatalogoPorId, bonoPreview, bonoRow } from '@/lib/tenenciaDisplay'
 import { formatFechaCorta } from '@/lib/format'
 import { onErrorToast } from '@/lib/toast'
-import { CANTIDAD_LOTES_TOOLTIP_BONO, SECCION_TOOLTIPS } from '@/lib/tooltips'
+import { CANTIDAD_LOTES_TOOLTIP_BONO, MONTO_INVERTIDO_TOOLTIP_BONO, SECCION_TOOLTIPS } from '@/lib/tooltips'
 import type { BonoCatalogo, PortfolioDetalle } from '@/types'
 import CatalogoTenenciaSection, { type CatalogoOpcion, type TenenciaItem } from './CatalogoTenenciaSection'
 import TypeSectionCard from './TypeSectionCard'
@@ -26,11 +26,17 @@ export default function BonosSection({
   const [error, setError] = useState<string | null>(null)
 
   const bonosPorId = bonoCatalogoPorId(bonosCatalogo)
-  const tenencias: TenenciaItem[] = detalle.bonos.map((b) => ({
-    idCatalogo: b.idBono,
-    cantidadActual: b.cantidad,
-    ...bonoRow(b, bonosPorId),
-  }))
+  const tenencias: TenenciaItem[] = detalle.bonos.map((b) => {
+    const c = bonosPorId.get(b.idBono)
+    return {
+      idCatalogo: b.idBono,
+      cantidadActual: b.cantidad,
+      precioActual: b.precioActual ?? c?.precioActual,
+      flujos: c?.flujos,
+      esCer: c?.tipoBono === 'INDEXADO_INFLACION',
+      ...bonoRow(b, bonosPorId),
+    }
+  })
   const opciones: CatalogoOpcion[] = (bonosCatalogo ?? [])
     .filter((b) => b.diasAlVencimiento > 0)
     .filter((b) => !detalle.bonos.some((existing) => existing.idBono === b.idBono))
@@ -39,6 +45,8 @@ export default function BonosSection({
       etiqueta: `${b.ticker} - Vence ${formatFechaCorta(b.fechaVencimiento)} · ${b.tipoBono === 'TASA_FIJA' ? 'Tasa fija' : 'CER'}`,
       previewFields: bonoPreview(b),
       precioActual: b.precioActual ?? 0,
+      flujos: b.flujos,
+      esCer: b.tipoBono === 'INDEXADO_INFLACION',
     }))
 
   if (tenencias.length === 0 && opciones.length === 0) return null
@@ -52,6 +60,7 @@ export default function BonosSection({
         addLabel="+ Agregar bono"
         cantidadLabel="Cantidad de lotes"
         cantidadTooltip={CANTIDAD_LOTES_TOOLTIP_BONO}
+        montoInvertidoTooltip={MONTO_INVERTIDO_TOOLTIP_BONO}
         emptyMessage={`No hay bonos disponibles para el perfil ${perfilLower} en este momento.`}
         tenencias={tenencias}
         catalogo={opciones}

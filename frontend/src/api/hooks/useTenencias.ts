@@ -50,7 +50,6 @@ function createTenenciaCrudHooks<TEntity, TAddPayload, TUpdatePayload extends ob
   return { useAdd, useUpdate, useDelete }
 }
 
-// ─── Acciones ──────────────────────────────────────────────────────────────────
 export interface AccionPayload {
   idAccion:     number
   cantidad:     number
@@ -63,7 +62,6 @@ export const useAddAccion = accionCrud.useAdd
 export const useUpdateAccion = accionCrud.useUpdate
 export const useDeleteAccion = accionCrud.useDelete
 
-// ─── Bonos ─────────────────────────────────────────────────────────────────────
 export interface BonoPayload {
   idBono:       number
   cantidad:     number
@@ -76,7 +74,6 @@ export const useAddBono = bonoCrud.useAdd
 export const useUpdateBono = bonoCrud.useUpdate
 export const useDeleteBono = bonoCrud.useDelete
 
-// ─── Letras ────────────────────────────────────────────────────────────────────
 export interface LetraPayload {
   idLetra:      number
   cantidad:     number
@@ -89,7 +86,6 @@ export const useAddLetra = letraCrud.useAdd
 export const useUpdateLetra = letraCrud.useUpdate
 export const useDeleteLetra = letraCrud.useDelete
 
-// ─── Plazos fijos ────────────────────────────────────────────────────────────────
 export interface PlazoFijoPayload {
   idTipoPlazoFijo:          number
   idMoneda:                 number

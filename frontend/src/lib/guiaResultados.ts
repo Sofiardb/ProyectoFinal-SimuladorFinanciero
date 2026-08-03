@@ -1,4 +1,3 @@
-// Contenido de la guía explicativa de la página de Resultados 
 export interface GuiaItem {
   term: string
   texto: string

@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react'
 import type { Control, FieldPath, FieldValues } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
 interface Props<TFieldValues extends FieldValues> {
@@ -20,6 +21,8 @@ export default function TextFormField<TFieldValues extends FieldValues>({
   labelClassName,
   inputProps,
 }: Props<TFieldValues>) {
+  const InputComponent = inputProps?.type === 'password' ? PasswordInput : Input
+
   return (
     <FormField
       control={control}
@@ -28,7 +31,7 @@ export default function TextFormField<TFieldValues extends FieldValues>({
         <FormItem className={itemClassName}>
           <FormLabel className={labelClassName}>{label}</FormLabel>
           <FormControl>
-            <Input {...inputProps} {...field} />
+            <InputComponent {...inputProps} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>

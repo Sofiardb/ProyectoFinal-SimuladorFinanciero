@@ -26,6 +26,19 @@ export const TASA_TOOLTIP =
 export const TIPO_TASA_TOOLTIP =
   'Tasa fija: la tasa no cambia durante toda la vida del instrumento. Indexado por inflación (CER): el capital y/o los cupones ajustan por la inflación acumulada, además de la tasa.'
 
+export const CRONOGRAMA_FLUJOS_TOOLTIP =
+  'Cuándo y cuánto paga este bono hasta su vencimiento. "Cupón" es el interés de ese pago; "Capital" aparece solo en los pagos donde el bono amortiza parte del valor nominal.'
+
+export const CRONOGRAMA_CER_TOOLTIP =
+  'El capital y/o los cupones ajustan por inflación, el monto real que vayas a cobrar en cada fecha va a ser mayor, según la inflación acumulada hasta ese momento.'
+
+function montoInvertidoTooltip(instrumento: string): string {
+  return `Cantidad de lotes × precio actual de ${instrumento} (cotiza cada VN 100). Es el monto aproximado que pagarías hoy por esa cantidad — el monto final puede variar levemente si el precio se mueve antes de confirmar la compra.`
+}
+
+export const MONTO_INVERTIDO_TOOLTIP_BONO = montoInvertidoTooltip('este bono')
+export const MONTO_INVERTIDO_TOOLTIP_LETRA = montoInvertidoTooltip('esta letra')
+
 export const SECCION_TOOLTIPS = {
   acciones: 'Participaciones de una empresa cotizante. Su valor sube o baja con el mercado; sin vencimiento.',
   bonos: 'Deuda emitida por el Estado o una empresa. Puede tener tasa fija o ajustar por CER (inflación).',

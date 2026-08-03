@@ -1,4 +1,3 @@
-// ─── Auth ──────────────────────────────────────────────────────────────────────
 export interface Usuario {
   email:     string
   username:  string
@@ -17,7 +16,6 @@ export interface AuthResponse {
   esAdmin:    boolean
 }
 
-// ─── Stats vector returned by the motor ───────────────────────────────────────
 export interface StatsVector {
   media:   number[]
   mediana: number[]
@@ -40,7 +38,6 @@ export interface ResultadoInstrumento {
   ganancias_reales:    MetricaEscenarios
 }
 
-// ─── Simulation result ────────────────────────────────────────────────────────
 export interface ResultadoSimulacion {
   semilla:      number
   instrumentos: Record<string, ResultadoInstrumento>
@@ -48,7 +45,6 @@ export interface ResultadoSimulacion {
   portfolio_usd: ResultadoInstrumento
 }
 
-// ─── Portfolio & instruments ──────────────────────────────────────────────────
 export type TipoInstrumento =
   | 'accion'
   | 'lecap'
@@ -58,7 +54,6 @@ export type TipoInstrumento =
   | 'plazo_fijo_tradicional'
   | 'plazo_fijo_uva'
 
-// ─── Referencia (catálogos de lookup) ─────────────────────────────────────────
 export interface Moneda {
   idMoneda:  number
   codigoIso: string
@@ -95,7 +90,6 @@ export interface TipoCambio {
   fecha: string
 }
 
-// ─── Catálogo de instrumentos disponibles para agregar a un portfolio ────────
 export interface AccionCatalogo {
   idAccion:               number
   ticker:                 string
@@ -149,7 +143,6 @@ export interface TipoPlazoFijo {
   descripcion?:    string
 }
 
-// ─── Tenencias (instrumentos ya agregados a un portfolio) ────────────────────
 export interface PortfolioAccion {
   idPortfolioAccion: number
   idAccion:          number
@@ -205,7 +198,6 @@ export interface PortfolioPlazoFijo {
   reinvertirAlVencimiento:  boolean
 }
 
-// ─── Portfolio ─────────────────────────────────────────────────────────────────
 export type EstadoPortfolio = 'ACTIVO' | 'ARCHIVADO'
 
 export interface PortfolioResumen {
@@ -229,7 +221,6 @@ export interface PortfolioDetalle extends PortfolioResumen {
   plazosFijos: PortfolioPlazoFijo[]
 }
 
-// ─── Preview de simulación (comparación original vs. mercado) ────────────────
 export type EstadoPreviewInstrumento =
   | 'IGUAL'
   | 'ACTUALIZADO'
@@ -278,7 +269,6 @@ export interface SimulacionPreview {
   instrumentos:            InstrumentoPreviewItem[]
 }
 
-// ─── Simulation ───────────────────────────────────────────────────────────────
 export interface SimularRequest {
   horizonteMeses: number
 }

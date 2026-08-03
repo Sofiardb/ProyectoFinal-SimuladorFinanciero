@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import TruncatedText from '@/components/portfolios/TruncatedText'
+import CronogramaFlujos from '@/components/portfolios/tenencias/CronogramaFlujos'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
@@ -10,7 +11,9 @@ import { Form } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
 import SelectFormField from '@/components/forms/SelectFormField'
 import { useEditableSectionState } from '@/hooks/useEditableSectionState'
+import { formatMoneda } from '@/lib/format'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
+import type { FlujoCaja } from '@/types'
 
 const cantidadSchema = z
   .string()
@@ -30,6 +33,8 @@ export interface CatalogoOpcion {
   etiqueta:      string
   previewFields: CampoPreview[]
   precioActual:  number
+  flujos?:       FlujoCaja[]
+  esCer?:        boolean
 }
 
 export interface TenenciaItem {
@@ -37,8 +42,10 @@ export interface TenenciaItem {
   titulo:          string
   subtitulo:       string
   previewFields:   CampoPreview[]
-  /** Cantidad actualmente guardada (unidad "backend", p. ej. lotes de VN100 para bonos/letras). */
   cantidadActual:  number
+  precioActual?:   number
+  flujos?:         FlujoCaja[]
+  esCer?:          boolean
 }
 
 interface Props {
@@ -53,6 +60,7 @@ interface Props {
   error?:           string | null
   cantidadLabel?:   string
   cantidadTooltip?: string
+  montoInvertidoTooltip?: string
   onAdd:    (idCatalogo: number, cantidad: number, precioCompra: number) => Promise<void>
   onUpdate: (idCatalogo: number, cantidad: number) => Promise<void>
   onDelete: (idCatalogo: number) => void
@@ -70,6 +78,7 @@ export default function CatalogoTenenciaSection({
   error,
   cantidadLabel = 'Cantidad',
   cantidadTooltip,
+  montoInvertidoTooltip,
   onAdd,
   onUpdate,
   onDelete,
@@ -102,6 +111,7 @@ export default function CatalogoTenenciaSection({
           onCancel={cancelarAgregar}
           cantidadLabel={cantidadLabel}
           cantidadTooltip={cantidadTooltip}
+          montoInvertidoTooltip={montoInvertidoTooltip}
           onSave={(idCatalogo, cantidad, precioCompra) =>
             guardarAltaYCerrar(() => onAdd(idCatalogo, cantidad, precioCompra))
           }
@@ -117,6 +127,7 @@ export default function CatalogoTenenciaSection({
             onCancel={cancelarEdicion}
             cantidadLabel={cantidadLabel}
             cantidadTooltip={cantidadTooltip}
+            montoInvertidoTooltip={montoInvertidoTooltip}
             onSave={(cantidad) => guardarEdicionYCerrar(() => onUpdate(t.idCatalogo, cantidad))}
           />
         ) : (
@@ -142,23 +153,26 @@ function ViewRow({
   onDelete: () => void
 }) {
   return (
-    <div className="tenencia-row">
-      <div className="min-w-0 flex-1 basis-32">
-        <TruncatedText text={tenencia.titulo} className="tenencia-row-title" />
-        <p className="tenencia-row-subtitle">{tenencia.subtitulo}</p>
+    <div className="flex flex-col">
+      <div className="tenencia-row">
+        <div className="min-w-0 flex-1 basis-32">
+          <TruncatedText text={tenencia.titulo} className="tenencia-row-title" />
+          <p className="tenencia-row-subtitle">{tenencia.subtitulo}</p>
+        </div>
+        <div className="tenencia-row-stats">
+          {tenencia.previewFields.map((f) => (
+            <div key={f.label} className="text-right">
+              <p className="stat-label flex items-center justify-end gap-1">
+                {f.label}
+                {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+              </p>
+              <p className="mt-0.5 stat-value">{f.value}</p>
+            </div>
+          ))}
+        </div>
+        <RowIconActions onEdit={onEdit} onDelete={onDelete} />
       </div>
-      <div className="tenencia-row-stats">
-        {tenencia.previewFields.map((f) => (
-          <div key={f.label} className="text-right">
-            <p className="stat-label flex items-center justify-end gap-1">
-              {f.label}
-              {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
-            </p>
-            <p className="mt-0.5 stat-value">{f.value}</p>
-          </div>
-        ))}
-      </div>
-      <RowIconActions onEdit={onEdit} onDelete={onDelete} />
+      <CronogramaFlujos flujos={tenencia.flujos} cantidadLotes={tenencia.cantidadActual} esCer={tenencia.esCer} />
     </div>
   )
 }
@@ -169,6 +183,7 @@ function EditExistingRow({
   onCancel,
   cantidadLabel,
   cantidadTooltip,
+  montoInvertidoTooltip,
   onSave,
 }: {
   tenencia: TenenciaItem
@@ -176,6 +191,7 @@ function EditExistingRow({
   onCancel: () => void
   cantidadLabel: string
   cantidadTooltip?: string
+  montoInvertidoTooltip?: string
   onSave: (cantidad: number) => void
 }) {
   const form = useForm<EditValues>({
@@ -183,6 +199,7 @@ function EditExistingRow({
     mode: 'onChange',
     defaultValues: { cantidad: String(tenencia.cantidadActual) },
   })
+  const cantidadNum = Number(form.watch('cantidad')) || 0
 
   const onSubmit = (values: EditValues) => onSave(Number(values.cantidad))
 
@@ -210,7 +227,17 @@ function EditExistingRow({
             }
             inputProps={{ type: 'number', step: '1', placeholder: '0' }}
           />
+          {tenencia.precioActual != null && cantidadNum > 0 && (
+            <div>
+              <span className="field-label inline-flex items-center gap-1">
+                Monto invertido
+                {montoInvertidoTooltip && <InfoTooltip term="Monto invertido" definition={montoInvertidoTooltip} />}
+              </span>
+              <div className="readonly-chip">{formatMoneda(cantidadNum * tenencia.precioActual, 'ARS')}</div>
+            </div>
+          )}
         </div>
+        <CronogramaFlujos flujos={tenencia.flujos} cantidadLotes={cantidadNum} esCer={tenencia.esCer} />
         <RowFormFooter
           onCancel={onCancel}
           isMutating={isMutating}
@@ -230,6 +257,7 @@ function AddRow({
   onCancel,
   cantidadLabel,
   cantidadTooltip,
+  montoInvertidoTooltip,
   onSave,
 }: {
   pickLabel: string
@@ -239,6 +267,7 @@ function AddRow({
   onCancel: () => void
   cantidadLabel: string
   cantidadTooltip?: string
+  montoInvertidoTooltip?: string
   onSave: (idCatalogo: number, cantidad: number, precioCompra: number) => void
 }) {
   const form = useForm<AddValues>({
@@ -248,6 +277,7 @@ function AddRow({
   })
   const idCatalogo = form.watch('idCatalogo')
   const selected = catalogo.find((c) => String(c.id) === idCatalogo)
+  const cantidadNum = Number(form.watch('cantidad')) || 0
 
   const onSubmit = (values: AddValues) => {
     if (!selected) return
@@ -273,28 +303,42 @@ function AddRow({
         )}
 
         {selected && (
-          <div className="grid grid-cols-2 gap-2">
-            {selected.previewFields.map((f) => (
-              <div key={f.label}>
-                <span className="field-label inline-flex items-center gap-1">
-                  {f.label}
-                  {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
-                </span>
-                <div className="readonly-chip">{f.value}</div>
-              </div>
-            ))}
-            <TextFormField
-              control={form.control}
-              name="cantidad"
-              label={
-                <span className="inline-flex items-center gap-1">
-                  {cantidadLabel}
-                  {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
-                </span>
-              }
-              inputProps={{ type: 'number', step: '1', placeholder: '0' }}
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              {selected.previewFields.map((f) => (
+                <div key={f.label}>
+                  <span className="field-label inline-flex items-center gap-1">
+                    {f.label}
+                    {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
+                  </span>
+                  <div className="readonly-chip">{f.value}</div>
+                </div>
+              ))}
+              <TextFormField
+                control={form.control}
+                name="cantidad"
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    {cantidadLabel}
+                    {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
+                  </span>
+                }
+                inputProps={{ type: 'number', step: '1', placeholder: '0' }}
+              />
+              {cantidadNum > 0 && (
+                <div>
+                  <span className="field-label inline-flex items-center gap-1">
+                    Monto invertido
+                    {montoInvertidoTooltip && (
+                      <InfoTooltip term="Monto invertido" definition={montoInvertidoTooltip} />
+                    )}
+                  </span>
+                  <div className="readonly-chip">{formatMoneda(cantidadNum * selected.precioActual, 'ARS')}</div>
+                </div>
+              )}
+            </div>
+            <CronogramaFlujos flujos={selected.flujos} cantidadLotes={cantidadNum} esCer={selected.esCer} />
+          </>
         )}
 
         <RowFormFooter
