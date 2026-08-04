@@ -66,8 +66,15 @@ export default function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () 
     return (
       <div className="space-y-4">
         <Alert className="border-green-brand bg-[#eaf7f0] text-[#1c6b45]">
-          <AlertDescription className="text-[#1c6b45]">
-            Te mandamos un email para verificar la dirección provista — hacé clic en el enlace para que se efectúe la creación de tu cuenta.
+          <AlertDescription className="space-y-1.5 text-[#1c6b45]">
+            <p>
+              Te mandamos un email para verificar la dirección provista — hacé clic en el enlace
+              para que se efectúe la creación de tu cuenta.
+            </p>
+            <p className="font-semibold">
+              <span className="text-base">⚠</span> Si no lo ves, revisá tu carpeta de spam o
+              correo no deseado.
+            </p>
           </AlertDescription>
         </Alert>
         <Button size="lg" className="btn-auth-submit" onClick={onSwitchToLogin}>

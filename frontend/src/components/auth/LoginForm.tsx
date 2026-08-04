@@ -93,7 +93,13 @@ export default function LoginForm({ onSwitchToRegister }: { onSwitchToRegister: 
             <AlertDescription className="space-y-2">
               <p>{loginMutation.error?.message}</p>
               {reenviado ? (
-                <p>Te reenviamos el enlace de verificación. Revisá tu bandeja de entrada.</p>
+                <>
+                  <p>Te reenviamos el enlace de verificación. Revisá tu bandeja de entrada.</p>
+                  <p className="font-semibold">
+                    <span className="text-base">⚠</span> Si no lo ves, revisá tu carpeta de spam o
+                    correo no deseado.
+                  </p>
+                </>
               ) : (
                 <button
                   type="button"

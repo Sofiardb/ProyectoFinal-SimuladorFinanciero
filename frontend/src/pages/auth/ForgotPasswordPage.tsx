@@ -42,9 +42,15 @@ export default function ForgotPasswordPage() {
       {sent ? (
         <>
           <Alert className="mb-6 border-green-brand bg-[#eaf7f0] text-[#1c6b45]">
-            <AlertDescription className="text-[#1c6b45]">
-              Si el email existe en InvestLab, vas a recibir un enlace para restablecer tu
-              contraseña en los próximos minutos.
+            <AlertDescription className="space-y-1.5 text-[#1c6b45]">
+              <p>
+                Si el email existe en InvestLab, vas a recibir un enlace para restablecer tu
+                contraseña en los próximos minutos.
+              </p>
+              <p className="font-semibold">
+                <span className="text-base">⚠</span> Si no lo ves, revisá tu carpeta de spam o
+                correo no deseado.
+              </p>
             </AlertDescription>
           </Alert>
           <Link
