@@ -6,9 +6,9 @@ Este documento resume de dónde sale cada dato de mercado que usa el simulador y
 |---|---|---|
 | Plazo fijo tradicional | — (lo ingresa el usuario) | — |
 | Plazo fijo UVA | — | — (la inflación la genera el orquestador) |
-| LECAP | BYMA Open Data | Docta Capital (TNA) |
-| LECER | BYMA Open Data | Docta Capital (TIR, como spread real) |
-| Bono del Tesoro (tasa fija o CER) | ArgentinaDatos | Docta Capital (catálogo, flujos, TIR) |
+| LECAP | data912 (`/live/arg_notes`) | BYMA Open Data (catálogo, vencimiento) + Docta Capital (TNA) |
+| LECER | data912 (`/live/arg_notes`) | BYMA Open Data (catálogo, vencimiento) + Docta Capital (TIR, como spread real) |
+| Bono del Tesoro (tasa fija o CER) | data912 (`/live/arg_bonds`) | Docta Capital (catálogo, flujos, TIR) |
 | Bono provincial/municipal | BYMA Open Data (`/public-bonds`) | Docta Capital (catálogo, flujos, TIR) |
 | Acciones USA | Alpha Vantage | Alpha Vantage (histórico → μ, σ, ρ) |
 
@@ -16,18 +16,17 @@ Este documento resume de dónde sale cada dato de mercado que usa el simulador y
 
 **URL base:** `https://open.bymadata.com.ar` — acceso público, sin credenciales.
 
-Es la fuente del **precio** de dos grupos de instrumentos que Docta no cotiza:
+Es la fuente del **catálogo** de letras del Tesoro (LECAP y LECER, identificadas por el prefijo `S`/`X` del ticker, con su fecha de vencimiento) — data912 no expone vencimiento, así que BYMA sigue siendo necesario para saber qué letras existen y cuándo vencen, aunque el precio ahora salga de data912 (sección 2). El simulador ignora otros tipos de letra que BYMA lista (LETAMAR, LELINK).
 
-- **Letras del Tesoro** (LECAP y LECER, identificadas por el prefijo `S`/`X` del ticker). El simulador ignora otros tipos de letra que BYMA lista (LETAMAR, LELINK).
-- **Bonos provinciales y municipales** ("subsoberanos"). BYMA no distingue el emisor en la respuesta, así que qué tickers son subsoberanos lo determina el catálogo de Docta (sección 3), no BYMA.
+También es la fuente del **precio** de bonos provinciales y municipales ("subsoberanos"): BYMA no distingue el emisor en la respuesta, así que qué tickers son subsoberanos lo determina el catálogo de Docta (sección 3), no BYMA.
 
-BYMA no cotiza bonos soberanos nacionales (por eso esos usan ArgentinaDatos) ni da ninguna tasa — el precio de BYMA solo alcanza como precio de compra; la TNA/TIR real siempre viene de Docta.
+BYMA no da ninguna tasa — sus precios solo alcanzan como precio de mercado; la TNA/TIR real siempre viene de Docta.
 
-## 2. ArgentinaDatos
+## 2. data912
 
-**URL base:** `https://api.argentinadatos.com` — API pública no oficial, sin autenticación.
+**URL base:** `https://data912.com` — API pública no oficial, sin autenticación.
 
-Es la fuente del **precio** de los bonos del Tesoro nacional (tasa fija y CER) — el único grupo de instrumentos que ni BYMA ni Docta cotizan directamente (Docta solo da tasas, nunca precio de mercado).
+Es la fuente del **precio** de los bonos y letras del Tesoro nacional (`/live/arg_bonds` y `/live/arg_notes` respectivamente) — instrumentos que ni BYMA ni Docta cotizan directamente (Docta solo da tasas, nunca precio de mercado). data912 separa bonos y letras en dos endpoints distintos, cada uno con solo un tipo de instrumento, así que no hace falta excluir nada del resultado para evitar que un ticker de letra termine clasificado como bono.
 
 ## 3. Docta Capital — bonos y letras argentinas
 

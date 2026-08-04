@@ -1,5 +1,6 @@
 using SimuladorFinanciero.Api.DTOs.Instrumentos;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Data912;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
 using SimuladorFinanciero.Api.Repositories;
 
@@ -8,9 +9,9 @@ namespace SimuladorFinanciero.Api.Services.Catalogo;
 public interface ILetraCatalogoService
 {
     /// <summary>
-    /// Refresca precios de BYMA y TIR de LECER desde Docta. Llamado cada 15 min.
-    /// Devuelve la cantidad de letras efectivamente actualizadas (puede ser 0 si BYMA no tiene
-    /// datos disponibles, típicamente fuera de horario de mercado).
+    /// Refresca catálogo desde BYMA, precios desde data912 y TIR/TNA desde Docta. Llamado cada
+    /// 15 min. Devuelve la cantidad de letras efectivamente actualizadas (puede ser 0 si BYMA no
+    /// tiene datos disponibles, típicamente fuera de horario de mercado).
     /// </summary>
     Task<int> RefrescarPreciosAsync(CancellationToken ct = default);
 
@@ -21,20 +22,23 @@ public interface ILetraCatalogoService
 public sealed class LetraCatalogoService : ILetraCatalogoService
 {
     private readonly IBymaApiClient    _byma;
+    private readonly IData912ApiClient _data912;
     private readonly IDoctaApiClient   _docta;
     private readonly ILetraRepository  _repo;
     private readonly ILogger<LetraCatalogoService> _log;
 
     public LetraCatalogoService(
         IBymaApiClient byma,
+        IData912ApiClient data912,
         IDoctaApiClient docta,
         ILetraRepository repo,
         ILogger<LetraCatalogoService> log)
     {
-        _byma  = byma;
-        _docta = docta;
-        _repo  = repo;
-        _log   = log;
+        _byma    = byma;
+        _data912 = data912;
+        _docta   = docta;
+        _repo    = repo;
+        _log     = log;
     }
 
     public async Task<int> RefrescarPreciosAsync(CancellationToken ct = default)
@@ -56,6 +60,10 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
             return 0;
         }
 
+        // BYMA da el catálogo (símbolo + fecha de vencimiento) pero no cotiza LECAP/LECER de forma
+        // confiable; el precio real (por VN100) sale de data912 (/live/arg_notes).
+        var precios = await _data912.ObtenerPreciosLetrasAsync(ct);
+
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var actualizadas = 0;
 
@@ -68,10 +76,16 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
             else if (l.Symbol.StartsWith('X')) tipoLetraCodigo = "LECER";
             else continue;
 
-            // TNA/TIR real desde Docta Capital. El precio de descuento de BYMA no alcanza
-            // para derivar la tasa localmente: las LECAP son capitalizables (su valor técnico
-            // crece por sobre 100 durante toda su vida), así que asumir cara 100 en la fórmula
-            // de descuento invierte el signo de la tasa apenas el precio supera 100.
+            if (!precios.TryGetValue(l.Symbol, out var precio))
+            {
+                _log.LogDebug("{Tipo} {Ticker}: sin precio en Data912, se omite.", tipoLetraCodigo, l.Symbol);
+                continue;
+            }
+
+            // TNA/TIR real desde Docta Capital. El precio de mercado no alcanza para derivar la
+            // tasa localmente: las LECAP son capitalizables (su valor técnico crece por sobre 100
+            // durante toda su vida), así que asumir cara 100 en la fórmula de descuento invierte
+            // el signo de la tasa apenas el precio supera 100.
             DoctaYieldDto? yield = null;
             try
             {
@@ -96,7 +110,7 @@ public sealed class LetraCatalogoService : ILetraCatalogoService
                 Tasa              = tipoLetraCodigo == "LECAP" ? yield.Tna : yield.Tir,
                 FechaEmision      = hoy,
                 FechaVencimiento  = vencimiento,
-                PrecioActual      = l.SettlementPrice
+                PrecioActual      = precio
             }, ct);
 
             actualizadas++;

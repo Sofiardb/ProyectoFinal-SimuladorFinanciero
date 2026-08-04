@@ -1,6 +1,6 @@
 using SimuladorFinanciero.Api.DTOs.Instrumentos;
-using SimuladorFinanciero.Api.Infrastructure.ExternalApis.ArgentinaDatos;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
+using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Data912;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
 using SimuladorFinanciero.Api.Models;
 using SimuladorFinanciero.Api.Repositories;
@@ -32,48 +32,46 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
     private static readonly string[] SubAssetClasses =
         ["FIXED_RATE", "CER", "SUB_SOBERANO_FIXED_RATE", "SUB_SOBERANO_CER"];
 
-    private readonly IArgentinaDatosApiClient _argentinaDatos;
-    private readonly IBymaApiClient           _byma;
-    private readonly IDoctaApiClient          _docta;
-    private readonly IBonoRepository          _repo;
+    private readonly IData912ApiClient _data912;
+    private readonly IBymaApiClient    _byma;
+    private readonly IDoctaApiClient   _docta;
+    private readonly IBonoRepository   _repo;
     private readonly ILogger<BonoCatalogoService> _log;
 
     public BonoCatalogoService(
-        IArgentinaDatosApiClient argentinaDatos,
-        IBymaApiClient           byma,
-        IDoctaApiClient          docta,
-        IBonoRepository          repo,
+        IData912ApiClient data912,
+        IBymaApiClient    byma,
+        IDoctaApiClient   docta,
+        IBonoRepository   repo,
         ILogger<BonoCatalogoService> log)
     {
-        _argentinaDatos = argentinaDatos;
-        _byma           = byma;
-        _docta          = docta;
-        _repo           = repo;
-        _log            = log;
+        _data912 = data912;
+        _byma    = byma;
+        _docta   = docta;
+        _repo    = repo;
+        _log     = log;
     }
 
     /// <summary>
     /// Docta es la fuente de verdad de qué bonos existen (catálogo + TIR + flujos); BYMA Open Data
     /// no cotiza LECAP/BONTE/BONCER en sus endpoints gratuitos, así que el precio (por VN100) de
-    /// bonos nacionales se toma de ArgentinaDatos. Los bonos SUB_SOBERANO* (deuda provincial y
-    /// municipal) tampoco los cotiza ArgentinaDatos, pero sí aparecen en el endpoint /public-bonds
-    /// de BYMA. Un bono solo queda activo si está en AMBAS fuentes — si Docta lo deja de listar,
-    /// o la fuente de precio correspondiente no tiene precio para él, se desactiva.
+    /// bonos nacionales se toma de data912 (/live/arg_bonds), que no mezcla letras con bonos en
+    /// la misma respuesta. Los bonos SUB_SOBERANO* (deuda provincial y municipal) tampoco los
+    /// cotiza data912, pero sí aparecen en el endpoint
+    /// /public-bonds de BYMA. Un bono solo queda activo si está en AMBAS fuentes — si Docta lo deja
+    /// de listar, o la fuente de precio correspondiente no tiene precio para él, se desactiva.
     /// </summary>
     private async Task<IReadOnlyDictionary<string, decimal>> ObtenerPreciosAsync(CancellationToken ct)
     {
-        var letrasBonteTask   = _argentinaDatos.ObtenerPreciosLetrasBonteAsync(ct);
-        var bonosCerTask      = _argentinaDatos.ObtenerPreciosBonosCerAsync(ct);
-        var subSoberanoTask   = _byma.ObtenerPreciosBonosPublicosAsync(ct);
-        await Task.WhenAll(letrasBonteTask, bonosCerTask, subSoberanoTask);
+        var bonosTask        = _data912.ObtenerPreciosBonosAsync(ct);
+        var subSoberanoTask  = _byma.ObtenerPreciosBonosPublicosAsync(ct);
+        await Task.WhenAll(bonosTask, subSoberanoTask);
 
-        var precios = new Dictionary<string, decimal>(letrasBonteTask.Result);
-        foreach (var (ticker, precio) in bonosCerTask.Result)
-            precios[ticker] = precio;
+        var precios = new Dictionary<string, decimal>(bonosTask.Result);
         foreach (var (ticker, precio) in subSoberanoTask.Result)
             precios[ticker] = precio;
 
-        _log.LogInformation("ArgentinaDatos+BYMA: {Count} precios de bonos obtenidos.", precios.Count);
+        _log.LogInformation("Data912+BYMA: {Count} precios de bonos obtenidos.", precios.Count);
         return precios;
     }
 
@@ -99,7 +97,7 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
             {
                 if (!precios.TryGetValue(inst.Ticker, out var precio))
                 {
-                    _log.LogDebug("Bono {Ticker}: sin precio en ArgentinaDatos/BYMA, se omite.", inst.Ticker);
+                    _log.LogDebug("Bono {Ticker}: sin precio en Data912/BYMA, se omite.", inst.Ticker);
                     continue;
                 }
 
@@ -146,7 +144,7 @@ public sealed class BonoCatalogoService : IBonoCatalogoService
             {
                 if (!precios.TryGetValue(inst.Ticker, out var precio))
                 {
-                    _log.LogDebug("Bono {Ticker}: sin precio en ArgentinaDatos/BYMA, se omite.", inst.Ticker);
+                    _log.LogDebug("Bono {Ticker}: sin precio en Data912/BYMA, se omite.", inst.Ticker);
                     continue;
                 }
 

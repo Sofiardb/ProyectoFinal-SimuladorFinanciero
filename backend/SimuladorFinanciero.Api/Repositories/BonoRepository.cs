@@ -29,7 +29,7 @@ public interface IBonoRepository
 
     /// <summary>
     /// Desactiva todo bono cuyo ticker no esté en <paramref name="tickersVigentes"/> — instrumentos que
-    /// Docta ya no lista, o que Docta lista pero ninguna fuente de precio (ArgentinaDatos) cotiza.
+    /// Docta ya no lista, o que Docta lista pero ninguna fuente de precio (data912) cotiza.
     /// </summary>
     Task DesactivarNoListadosAsync(IReadOnlyCollection<string> tickersVigentes, CancellationToken ct = default);
 

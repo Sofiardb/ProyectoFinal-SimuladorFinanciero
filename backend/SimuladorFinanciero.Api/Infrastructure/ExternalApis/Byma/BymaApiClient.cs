@@ -43,8 +43,7 @@ public interface IBymaApiClient
     Task<IReadOnlyList<BymaLetraDto>> ObtenerLetrasAsync(CancellationToken ct = default);
 
     /// <summary>Precios (ticker → settlementPrice) de bonos soberanos y subsoberanos desde
-    /// /public-bonds. Se usa como fuente de precio para bonos SUB_SOBERANO* de Docta, que
-    /// ArgentinaDatos no cotiza.</summary>
+    /// /public-bonds. Se usa como fuente de precio para bonos SUB_SOBERANO* de Docta.</summary>
     Task<IReadOnlyDictionary<string, decimal>> ObtenerPreciosBonosPublicosAsync(CancellationToken ct = default);
 }
 
