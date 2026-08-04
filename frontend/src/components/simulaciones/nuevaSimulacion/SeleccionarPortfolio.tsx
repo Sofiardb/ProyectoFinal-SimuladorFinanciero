@@ -35,7 +35,7 @@ export default function SeleccionarPortfolio() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="portfolio-grid xl:grid-cols-3">
           <Skeleton className="h-52 w-full" />
           <Skeleton className="h-52 w-full" />
           <Skeleton className="h-52 w-full" />
@@ -46,7 +46,7 @@ export default function SeleccionarPortfolio() {
           {todosLosPortfolios && todosLosPortfolios.length > 0 ? (
             <>
               Todavía no tenés un portfolio activo con instrumentos cargados.{' '}
-              <Link to="/portfolios" className="font-semibold text-navy-950 underline">
+              <Link to="/portfolios" className="link-inline">
                 Revisá tus portfolios
               </Link>{' '}
               para poder simular.
@@ -54,7 +54,7 @@ export default function SeleccionarPortfolio() {
           ) : (
             <>
               Todavía no tenés portfolios.{' '}
-              <Link to="/portfolios" className="font-semibold text-navy-950 underline">
+              <Link to="/portfolios" className="link-inline">
                 Creá uno
               </Link>{' '}
               para poder simular.
@@ -63,7 +63,7 @@ export default function SeleccionarPortfolio() {
         </div>
       ) : (
         <div className="fade-in-content">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="portfolio-grid xl:grid-cols-3">
             {visibles.map((portfolio) => (
               <PortfolioCard key={portfolio.idPortfolio} portfolio={portfolio} mostrarPerfil />
             ))}
@@ -74,7 +74,7 @@ export default function SeleccionarPortfolio() {
               <button
                 onClick={() => setPagina((p) => Math.max(1, p - 1))}
                 disabled={paginaActual === 1}
-                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-secondary"
               >
                 ← Anterior
               </button>
@@ -84,7 +84,7 @@ export default function SeleccionarPortfolio() {
               <button
                 onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
                 disabled={paginaActual === totalPaginas}
-                className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-secondary"
               >
                 Siguiente →
               </button>

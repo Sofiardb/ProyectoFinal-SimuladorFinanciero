@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, TrendingUp, UserCog, LogOut, ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import Logo from '@/components/brand/Logo'
+import NavLinks from '@/components/layout/NavLinks'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTour } from '@/contexts/TourContext'
 
@@ -26,14 +26,6 @@ const baseNavItems = [
 function iniciales(nombre?: string, apellido?: string, username?: string): string {
   if (nombre) return (nombre[0] + (apellido?.[0] ?? '')).toUpperCase()
   return (username ?? '?').slice(0, 2).toUpperCase()
-}
-
-/** /simulaciones/nueva no debe marcar el tab "Historial" — se llega ahí desde el botón aparte, no navegando el historial. */
-function isNavItemActive(pathname: string, to: string): boolean {
-  if (to === '/simulaciones') {
-    return pathname === '/simulaciones' || (pathname.startsWith('/simulaciones/') && pathname !== '/simulaciones/nueva')
-  }
-  return pathname === to || pathname.startsWith(`${to}/`)
 }
 
 export default function TopNav() {
@@ -74,21 +66,7 @@ export default function TopNav() {
           </NavLink>
 
           <nav className="hidden h-full items-center gap-6 md:flex">
-            {navItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                data-tour={to === '/simulaciones' ? 'tour-historial-nav' : undefined}
-                className={cn(
-                  'flex h-full items-center border-b-2 text-sm font-medium transition-colors',
-                  isNavItemActive(location.pathname, to)
-                    ? 'border-navy-950 font-semibold text-navy-950'
-                    : 'border-transparent text-muted-foreground hover:text-navy-950',
-                )}
-              >
-                {label}
-              </NavLink>
-            ))}
+            <NavLinks items={navItems} pathname={location.pathname} variant="desktop" />
           </nav>
         </div>
 
@@ -154,22 +132,12 @@ export default function TopNav() {
           </SheetHeader>
 
           <div className="flex flex-col gap-1 px-4">
-            {navItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                data-tour={to === '/simulaciones' ? 'tour-historial-nav' : undefined}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isNavItemActive(location.pathname, to)
-                    ? 'bg-navy-950 text-white'
-                    : 'text-muted-foreground hover:bg-sand-100 hover:text-navy-950',
-                )}
-              >
-                {label}
-              </NavLink>
-            ))}
+            <NavLinks
+              items={navItems}
+              pathname={location.pathname}
+              variant="mobile"
+              onNavigate={() => setMobileOpen(false)}
+            />
             <Button
               variant="outline"
               className="mt-2 justify-start"
@@ -192,7 +160,7 @@ export default function TopNav() {
                 setMobileOpen(false)
                 navigate('/perfil')
               }}
-              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-sand-100 hover:text-navy-950"
+              className="nav-item-mobile text-muted-foreground hover:bg-sand-100 hover:text-navy-950"
             >
               <UserCog size={14} />
               Actualizar mis datos
@@ -202,7 +170,7 @@ export default function TopNav() {
                 setMobileOpen(false)
                 handleLogout()
               }}
-              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm text-desfavorable transition-colors hover:bg-desfavorable/10"
+              className="nav-item-mobile text-desfavorable hover:bg-desfavorable/10"
             >
               <LogOut size={14} />
               Cerrar sesión

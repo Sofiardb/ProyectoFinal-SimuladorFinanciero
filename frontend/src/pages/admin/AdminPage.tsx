@@ -8,7 +8,7 @@ export default function AdminPage() {
   return (
     <div className="page-shell-lg max-w-[1080px]">
       <div className="mb-7">
-        <h1 className="mb-1.5 font-display text-2xl font-bold text-navy-950 xl:text-[28px]">
+        <h1 className="page-title mb-1.5">
           Administración
         </h1>
         <p className="text-sm text-ink-muted">

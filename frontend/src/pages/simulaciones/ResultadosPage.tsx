@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import InflacionChart from '@/components/charts/InflacionChart'
-import KpiCard from '@/components/simulaciones/KpiCard'
+import KpisPortfolioGrid from '@/components/simulaciones/KpisPortfolioGrid'
 import PanelGraficoResultados from '@/components/simulaciones/PanelGraficoResultados'
 import PercentilesPatrimonioTabla from '@/components/simulaciones/PercentilesPatrimonioTabla'
 import DeleteSimulacionDialog from '@/components/simulaciones/DeleteSimulacionDialog'
@@ -13,7 +13,7 @@ import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigg
 import { useResultadosSimulacionView } from '@/hooks/useResultadosSimulacionView'
 import { useGuiaResultados } from '@/hooks/useGuiaResultados'
 import { ESCENARIO_BADGE } from '@/lib/escenarios'
-import { formatFecha, formatMoneda, formatPorcentaje } from '@/lib/format'
+import { formatFecha, formatPorcentaje } from '@/lib/format'
 import { GUIA_RESULTADOS } from '@/lib/guiaResultados'
 
 export default function ResultadosPage() {
@@ -49,6 +49,41 @@ export default function ResultadosPage() {
   const { sim, filas, detalle, instrumentos } = v
   const primerAmbitoConPercentiles = v.kpisPortfolio.find((k) => k.patrimonio && k.gananciasReales)?.ambito
 
+  const paneles: {
+    slot: string
+    titulo: string
+    ambitosDisponibles: string[]
+    seleccionUnica: boolean
+    moneda: 'ARS' | 'USD'
+    guiaAnchors?: boolean
+    dataGuiaPanel?: string
+  }[] = [
+    {
+      slot: 'panel-portfolio',
+      titulo: 'Portfolio',
+      ambitosDisponibles: v.ambitosPortfolio,
+      seleccionUnica: true,
+      moneda: v.kpisPortfolio[0]?.moneda ?? 'ARS',
+      guiaAnchors: true,
+    },
+    {
+      slot: 'panel-instrumentos-ars',
+      titulo: 'Instrumentos (ARS)',
+      ambitosDisponibles: v.ambitosArs,
+      seleccionUnica: false,
+      moneda: 'ARS',
+      dataGuiaPanel: 'panel-instrumentos-ars',
+    },
+    {
+      slot: 'panel-instrumentos-usd',
+      titulo: 'Instrumentos (USD)',
+      ambitosDisponibles: v.ambitosUsd,
+      seleccionUnica: false,
+      moneda: 'USD',
+      dataGuiaPanel: 'panel-instrumentos-usd',
+    },
+  ]
+
   return (
     <div className="page-shell fade-in-content max-w-[1080px]">
       <div className="breadcrumb-nav">
@@ -80,79 +115,35 @@ export default function ResultadosPage() {
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {v.kpisPortfolio.map((k, i) => (
-          <Fragment key={k.ambito}>
-            <KpiCard
-              label={v.kpisPortfolio.length > 1 ? `Monto invertido (${k.moneda})` : 'Monto invertido'}
-              value={k.montoInvertido != null ? formatMoneda(k.montoInvertido, k.moneda) : '—'}
-              dataGuia={i === 0 ? 'kpi-monto-invertido' : undefined}
-              onAbrirGuia={i === 0 ? () => guia.iniciarEnSlot('kpis', 0) : undefined}
-            />
-            <KpiCard
-              label={v.kpisPortfolio.length > 1 ? `Valor final (mediana) (${k.moneda})` : 'Valor final (mediana)'}
-              value={k.valorFinalMediana != null ? formatMoneda(k.valorFinalMediana, k.moneda) : '—'}
-              dataGuia={i === 0 ? 'kpi-valor-final' : undefined}
-              onAbrirGuia={i === 0 ? () => guia.iniciarEnSlot('kpis', 1) : undefined}
-            />
-          </Fragment>
-        ))}
-        <KpiCard
-          label="Inflación acumulada (ARS)"
-          value={v.inflacionAcumuladaArs != null ? formatPorcentaje((v.inflacionAcumuladaArs - 1) * 100) : '—'}
-          tooltip={{ term: 'Inflación acumulada (ARS)', definition: 'Mediana de la inflación acumulada simulada en pesos a lo largo del horizonte, escenario global.' }}
-          dataGuia="kpi-inflacion-ars"
-          onAbrirGuia={() => guia.iniciarEnSlot('kpis', 2)}
-        />
-        <KpiCard
-          label="Inflación acumulada (USD)"
-          value={v.inflacionAcumuladaUsd != null ? formatPorcentaje((v.inflacionAcumuladaUsd - 1) * 100) : '—'}
-          tooltip={{ term: 'Inflación acumulada (USD)', definition: 'Mediana de la inflación acumulada simulada en dólares a lo largo del horizonte, escenario global.' }}
-        />
-      </div>
+      <KpisPortfolioGrid
+        className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        kpisPortfolio={v.kpisPortfolio}
+        inflacionAcumuladaArs={v.inflacionAcumuladaArs}
+        inflacionAcumuladaUsd={v.inflacionAcumuladaUsd}
+        guia={guia}
+      />
 
       <GuiaResultadosSlot guia={guia} slot="kpis" />
 
       <div className="mb-5 flex flex-col gap-4">
-        <PanelGraficoResultados
-          titulo="Portfolio"
-          ambitosDisponibles={v.ambitosPortfolio}
-          seleccionUnica
-          moneda={v.kpisPortfolio[0]?.moneda ?? 'ARS'}
-          filas={filas}
-          detalle={detalle}
-          instrumentos={instrumentos}
-          montoInvertidoDe={v.montoInvertidoDe}
-          guiaAnchors
-          onAbrirGuia={() => guia.iniciarEnSlot('panel-portfolio')}
-        />
-        <GuiaResultadosSlot guia={guia} slot="panel-portfolio" />
-        <PanelGraficoResultados
-          titulo="Instrumentos (ARS)"
-          ambitosDisponibles={v.ambitosArs}
-          seleccionUnica={false}
-          moneda="ARS"
-          filas={filas}
-          detalle={detalle}
-          instrumentos={instrumentos}
-          montoInvertidoDe={v.montoInvertidoDe}
-          dataGuiaPanel="panel-instrumentos-ars"
-          onAbrirGuia={() => guia.iniciarEnSlot('panel-instrumentos-ars')}
-        />
-        <GuiaResultadosSlot guia={guia} slot="panel-instrumentos-ars" />
-        <PanelGraficoResultados
-          titulo="Instrumentos (USD)"
-          ambitosDisponibles={v.ambitosUsd}
-          seleccionUnica={false}
-          moneda="USD"
-          filas={filas}
-          detalle={detalle}
-          instrumentos={instrumentos}
-          montoInvertidoDe={v.montoInvertidoDe}
-          dataGuiaPanel="panel-instrumentos-usd"
-          onAbrirGuia={() => guia.iniciarEnSlot('panel-instrumentos-usd')}
-        />
-        <GuiaResultadosSlot guia={guia} slot="panel-instrumentos-usd" />
+        {paneles.map((panel) => (
+          <Fragment key={panel.slot}>
+            <PanelGraficoResultados
+              titulo={panel.titulo}
+              ambitosDisponibles={panel.ambitosDisponibles}
+              seleccionUnica={panel.seleccionUnica}
+              moneda={panel.moneda}
+              filas={filas}
+              detalle={detalle}
+              instrumentos={instrumentos}
+              montoInvertidoDe={v.montoInvertidoDe}
+              guiaAnchors={panel.guiaAnchors}
+              dataGuiaPanel={panel.dataGuiaPanel}
+              onAbrirGuia={() => guia.iniciarEnSlot(panel.slot)}
+            />
+            <GuiaResultadosSlot guia={guia} slot={panel.slot} />
+          </Fragment>
+        ))}
       </div>
 
       <InflacionChart

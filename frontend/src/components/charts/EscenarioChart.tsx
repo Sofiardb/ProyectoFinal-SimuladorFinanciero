@@ -1,60 +1,24 @@
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import EscenarioTooltip from '@/components/charts/EscenarioTooltip'
+import { buildChartData, computeMarginTop, computeZonasVencidas, ordenarVencimientos } from '@/lib/escenarioChartData'
+import type { BreakevenMarcador, SerieEscenario, VencimientoMarcador } from '@/lib/escenarioChartData'
 
-export interface SerieEscenario {
-  key:     string
-  label:   string
-  color:   string
-  media:   number[]
-  p25?:    number[]
-  p75?:    number[]
-  minimo?: number[]
-  maximo?: number[]
-  /** Overlay nominal-vs-real (idea 4): segunda línea entera (no punteada — con color propio ya se
-   * distingue de la principal), mismo ámbito. p25/p75 propios para que el overlay muestre la banda
-   * de las dos series, no solo de la principal. */
-  mediaSecundaria?: number[]
-  labelSecundaria?: string
-  colorSecundaria?: string
-  p25Secundaria?: number[]
-  p75Secundaria?: number[]
-}
-
-export interface VencimientoMarcador {
-  mes:   number
-  label: string
-}
-
-/** Línea de referencia horizontal ("punto de equilibrio"): monto invertido para patrimonio, 0 para
- * las métricas de ganancia. Solo tiene sentido con un único ámbito seleccionado. Sin texto propio
- * en el gráfico (generaba ruido visual) — es una referencia muda, como la grilla. */
-export interface BreakevenMarcador {
-  valor: number
-}
+export type { SerieEscenario, VencimientoMarcador, BreakevenMarcador }
 
 interface EscenarioChartProps {
   series:        SerieEscenario[]
   /** Modo B (un solo escenario/instrumento): banda p25-p75 + mín/máx tenues. Modo A: solo medias. */
   mostrarBanda:  boolean
   /** Independiente de `mostrarBanda` — se apaga en el overlay nominal-vs-real: con dos líneas más
-   * la banda ya es suficiente, agregar también mín/máx (que solo describe una de las dos) satura
+   * la banda ya es suficiente, agregar también mín/máx satura
    * el gráfico. Por defecto sigue a `mostrarBanda` para no romper otros usos. */
   mostrarMinMax?: boolean
   formatY:       (v: number) => string
   height?:       number | `${number}%`
-  /** Línea vertical punteada por cada instrumento que vence dentro del horizonte — a partir de ahí
-   * su "ganancia real" queda congelada (docs/02, congelamiento del deflactor al vencimiento). */
   vencimientos?: VencimientoMarcador[]
   breakeven?:    BreakevenMarcador
 }
 
-type FilaChart = { mes: number } & Record<string, number | [number, number]>
-
-/**
- * Gráfico compartido por Resultados y Comparar (docs de diseño "graficos-decisiones"):
- * Modo A = varias líneas de media sin banda; Modo B = 1 serie con banda p25-p75 sombreada
- * y mín/máx como líneas tenues. Paleta de escenario (favorable/moderado/desfavorable) fijada
- * por el proyecto — validada colorblind-safe, ver dataviz skill.
- */
 export default function EscenarioChart({
   series,
   mostrarBanda,
@@ -68,36 +32,12 @@ export default function EscenarioChart({
 
   const T = series[0].media.length
   const hayOverlay = series.some((s) => s.mediaSecundaria != null)
-  const data: FilaChart[] = Array.from({ length: T }, (_, mes) => {
-    const fila: FilaChart = { mes }
-    for (const s of series) {
-      fila[`${s.key}_media`] = s.media[mes]
-      if (s.mediaSecundaria != null) fila[`${s.key}_secundaria`] = s.mediaSecundaria[mes]
-      if (mostrarBanda && s.p25 != null && s.p75 != null) {
-        fila[`${s.key}_banda`] = [s.p25[mes], s.p75[mes]]
-      }
-      if (mostrarBanda && s.p25Secundaria != null && s.p75Secundaria != null) {
-        fila[`${s.key}_bandaSecundaria`] = [s.p25Secundaria[mes], s.p75Secundaria[mes]]
-      }
-      if (mostrarMinMax && s.minimo != null) fila[`${s.key}_minimo`] = s.minimo[mes]
-      if (mostrarMinMax && s.maximo != null) fila[`${s.key}_maximo`] = s.maximo[mes]
-    }
-    return fila
-  })
+  const data = buildChartData(series, mostrarBanda, mostrarMinMax)
 
-  // Vencimientos cercanos en el tiempo chocan si sus etiquetas van todas a la misma altura —
-  // se intercalan en 3 filas (ordenados por mes) para que no se pisen entre sí.
-  const vencimientosOrdenados = [...(vencimientos ?? [])].sort((a, b) => a.mes - b.mes)
+  const vencimientosOrdenados = ordenarVencimientos(vencimientos)
+  const marginTop = computeMarginTop(vencimientosOrdenados.length)
+  const zonasVencidas = computeZonasVencidas(vencimientosOrdenados, T)
   const FILAS_ETIQUETA = 3
-  const ALTO_ETIQUETA = 11
-  const marginTop = vencimientosOrdenados.length > 0 ? 8 + FILAS_ETIQUETA * ALTO_ETIQUETA : 8
-
-  // Zona "capital parado": desde cada vencimiento hasta el próximo (o el final del horizonte).
-  // Relleno uniforme — no tenemos acá el peso en $ de cada instrumento para variar la opacidad.
-  const zonasVencidas = vencimientosOrdenados.map((v, i) => ({
-    desde: v.mes,
-    hasta: vencimientosOrdenados[i + 1]?.mes ?? T - 1,
-  }))
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -129,42 +69,7 @@ export default function EscenarioChart({
           width={72}
           domain={['auto', 'auto']}
         />
-        <Tooltip
-          content={({ active, label, payload }) => {
-            if (!active || !payload) return null
-            const relevantes = payload.filter(
-              (p) => typeof p.dataKey === 'string' && (p.dataKey.endsWith('_media') || p.dataKey.endsWith('_secundaria')),
-            )
-            if (relevantes.length === 0) return null
-            return (
-              <div
-                role="status"
-                aria-live="assertive"
-                style={{
-                  borderRadius: 8,
-                  border: '1px solid var(--color-line)',
-                  background: 'var(--color-card)',
-                  padding: '8px 10px',
-                  fontSize: 12,
-                }}
-              >
-                <p style={{ marginBottom: 4, color: 'var(--color-ink-soft)' }}>Mes {label}</p>
-                {relevantes.map((p) => {
-                  const esSecundaria = typeof p.dataKey === 'string' && p.dataKey.endsWith('_secundaria')
-                  const serie = series.find((s) => p.dataKey === `${s.key}_${esSecundaria ? 'secundaria' : 'media'}`)
-                  const nombre = esSecundaria ? serie?.labelSecundaria : serie?.label
-                  return (
-                    <p key={String(p.dataKey)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ display: 'inline-block', width: 10, height: 2, background: p.color }} />
-                      <strong>{formatY(p.value as number)}</strong>
-                      <span style={{ color: 'var(--color-ink-soft)' }}>{nombre}</span>
-                    </p>
-                  )
-                })}
-              </div>
-            )
-          }}
-        />
+        <Tooltip content={(props) => <EscenarioTooltip {...props} series={series} formatY={formatY} />} />
         {(series.length > 1 || hayOverlay || mostrarBanda) && (
           <Legend
             height={40}
@@ -193,7 +98,7 @@ export default function EscenarioChart({
               label={(props: { viewBox?: { x?: number } }) => (
                 <text
                   x={props.viewBox?.x ?? 0}
-                  y={marginTop - 4 - fila * ALTO_ETIQUETA}
+                  y={marginTop - 4 - fila * 11}
                   textAnchor="middle"
                   fontSize={9}
                   fill="var(--color-ink-soft)"
@@ -225,7 +130,7 @@ export default function EscenarioChart({
               legendType="square"
             />
           ))}
-        {/* Banda de la serie secundaria del overlay (idea 4) — sin nombre propio en la leyenda,
+        {/* Banda de la serie secundaria del overlay — sin nombre propio en la leyenda,
             ya la identifican los colores de las dos líneas de arriba (Nominal/Real). */}
         {mostrarBanda &&
           series

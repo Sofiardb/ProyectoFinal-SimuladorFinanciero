@@ -6,7 +6,6 @@ function partesISO(iso: string): [number, number, number] {
   return [y, m, d]
 }
 
-/** Diferencia en meses calendario entre dos fechas ISO, ignorando el día — mismo criterio que `MesesEntre` en el backend. */
 export function mesesEntre(desdeISO: string, hastaISO: string): number {
   const [ay, am] = partesISO(desdeISO)
   const [by, bm] = partesISO(hastaISO)
@@ -30,21 +29,23 @@ export function esVencido(
   return !pf.reinvertirAlVencimiento && fechaVencimiento(pf) <= hoyISO()
 }
 
-/** Capital compuesto mensualmente a la TNA pactada — misma convención que el motor (r_m = TNA/12). */
 export function capitalDevengado(montoInvertido: number, tnaPactada: number, meses: number): number {
   const rm = tnaPactada / 12
   return montoInvertido * Math.pow(1 + rm, Math.max(0, meses))
 }
 
-/** Capital disponible hoy si el depósito sigue vigente (sin capar en el vencimiento). */
 export function capitalHoy(pf: Pick<PortfolioPlazoFijo, 'fechaInicio' | 'montoInvertido' | 'tnaPactada'>): number {
   return capitalDevengado(pf.montoInvertido, pf.tnaPactada, mesesEntre(pf.fechaInicio, hoyISO()))
 }
 
-/** Capital devengado al vencimiento original (capado ahí) — el que corresponde reinvertir al renovar. */
 export function capitalAlVencimiento(
   pf: Pick<PortfolioPlazoFijo, 'fechaInicio' | 'duracionDias' | 'montoInvertido' | 'tnaPactada'>,
 ): number {
   const meses = mesesEntre(pf.fechaInicio, fechaVencimiento(pf))
   return capitalDevengado(pf.montoInvertido, pf.tnaPactada, meses)
+}
+
+/** UVA muestra "Tasa real" (ajusta por inflación aparte); el resto de los tipos usa TNA nominal. */
+export function tasaLabelPara(codigoTipo: string | undefined): string {
+  return codigoTipo === 'UVA' ? 'Tasa real' : 'TNA'
 }

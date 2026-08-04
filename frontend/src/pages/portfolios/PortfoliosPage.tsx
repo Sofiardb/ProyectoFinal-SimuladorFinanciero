@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
+import TabList from '@/components/ui/tab-list'
 import PortfolioCard from '@/components/portfolios/PortfolioCard'
 import CreateEditPortfolioDialog from '@/components/portfolios/CreateEditPortfolioDialog'
 import { getPerfilEstilo } from '@/components/portfolios/PerfilBadge'
 import { usePerfilesRiesgo, usePortfolios } from '@/api/hooks'
-import { tabListArrowTarget } from '@/lib/a11y'
 import { cn } from '@/lib/utils'
 
 export default function PortfoliosPage() {
@@ -14,7 +14,6 @@ export default function PortfoliosPage() {
   const { data: portfolios, isLoading: portfoliosLoading } = usePortfolios()
   const [searchParams, setSearchParams] = useSearchParams()
   const [createOpen, setCreateOpen] = useState(false)
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const perfilParam = Number(searchParams.get('perfil'))
   const activeTab = perfiles?.some((p) => p.idPerfilRiesgo === perfilParam) ? perfilParam : undefined
@@ -43,19 +42,10 @@ export default function PortfoliosPage() {
     .filter((p) => p.idPerfilRiesgo === activeTab)
     .sort((a, b) => Number(a.estado === 'ARCHIVADO') - Number(b.estado === 'ARCHIVADO'))
 
-  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    if (!perfiles) return
-    const target = tabListArrowTarget(e.key, index, perfiles.length)
-    if (target === null) return
-    e.preventDefault()
-    setActiveTab(perfiles[target].idPerfilRiesgo)
-    tabRefs.current[target]?.focus()
-  }
-
   return (
     <div className="page-shell-lg max-w-[1080px]">
       <div className="mb-7">
-        <h1 className="mb-1.5 font-display text-2xl font-bold text-navy-950 xl:text-[28px]">
+        <h1 className="page-title mb-1.5">
           Mis portfolios
         </h1>
         <p className="text-sm text-ink-muted">Organizados por perfil de riesgo.</p>
@@ -70,37 +60,15 @@ export default function PortfoliosPage() {
         </div>
       ) : (
         <div className="fade-in-content">
-          <div className="-mx-4 mb-7 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div role="tablist" data-tour="tour-perfil-tabs" className="flex gap-2 border-b-[1.5px] border-line">
-              {perfiles.map((p, index) => {
-                const isActive = p.idPerfilRiesgo === activeTab
-                return (
-                  <button
-                    key={p.idPerfilRiesgo}
-                    ref={(el) => {
-                      tabRefs.current[index] = el
-                    }}
-                    id={`tab-perfil-${p.idPerfilRiesgo}`}
-                    role="tab"
-                    type="button"
-                    aria-selected={isActive}
-                    aria-controls="panel-perfil"
-                    tabIndex={isActive ? 0 : -1}
-                    onClick={() => setActiveTab(p.idPerfilRiesgo)}
-                    onKeyDown={(e) => handleTabKeyDown(e, index)}
-                    className={cn(
-                      'shrink-0 cursor-pointer rounded-sm whitespace-nowrap border-b-[2.5px] border-transparent px-1.5 pb-3.5 font-display text-[14.5px] font-semibold outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
-                      isActive
-                        ? 'border-navy-950 text-navy-950'
-                        : 'text-ink-soft hover:text-navy-950',
-                    )}
-                  >
-                    {p.nombre}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <TabList
+            idPrefix="perfil"
+            panelId="panel-perfil"
+            tabs={perfiles.map((p) => ({ id: p.idPerfilRiesgo, label: p.nombre }))}
+            activeId={activeTab ?? null}
+            onChange={(id) => id != null && setActiveTab(id)}
+            wrapperClassName="mb-7"
+            dataTour="tour-perfil-tabs"
+          />
 
           <div
             role="tabpanel"
@@ -140,14 +108,14 @@ export default function PortfoliosPage() {
 
             {portfoliosLoading ? (
               <>
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
+                <div className="portfolio-grid xl:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
                   <Skeleton className="h-52 w-full" />
                   <Skeleton className="h-52 w-full" />
                 </div>
                 <SlowLoadingHint isLoading={portfoliosLoading} />
               </>
             ) : (
-              <div className="fade-in-content grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
+              <div className="portfolio-grid fade-in-content xl:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
                 {portfoliosDelPerfil.map((portfolio) => (
                   <PortfolioCard key={portfolio.idPortfolio} portfolio={portfolio} />
                 ))}

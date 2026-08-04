@@ -29,6 +29,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
+import SelectFormField from '@/components/forms/SelectFormField'
 import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import TipoCambioIndicator from '@/components/portfolios/TipoCambioIndicator'
 import { useCreatePortfolio, useUpdatePortfolio, useMonedas, usePerfilesRiesgo } from '@/api/hooks'
@@ -38,7 +39,7 @@ const schema = z.object({
   nombre: z.string().min(1, 'Ingresá un nombre.').max(100, 'Máximo 100 caracteres.'),
   descripcion: z.string().max(500, 'Máximo 500 caracteres.').optional(),
   idPerfilRiesgo: z.number().int().positive('Elegí un perfil de riesgo.'),
-  idMonedaBase: z.number().int().positive('Elegí una moneda.'),
+  idMonedaBase: z.string().min(1, 'Elegí una moneda.'),
   capitalInicial: z
     .string()
     .optional()
@@ -103,7 +104,7 @@ function PortfolioForm({
       nombre: portfolio?.nombre ?? '',
       descripcion: portfolio?.descripcion ?? '',
       idPerfilRiesgo: portfolio?.idPerfilRiesgo ?? defaultPerfilId ?? 0,
-      idMonedaBase: portfolio?.idMonedaBase ?? 0,
+      idMonedaBase: portfolio?.idMonedaBase ? String(portfolio.idMonedaBase) : '',
       capitalInicial: portfolio?.capitalInicial ? String(portfolio.capitalInicial) : '',
     },
   })
@@ -113,7 +114,7 @@ function PortfolioForm({
       nombre: values.nombre,
       descripcion: values.descripcion || undefined,
       idPerfilRiesgo: values.idPerfilRiesgo,
-      idMonedaBase: values.idMonedaBase,
+      idMonedaBase: Number(values.idMonedaBase),
       capitalInicial: values.capitalInicial ? Number(values.capitalInicial) : undefined,
     }
     mutation.mutate(payload, {
@@ -160,7 +161,7 @@ function PortfolioForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Perfil de riesgo</FormLabel>
-                  {isEdit ? (
+                  {isEdit || defaultPerfilId == null ? (
                     <Select
                       items={Object.fromEntries((perfiles ?? []).map((p) => [String(p.idPerfilRiesgo), p.nombre]))}
                       value={field.value ? String(field.value) : undefined}
@@ -192,33 +193,12 @@ function PortfolioForm({
               )}
             />
 
-            <FormField
+            <SelectFormField
               control={form.control}
               name="idMonedaBase"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Moneda base</FormLabel>
-                  <Select
-                    items={Object.fromEntries((monedas ?? []).map((m) => [String(m.idMoneda), m.codigoIso]))}
-                    value={field.value ? String(field.value) : undefined}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Elegir" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {monedas?.map((m) => (
-                        <SelectItem key={m.idMoneda} value={String(m.idMoneda)}>
-                          {m.codigoIso}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Moneda base"
+              placeholder="Elegir"
+              options={(monedas ?? []).map((m) => ({ value: String(m.idMoneda), label: m.codigoIso }))}
             />
           </div>
 

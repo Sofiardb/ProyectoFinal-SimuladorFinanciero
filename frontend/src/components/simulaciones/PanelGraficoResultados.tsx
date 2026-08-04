@@ -1,42 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
-import EscenarioChart, { type BreakevenMarcador, type SerieEscenario, type VencimientoMarcador } from '@/components/charts/EscenarioChart'
+import EscenarioChart from '@/components/charts/EscenarioChart'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigger'
-import { resolveAmbitoInfo } from '@/lib/tenenciaDisplay'
+import PillButton from '@/components/ui/pill-button'
+import { usePanelGraficoState } from '@/hooks/usePanelGraficoState'
+import { ESCENARIOS_COLOR } from '@/lib/escenarios'
 import { formatMoneda } from '@/lib/format'
 import { RESULTADOS_TOOLTIPS } from '@/lib/tooltips'
 import type {
-  EscenarioNombre,
   InstrumentoSimulacion,
   MetricaResultado,
   PortfolioDetalle,
   ResultadoSimulacionRow,
 } from '@/types'
 
-const ESCENARIOS: { key: EscenarioNombre; label: string; color: string }[] = [
-  { key: 'favorable', label: 'Favorable', color: 'var(--color-favorable)' },
-  { key: 'moderado', label: 'Moderado', color: 'var(--color-moderado)' },
-  { key: 'desfavorable', label: 'Desfavorable', color: 'var(--color-desfavorable)' },
-]
-
 const METRICAS: { key: MetricaResultado; label: string; tooltip: { term: string; definition: string } }[] = [
   { key: 'patrimonio', label: 'Patrimonio', tooltip: RESULTADOS_TOOLTIPS.patrimonio },
   { key: 'ganancias_nominales', label: 'Ganancias nominales', tooltip: RESULTADOS_TOOLTIPS.gananciasNominales },
   { key: 'ganancias_reales', label: 'Ganancias reales', tooltip: RESULTADOS_TOOLTIPS.gananciasReales },
 ]
-
-function metricaOpuesta(m: MetricaResultado): MetricaResultado {
-  return m === 'ganancias_nominales' ? 'ganancias_reales' : 'ganancias_nominales'
-}
-
-function metricaCorta(m: MetricaResultado): string {
-  return m === 'ganancias_nominales' ? 'Nominal' : 'Real'
-}
-
-const COLOR_NOMINAL = '#2a78d6'
-const COLOR_REAL = '#c1740f'
-
-const PALETA_INSTRUMENTOS = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a', '#eb6834', '#4a3aa7', '#e34948']
 
 interface PanelGraficoResultadosProps {
   titulo: string
@@ -65,141 +46,25 @@ export default function PanelGraficoResultados({
   dataGuiaPanel,
   onAbrirGuia,
 }: PanelGraficoResultadosProps) {
-  const [ambitosSeleccionados, setAmbitosSeleccionados] = useState<string[]>(
-    ambitosDisponibles.length > 0 ? [ambitosDisponibles[0]] : [],
-  )
-  const [metrica, setMetrica] = useState<MetricaResultado>('patrimonio')
-  const [escenario, setEscenario] = useState<EscenarioNombre>('global')
-  const [modoA, setModoA] = useState(false)
-  const [compararNominalReal, setCompararNominalReal] = useState(false)
-
-  useEffect(() => {
-    if (ambitosSeleccionados.length > 0 || ambitosDisponibles.length === 0) return
-    setAmbitosSeleccionados([ambitosDisponibles[0]])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ambitosDisponibles])
-
-  function filaFor(ambito: string, esc: EscenarioNombre, met: MetricaResultado) {
-    return filas.find((f) => f.ambito === ambito && f.escenario === esc && f.metrica === met)?.stats
-  }
-
-  function labelDe(ambito: string): string {
-    if (ambito === 'portfolio_ars') return 'Portfolio (ARS)'
-    if (ambito === 'portfolio_usd') return 'Portfolio (USD)'
-    return detalle ? resolveAmbitoInfo(ambito, detalle).label : ambito
-  }
-
-  function monedaDe(ambito: string): 'ARS' | 'USD' {
-    if (ambito === 'portfolio_ars') return 'ARS'
-    if (ambito === 'portfolio_usd') return 'USD'
-    return moneda
-  }
-
-  const monedaActual = ambitosSeleccionados.length === 1 ? monedaDe(ambitosSeleccionados[0]) : moneda
-
-  function elegirAmbito(ambito: string) {
-    if (seleccionUnica) {
-      setAmbitosSeleccionados([ambito])
-      return
-    }
-    setAmbitosSeleccionados((prev) => (prev.includes(ambito) ? prev.filter((a) => a !== ambito) : [...prev, ambito]))
-  }
-
-  const mostrarBanda = !modoA && ambitosSeleccionados.length === 1
-
-  useEffect(() => {
-    if (modoA && ambitosSeleccionados.length !== 1) setModoA(false)
-  }, [modoA, ambitosSeleccionados.length])
-
-  const puedeCompararNominalReal = metrica !== 'patrimonio' && !modoA && ambitosSeleccionados.length === 1
-  useEffect(() => {
-    if (compararNominalReal && !puedeCompararNominalReal) setCompararNominalReal(false)
-  }, [compararNominalReal, puedeCompararNominalReal])
-
-
-  const breakeven: BreakevenMarcador | undefined = useMemo(() => {
-    if (ambitosSeleccionados.length !== 1) return undefined
-    if (metrica === 'patrimonio') {
-      const monto = montoInvertidoDe(ambitosSeleccionados[0])
-      return monto != null ? { valor: monto } : undefined
-    }
-    return { valor: 0 }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ambitosSeleccionados, metrica])
-
-  const esVistaPortfolio = ambitosSeleccionados.includes('portfolio_ars') || ambitosSeleccionados.includes('portfolio_usd')
-
-  const vencimientos: VencimientoMarcador[] = useMemo(() => {
-    if (!instrumentos || ambitosSeleccionados.length === 0) return []
-    const relevantes = instrumentos.filter((inst) => {
-      if (inst.tVencMeses == null) return false
-      if (esVistaPortfolio) return true
-      return ambitosSeleccionados.includes(inst.ambito)
-    })
-    const porMes = new Map<number, string[]>()
-    for (const inst of relevantes) {
-      const corto = detalle ? resolveAmbitoInfo(inst.ambito, detalle).corto : inst.ambito
-      porMes.set(inst.tVencMeses!, [...(porMes.get(inst.tVencMeses!) ?? []), corto])
-    }
-    return Array.from(porMes.entries()).map(([mes, labels]) => ({ mes, label: labels.join(', ') }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instrumentos, ambitosSeleccionados, detalle])
-
-  const series: SerieEscenario[] = useMemo(() => {
-    if (ambitosSeleccionados.length === 0) return []
-
-    if (modoA && ambitosSeleccionados.length === 1) {
-      const ambito = ambitosSeleccionados[0]
-      return ESCENARIOS.flatMap(({ key, label, color }) => {
-        const stats = filaFor(ambito, key, metrica)
-        return stats ? [{ key, label, color, media: stats.media }] : []
-      })
-    }
-
-    return ambitosSeleccionados.flatMap((ambito, i) => {
-      const stats = filaFor(ambito, escenario, metrica)
-      if (!stats) return []
-      const label = labelDe(ambito)
-      const color = ambitosSeleccionados.length === 1 ? 'var(--color-accent-blue-strong)' : PALETA_INSTRUMENTOS[i % PALETA_INSTRUMENTOS.length]
-
-      let labelPrincipal = label
-      let colorPrincipal = color
-      let mediaSecundaria: number[] | undefined
-      let labelSecundaria: string | undefined
-      let colorSecundaria: string | undefined
-      let p25Secundaria: number[] | undefined
-      let p75Secundaria: number[] | undefined
-      if (compararNominalReal && puedeCompararNominalReal) {
-        const statsOpuesta = filaFor(ambito, escenario, metricaOpuesta(metrica))
-        if (statsOpuesta) {
-          labelPrincipal = metricaCorta(metrica)
-          colorPrincipal = metrica === 'ganancias_nominales' ? COLOR_NOMINAL : COLOR_REAL
-          mediaSecundaria = statsOpuesta.media
-          labelSecundaria = metricaCorta(metricaOpuesta(metrica))
-          colorSecundaria = metrica === 'ganancias_nominales' ? COLOR_REAL : COLOR_NOMINAL
-          p25Secundaria = mostrarBanda ? statsOpuesta.p25 : undefined
-          p75Secundaria = mostrarBanda ? statsOpuesta.p75 : undefined
-        }
-      }
-
-      return [{
-        key: ambito,
-        label: labelPrincipal,
-        color: colorPrincipal,
-        media: stats.media,
-        mediaSecundaria,
-        labelSecundaria,
-        colorSecundaria,
-        p25Secundaria,
-        p75Secundaria,
-        p25: mostrarBanda ? stats.p25 : undefined,
-        p75: mostrarBanda ? stats.p75 : undefined,
-        minimo: mostrarBanda ? stats.minimo : undefined,
-        maximo: mostrarBanda ? stats.maximo : undefined,
-      }]
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filas, ambitosSeleccionados, metrica, escenario, modoA, detalle, compararNominalReal, puedeCompararNominalReal])
+  const {
+    ambitosSeleccionados,
+    metrica,
+    setMetrica,
+    escenario,
+    setEscenario,
+    modoA,
+    setModoA,
+    compararNominalReal,
+    setCompararNominalReal,
+    elegirAmbito,
+    labelDe,
+    monedaActual,
+    mostrarBanda,
+    puedeCompararNominalReal,
+    breakeven,
+    vencimientos,
+    series,
+  } = usePanelGraficoState({ ambitosDisponibles, seleccionUnica, moneda, filas, detalle, instrumentos, montoInvertidoDe })
 
   if (ambitosDisponibles.length === 0) return null
 
@@ -212,17 +77,9 @@ export default function PanelGraficoResultados({
 
       <div className="flex flex-wrap gap-1.5">
         {ambitosDisponibles.map((a) => (
-          <button
-            key={a}
-            onClick={() => elegirAmbito(a)}
-            className={
-              ambitosSeleccionados.includes(a)
-                ? 'rounded-full bg-navy-950 px-3 py-1 text-[11.5px] font-semibold text-white'
-                : 'rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-semibold text-ink-muted'
-            }
-          >
+          <PillButton key={a} active={ambitosSeleccionados.includes(a)} onClick={() => elegirAmbito(a)}>
             {labelDe(a)}
-          </button>
+          </PillButton>
         ))}
       </div>
 
@@ -234,16 +91,9 @@ export default function PanelGraficoResultados({
               : metrica === m.key
             return (
               <span key={m.key} className="inline-flex items-center gap-0.5">
-                <button
-                  onClick={() => setMetrica(m.key)}
-                  className={
-                    activa
-                      ? 'rounded-full bg-navy-950 px-3 py-1 text-[11.5px] font-semibold text-white'
-                      : 'rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-semibold text-ink-muted'
-                  }
-                >
+                <PillButton active={activa} onClick={() => setMetrica(m.key)}>
                   {m.label}
-                </button>
+                </PillButton>
                 {metrica === m.key && <InfoTooltip term={m.tooltip.term} definition={m.tooltip.definition} />}
               </span>
             )
@@ -272,17 +122,10 @@ export default function PanelGraficoResultados({
           )}
           {!modoA && (
             <div className="flex flex-wrap items-center gap-1" data-guia={guiaAnchors ? 'panel-escenarios' : undefined}>
-              <button
-                onClick={() => setEscenario('global')}
-                className={
-                  escenario === 'global'
-                    ? 'rounded-full bg-navy-950 px-2.5 py-1 text-[11px] font-semibold text-white'
-                    : 'rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-ink-muted'
-                }
-              >
+              <PillButton active={escenario === 'global'} onClick={() => setEscenario('global')} size="sm">
                 Global
-              </button>
-              {ESCENARIOS.map((e) => (
+              </PillButton>
+              {ESCENARIOS_COLOR.map((e) => (
                 <button
                   key={e.key}
                   onClick={() => setEscenario(e.key)}

@@ -1,12 +1,7 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import GuiaResultadosTrigger from '@/components/simulaciones/GuiaResultadosTrigger'
+import { ESCENARIOS_COLOR } from '@/lib/escenarios'
 import { formatPorcentaje } from '@/lib/format'
-
-const ESCENARIOS = [
-  { key: 'favorable', label: 'Favorable', color: 'var(--color-favorable)' },
-  { key: 'moderado', label: 'Moderado', color: 'var(--color-moderado)' },
-  { key: 'desfavorable', label: 'Desfavorable', color: 'var(--color-desfavorable)' },
-] as const
 
 export interface SerieInflacionPorEscenario {
   favorable:    number[]
@@ -63,7 +58,7 @@ function MiniChart({ titulo, datos }: MiniChartProps) {
               gap: '4px 10px',
             }}
           />
-          {ESCENARIOS.map((e) => (
+          {ESCENARIOS_COLOR.map((e) => (
             <Line
               key={e.key}
               name={e.label}
