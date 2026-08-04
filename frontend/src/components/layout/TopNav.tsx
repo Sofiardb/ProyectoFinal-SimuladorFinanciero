@@ -103,7 +103,7 @@ export default function TopNav() {
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-full bg-sand-50 py-1 pr-2.5 pl-1 outline-none">
+            <DropdownMenuTrigger className="flex items-center gap-2 rounded-full bg-sand-50 py-1 pr-2.5 pl-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
               <Avatar size="sm">
                 <AvatarFallback className="bg-navy-950 text-white">
                   {iniciales(usuario?.nombre, usuario?.apellido, usuario?.username)}

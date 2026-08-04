@@ -138,6 +138,8 @@ export default function EscenarioChart({
             if (relevantes.length === 0) return null
             return (
               <div
+                role="status"
+                aria-live="assertive"
                 style={{
                   borderRadius: 8,
                   border: '1px solid var(--color-line)',
