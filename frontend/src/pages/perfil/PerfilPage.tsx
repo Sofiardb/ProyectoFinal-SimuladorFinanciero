@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 export default function PerfilPage() {
+  const navigate = useNavigate()
   const { usuario, updateUsuario } = useAuth()
   const updatePerfil = useUpdatePerfil()
 
@@ -52,6 +54,9 @@ export default function PerfilPage() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-10">
+      <button onClick={() => navigate(-1)} className="btn-back">
+        ← Volver
+      </button>
       <h1 className="mb-1 font-display text-2xl font-semibold text-navy-950">Mi perfil</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         Actualizá tus datos personales. Para cambiar tu contraseña usá la opción "¿Olvidaste

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
 import { FilaComparacion } from '@/components/simulaciones/comparar/ComparacionGrid'
@@ -8,6 +8,7 @@ import SelectorSimulacion, { type Grupo } from '@/components/simulaciones/compar
 import { useTodasLasSimulaciones } from '@/api/hooks'
 
 export default function CompararPage() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: simulaciones, isLoading } = useTodasLasSimulaciones()
 
@@ -39,6 +40,9 @@ export default function CompararPage() {
         <span>/</span>
         <span className="font-semibold text-navy-950">Comparar simulaciones</span>
       </div>
+      <button onClick={() => navigate(-1)} className="btn-back">
+        ← Volver
+      </button>
 
       <div className="mb-6">
         <h1 className="page-title mb-1.5">

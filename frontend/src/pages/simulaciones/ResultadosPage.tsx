@@ -97,6 +97,9 @@ export default function ResultadosPage() {
         )}
         <span className="font-semibold text-navy-950">Resultados</span>
       </div>
+      <button onClick={() => navigate(-1)} className="btn-back">
+        ← Volver
+      </button>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
