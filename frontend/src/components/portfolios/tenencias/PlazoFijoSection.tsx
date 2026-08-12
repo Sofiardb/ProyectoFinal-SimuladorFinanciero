@@ -1,6 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useTipoCambio } from '@/api/hooks'
+import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import TruncatedText from '@/components/portfolios/TruncatedText'
+import DisponibleParaInvertir from '@/components/portfolios/tenencias/DisponibleParaInvertir'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
@@ -14,9 +17,11 @@ import {
   type PlazoFijoValues,
 } from '@/components/portfolios/tenencias/plazoFijoForm'
 import { useEditableSectionState } from '@/hooks/useEditableSectionState'
-import { formatFecha, formatMoneda, formatPorcentaje, hoyISO } from '@/lib/format'
-import { capitalHoy, esVencido, mesesEntre, tasaLabelPara } from '@/lib/plazoFijo'
-import type { PortfolioPlazoFijo, TipoPlazoFijo } from '@/types'
+import { formatMoneda, hoyISO } from '@/lib/format'
+import { capitalHoy, esVencido, mesesEntre } from '@/lib/plazoFijo'
+import { calcularDisponible } from '@/lib/presupuesto'
+import { plazoFijoPreview, type CampoPreview } from '@/lib/tenenciaDisplay'
+import type { PortfolioDetalle, PortfolioPlazoFijo, TipoPlazoFijo } from '@/types'
 
 export type { EditarPlazoFijo, NuevoPlazoFijo }
 
@@ -25,10 +30,12 @@ interface Props {
   tooltip:           string
   moneda:            string
   addButtonDataTour?: string
+  detalle:           PortfolioDetalle
   tenencias:         PortfolioPlazoFijo[]
   tipos:             TipoPlazoFijo[]
   isMutating:        boolean
   error?:            string | null
+  onDescartarError?: () => void
   onAdd:    (payload: NuevoPlazoFijo) => Promise<void>
   onUpdate: (idPortfolioPlazoFijo: number, payload: EditarPlazoFijo) => Promise<void>
   onDelete: (idPortfolioPlazoFijo: number) => void
@@ -39,10 +46,12 @@ export default function PlazoFijoSection({
   tooltip,
   moneda,
   addButtonDataTour,
+  detalle,
   tenencias,
   tipos,
   isMutating,
   error,
+  onDescartarError,
   onAdd,
   onUpdate,
   onDelete,
@@ -56,7 +65,8 @@ export default function PlazoFijoSection({
     cancelarAgregar,
     guardarEdicionYCerrar,
     guardarAltaYCerrar,
-  } = useEditableSectionState()
+  } = useEditableSectionState(onDescartarError)
+  const { data: tipoCambio } = useTipoCambio()
 
   return (
     <SectionShell
@@ -72,6 +82,9 @@ export default function PlazoFijoSection({
           moneda={moneda}
           tipos={tipos}
           isMutating={isMutating}
+          disponible={calcularDisponible(detalle, tipoCambio?.valor)}
+          monedaBase={detalle.codigoMonedaBase}
+          tipoCambio={tipoCambio?.valor}
           onCancel={cancelarAgregar}
           onSave={(payload) => guardarAltaYCerrar(() => onAdd(payload))}
         />
@@ -85,6 +98,9 @@ export default function PlazoFijoSection({
             moneda={moneda}
             tipos={tipos}
             isMutating={isMutating}
+            disponible={calcularDisponible(detalle, tipoCambio?.valor)}
+            monedaBase={detalle.codigoMonedaBase}
+            tipoCambio={tipoCambio?.valor}
             onCancel={cancelarEdicion}
             onSave={(payload) => guardarEdicionYCerrar(() => onUpdate(t.idPortfolioPlazoFijo, payload))}
           />
@@ -93,6 +109,8 @@ export default function PlazoFijoSection({
             key={t.idPortfolioPlazoFijo}
             tenencia={t}
             moneda={moneda}
+            monedaBase={detalle.codigoMonedaBase}
+            tipoCambio={tipoCambio?.valor}
             isMutating={isMutating}
             onEdit={() => editar(t.idPortfolioPlazoFijo)}
             onDelete={() => onDelete(t.idPortfolioPlazoFijo)}
@@ -107,6 +125,8 @@ export default function PlazoFijoSection({
 function ViewRow({
   tenencia,
   moneda,
+  monedaBase,
+  tipoCambio,
   isMutating,
   onEdit,
   onDelete,
@@ -114,21 +134,16 @@ function ViewRow({
 }: {
   tenencia: PortfolioPlazoFijo
   moneda: string
+  monedaBase: string
+  tipoCambio: number | undefined
   isMutating: boolean
   onEdit: () => void
   onDelete: () => void
   onRenovar: (payload: EditarPlazoFijo) => Promise<void>
 }) {
-  const tasaLabel = tasaLabelPara(tenencia.nombreTipoPlazoFijo === 'Plazo fijo UVA' ? 'UVA' : undefined)
   const vencido = esVencido(tenencia)
   const mesesTranscurridos = mesesEntre(tenencia.fechaInicio, hoyISO())
-  const stats = [
-    { label: 'Monto', value: formatMoneda(tenencia.montoInvertido, moneda) },
-    { label: tasaLabel, value: `${formatPorcentaje(tenencia.tnaPactada * 100)}` },
-    { label: 'Plazo', value: `${tenencia.duracionDias} días` },
-    { label: 'Inicio', value: formatFecha(tenencia.fechaInicio) },
-    { label: 'Reinversión', value: tenencia.reinvertirAlVencimiento ? 'Sí' : 'No' },
-  ]
+  const stats: CampoPreview[] = [...plazoFijoPreview(tenencia, monedaBase, tipoCambio)]
   if (!vencido && mesesTranscurridos > 0) {
     stats.push({ label: 'Capital hoy', value: formatMoneda(capitalHoy(tenencia), moneda) })
   }
@@ -149,7 +164,10 @@ function ViewRow({
       <div className="tenencia-row-stats">
         {stats.map((s) => (
           <div key={s.label} className="text-right">
-            <p className="stat-label">{s.label}</p>
+            <p className="stat-label flex items-center justify-end gap-1">
+              {s.label}
+              {s.tooltip && <InfoTooltip term={s.label} definition={s.tooltip} />}
+            </p>
             <p className="mt-0.5 stat-value">{s.value}</p>
           </div>
         ))}
@@ -169,6 +187,9 @@ function Row({
   moneda,
   tipos,
   isMutating,
+  disponible,
+  monedaBase,
+  tipoCambio,
   onCancel,
   onSave,
 }: {
@@ -176,6 +197,9 @@ function Row({
   moneda: string
   tipos: TipoPlazoFijo[]
   isMutating: boolean
+  disponible?: number | null
+  monedaBase?: string
+  tipoCambio?: number
   onCancel: () => void
   onSave: (payload: NuevoPlazoFijo) => void
 }) {
@@ -187,7 +211,7 @@ function Row({
           idTipoPlazoFijo: String(tenencia.idTipoPlazoFijo),
           entidadFinanciera: tenencia.entidadFinanciera,
           montoInvertido: String(tenencia.montoInvertido),
-          tnaPactada: String(tenencia.tnaPactada),
+          tnaPactada: String(tenencia.tnaPactada * 100),
           fechaInicio: tenencia.fechaInicio,
           duracionDias: String(tenencia.duracionDias),
           reinvertirAlVencimiento: tenencia.reinvertirAlVencimiento,
@@ -208,7 +232,7 @@ function Row({
       idTipoPlazoFijo: Number(values.idTipoPlazoFijo),
       entidadFinanciera: values.entidadFinanciera,
       montoInvertido: Number(values.montoInvertido),
-      tnaPactada: Number(values.tnaPactada),
+      tnaPactada: Number(values.tnaPactada) / 100,
       fechaInicio: values.fechaInicio,
       duracionDias: Number(values.duracionDias),
       reinvertirAlVencimiento: values.reinvertirAlVencimiento,
@@ -217,7 +241,14 @@ function Row({
   return (
     <Form {...form}>
       <div className="compare-card gap-2">
-        <PlazoFijoFormGrid moneda={moneda} tipos={tipos} control={form.control} />
+        <DisponibleParaInvertir disponible={disponible ?? null} monedaBase={monedaBase ?? moneda} />
+        <PlazoFijoFormGrid
+          moneda={moneda}
+          tipos={tipos}
+          control={form.control}
+          monedaBase={monedaBase ?? moneda}
+          tipoCambio={tipoCambio}
+        />
         <RowFormFooter
           className="mt-0.5 flex justify-end gap-2"
           onCancel={onCancel}

@@ -8,7 +8,10 @@ export const plazoFijoSchema = z.object({
     .refine((v) => v.trim() !== '' && !Number.isNaN(Number(v)) && Number(v) > 0, 'Ingresá un monto válido.'),
   tnaPactada: z
     .string()
-    .refine((v) => v.trim() !== '' && !Number.isNaN(Number(v)) && Number(v) >= 0, 'Ingresá una tasa válida.'),
+    .refine(
+      (v) => v.trim() !== '' && !Number.isNaN(Number(v)) && Number(v) > 0 && Number(v) <= 100,
+      'Ingresá una tasa válida (mayor a 0 y hasta 100%).',
+    ),
   fechaInicio: z.string().min(1, 'Elegí una fecha válida.'),
   duracionDias: z
     .string()

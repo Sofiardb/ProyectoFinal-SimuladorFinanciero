@@ -1,5 +1,6 @@
-import { formatPorcentaje } from '@/lib/format'
+import { formatMoneda, formatPorcentaje } from '@/lib/format'
 import { GBM_TOOLTIPS } from '@/lib/tooltips'
+import { montoConvertidoField } from '@/lib/tenenciaDisplay/comun'
 import type { CampoPreview, CardDisplay, TenenciaRowCore } from '@/lib/tenenciaDisplay/tipos'
 import type { AccionCatalogo, PortfolioAccion } from '@/types'
 
@@ -39,10 +40,18 @@ export function accionCatalogoPorId(catalogo: AccionCatalogo[] | undefined): Map
   return new Map((catalogo ?? []).map((a) => [a.idAccion, a]))
 }
 
-export function accionHeldPreview(a: PortfolioAccion, catalogo: Map<number, AccionCatalogo>): CampoPreview[] {
+export function accionHeldPreview(
+  a: PortfolioAccion,
+  catalogo: Map<number, AccionCatalogo>,
+  monedaBase: string,
+  tipoCambio?: number,
+): CampoPreview[] {
   const c = catalogo.get(a.idAccion)
+  const montoInvertido = a.cantidad * a.precioCompra
   return [
     { label: 'Cantidad', value: a.cantidad.toLocaleString('es-AR') },
+    { label: 'Monto invertido', value: formatMoneda(montoInvertido, 'USD') },
+    montoConvertidoField(montoInvertido, 'USD', monedaBase, tipoCambio),
     ...accionPreview({
       sector: a.sector ?? c?.sector,
       precioActual: a.precioActual ?? c?.precioActual,
@@ -51,14 +60,19 @@ export function accionHeldPreview(a: PortfolioAccion, catalogo: Map<number, Acci
       sigma: a.sigmaVolatilidadCompra ?? c?.sigmaVolatilidad,
       rho: a.rhoCorrelacionIndiceCompra ?? c?.rhoCorrelacionIndice,
     }),
-  ]
+  ].filter((f): f is CampoPreview => f != null)
 }
 
-export function accionRow(a: PortfolioAccion, catalogo: Map<number, AccionCatalogo>): TenenciaRowCore {
+export function accionRow(
+  a: PortfolioAccion,
+  catalogo: Map<number, AccionCatalogo>,
+  monedaBase: string,
+  tipoCambio?: number,
+): TenenciaRowCore {
   return {
     titulo: `${a.ticker} · ${a.nombre}`,
     subtitulo: accionSubtitulo({ sector: a.sector }),
-    previewFields: accionHeldPreview(a, catalogo),
+    previewFields: accionHeldPreview(a, catalogo, monedaBase, tipoCambio),
   }
 }
 

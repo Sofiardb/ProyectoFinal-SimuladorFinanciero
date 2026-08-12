@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAddAccion, useDeleteAccion, useUpdateAccion } from '@/api/hooks'
+import { useAddAccion, useDeleteAccion, useTipoCambio, useUpdateAccion } from '@/api/hooks'
 import { conCaptura } from '@/lib/mutationHelpers'
+import { calcularDisponible } from '@/lib/presupuesto'
 import { accionCatalogoPorId, accionPreview, accionRow } from '@/lib/tenenciaDisplay'
 import { onErrorToast } from '@/lib/toast'
 import { SECCION_TOOLTIPS } from '@/lib/tooltips'
@@ -24,13 +25,14 @@ export default function AccionesSection({
   const addAccion = useAddAccion(idPortfolio)
   const updateAccion = useUpdateAccion(idPortfolio)
   const deleteAccion = useDeleteAccion(idPortfolio)
+  const { data: tipoCambio } = useTipoCambio()
   const [error, setError] = useState<string | null>(null)
 
   const accionesPorId = accionCatalogoPorId(accionesCatalogo)
   const tenencias: TenenciaItem[] = detalle.acciones.map((a) => ({
     idCatalogo: a.idAccion,
     cantidadActual: a.cantidad,
-    ...accionRow(a, accionesPorId),
+    ...accionRow(a, accionesPorId, detalle.codigoMonedaBase, tipoCambio?.valor),
   }))
   const opciones: CatalogoOpcion[] = (accionesCatalogo ?? [])
     .filter((a) => !detalle.acciones.some((existing) => existing.idAccion === a.idAccion))
@@ -61,7 +63,12 @@ export default function AccionesSection({
         tenencias={tenencias}
         catalogo={opciones}
         isMutating={addAccion.isPending || updateAccion.isPending || deleteAccion.isPending}
+        disponible={calcularDisponible(detalle, tipoCambio?.valor)}
+        monedaBase={detalle.codigoMonedaBase}
+        moneda="USD"
+        tipoCambio={tipoCambio?.valor}
         error={error}
+        onDescartarError={() => setError(null)}
         onAdd={(idAccion, cantidad, precioCompra) =>
           conCaptura(setError, () => addAccion.mutateAsync({ idAccion, cantidad, precioCompra }))
         }

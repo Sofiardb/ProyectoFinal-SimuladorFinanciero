@@ -1,6 +1,6 @@
-import { formatFechaCorta, formatPorcentaje } from '@/lib/format'
+import { formatFechaCorta, formatMoneda, formatPorcentaje } from '@/lib/format'
 import { TASA_TOOLTIP, TIPO_TASA_TOOLTIP } from '@/lib/tooltips'
-import { precioVnField, tasaTexto, valorNominalField } from '@/lib/tenenciaDisplay/comun'
+import { montoConvertidoField, precioVnField, tasaTexto, valorNominalField } from '@/lib/tenenciaDisplay/comun'
 import type { CampoPreview, CardDisplay, TenenciaRowCore } from '@/lib/tenenciaDisplay/tipos'
 import type { LetraCatalogo, PortfolioLetra } from '@/types'
 
@@ -30,24 +30,37 @@ export function letraCatalogoPorId(catalogo: LetraCatalogo[] | undefined): Map<n
   return new Map((catalogo ?? []).map((l) => [l.idLetra, l]))
 }
 
-export function letraHeldPreview(l: PortfolioLetra, catalogo: Map<number, LetraCatalogo>): CampoPreview[] {
+export function letraHeldPreview(
+  l: PortfolioLetra,
+  catalogo: Map<number, LetraCatalogo>,
+  monedaBase: string,
+  tipoCambio?: number,
+): CampoPreview[] {
   const c = catalogo.get(l.idLetra)
+  const montoInvertido = l.cantidad * l.precioCompra
   return [
     valorNominalField(l.cantidad),
+    { label: 'Monto invertido', value: formatMoneda(montoInvertido, 'ARS') },
+    montoConvertidoField(montoInvertido, 'ARS', monedaBase, tipoCambio),
     ...letraPreview({
       fechaVencimiento: l.fechaVencimiento,
       tipoLetra: c?.tipoLetra ?? 'LECAP',
       tasa: l.tasa,
       precioActual: l.precioActual ?? c?.precioActual,
     }),
-  ]
+  ].filter((f): f is CampoPreview => f != null)
 }
 
-export function letraRow(l: PortfolioLetra, catalogo: Map<number, LetraCatalogo>): TenenciaRowCore {
+export function letraRow(
+  l: PortfolioLetra,
+  catalogo: Map<number, LetraCatalogo>,
+  monedaBase: string,
+  tipoCambio?: number,
+): TenenciaRowCore {
   return {
     titulo: `${l.ticker} · ${l.nombre}`,
     subtitulo: letraSubtitulo({ fechaVencimiento: l.fechaVencimiento }),
-    previewFields: letraHeldPreview(l, catalogo),
+    previewFields: letraHeldPreview(l, catalogo, monedaBase, tipoCambio),
   }
 }
 

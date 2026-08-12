@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import CronogramaFlujos from '@/components/portfolios/tenencias/CronogramaFlujos'
+import DisponibleParaInvertir from '@/components/portfolios/tenencias/DisponibleParaInvertir'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import CamposCantidadYPreview from '@/components/portfolios/tenencias/CamposCantidadYPreview'
 import { Form } from '@/components/ui/form'
@@ -12,6 +13,10 @@ interface Props {
   emptyMessage: string
   catalogo: CatalogoOpcion[]
   isMutating: boolean
+  disponible: number | null
+  monedaBase: string
+  moneda: 'ARS' | 'USD'
+  tipoCambio?: number
   onCancel: () => void
   cantidadLabel: string
   cantidadTooltip?: string
@@ -24,6 +29,10 @@ export default function CatalogoTenenciaAddRow({
   emptyMessage,
   catalogo,
   isMutating,
+  disponible,
+  monedaBase,
+  moneda,
+  tipoCambio,
   onCancel,
   cantidadLabel,
   cantidadTooltip,
@@ -47,6 +56,7 @@ export default function CatalogoTenenciaAddRow({
   return (
     <Form {...form}>
       <div className="compare-card gap-2.5">
+        <DisponibleParaInvertir disponible={disponible} monedaBase={monedaBase} />
         {catalogo.length === 0 ? (
           <div className="banner-warning">
             {emptyMessage}
@@ -72,6 +82,9 @@ export default function CatalogoTenenciaAddRow({
               cantidadLabel={cantidadLabel}
               cantidadTooltip={cantidadTooltip}
               montoInvertidoTooltip={montoInvertidoTooltip}
+              moneda={moneda}
+              monedaBase={monedaBase}
+              tipoCambio={tipoCambio}
             />
             <CronogramaFlujos flujos={selected.flujos} cantidadLotes={cantidadNum} esCer={selected.esCer} />
           </>

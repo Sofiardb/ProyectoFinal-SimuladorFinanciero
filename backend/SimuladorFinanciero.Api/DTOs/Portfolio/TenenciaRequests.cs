@@ -87,7 +87,7 @@ public sealed class AgregarPlazoFijoRequest
     [Range(0.000001, double.MaxValue, ErrorMessage = "El monto invertido debe ser un valor positivo.")]
     public decimal MontoInvertido { get; init; }
 
-    [Range(0, double.MaxValue, ErrorMessage = "La TNA no puede ser negativa.")]
+    [Range(0.000001, 1, ErrorMessage = "La TNA debe ser mayor a 0 y hasta 100%.")]
     public decimal TnaPactada { get; init; }
 
     [Required]
@@ -113,7 +113,7 @@ public sealed class ActualizarPlazoFijoRequest
     [Range(0.000001, double.MaxValue)]
     public decimal? MontoInvertido { get; init; }
 
-    [Range(0, double.MaxValue)]
+    [Range(0.000001, 1, ErrorMessage = "La TNA debe ser mayor a 0 y hasta 100%.")]
     public decimal? TnaPactada { get; init; }
 
     public DateOnly? FechaInicio { get; init; }

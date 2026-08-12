@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAddLetra, useDeleteLetra, useUpdateLetra } from '@/api/hooks'
+import { useAddLetra, useDeleteLetra, useTipoCambio, useUpdateLetra } from '@/api/hooks'
 import { conCaptura } from '@/lib/mutationHelpers'
+import { calcularDisponible } from '@/lib/presupuesto'
 import { letraCatalogoPorId, letraPreview, letraRow } from '@/lib/tenenciaDisplay'
 import { onErrorToast } from '@/lib/toast'
 import { CANTIDAD_LOTES_TOOLTIP_LETRA, MONTO_INVERTIDO_TOOLTIP_LETRA, SECCION_TOOLTIPS } from '@/lib/tooltips'
@@ -22,6 +23,7 @@ export default function LetrasSection({
   const addLetra = useAddLetra(idPortfolio)
   const updateLetra = useUpdateLetra(idPortfolio)
   const deleteLetra = useDeleteLetra(idPortfolio)
+  const { data: tipoCambio } = useTipoCambio()
   const [error, setError] = useState<string | null>(null)
 
   const letrasPorId = letraCatalogoPorId(letrasCatalogo)
@@ -32,7 +34,7 @@ export default function LetrasSection({
       cantidadActual: l.cantidad,
       precioActual: l.precioActual ?? c?.precioActual,
       esCer: c?.tipoLetra === 'LECER',
-      ...letraRow(l, letrasPorId),
+      ...letraRow(l, letrasPorId, detalle.codigoMonedaBase, tipoCambio?.valor),
     }
   })
   const opciones: CatalogoOpcion[] = (letrasCatalogo ?? [])
@@ -62,7 +64,12 @@ export default function LetrasSection({
         tenencias={tenencias}
         catalogo={opciones}
         isMutating={addLetra.isPending || updateLetra.isPending || deleteLetra.isPending}
+        disponible={calcularDisponible(detalle, tipoCambio?.valor)}
+        monedaBase={detalle.codigoMonedaBase}
+        moneda="ARS"
+        tipoCambio={tipoCambio?.valor}
         error={error}
+        onDescartarError={() => setError(null)}
         onAdd={(idLetra, cantidad, precioCompra) =>
           conCaptura(setError, () => addLetra.mutateAsync({ idLetra, cantidad, precioCompra }))
         }

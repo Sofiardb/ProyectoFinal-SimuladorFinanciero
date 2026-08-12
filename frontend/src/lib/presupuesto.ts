@@ -36,3 +36,9 @@ export function calcularMontoInvertido(detalle: PortfolioDetalle, tipoCambio: nu
 
   return { totalArs, totalUsd, totalEnBase }
 }
+
+export function calcularDisponible(detalle: PortfolioDetalle, tipoCambio: number | undefined): number | null {
+  if (detalle.capitalInicial == null) return null
+  const { totalEnBase } = calcularMontoInvertido(detalle, tipoCambio)
+  return detalle.capitalInicial - totalEnBase
+}

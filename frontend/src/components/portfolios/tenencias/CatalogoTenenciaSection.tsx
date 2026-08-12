@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import TruncatedText from '@/components/portfolios/TruncatedText'
 import CronogramaFlujos from '@/components/portfolios/tenencias/CronogramaFlujos'
+import DisponibleParaInvertir from '@/components/portfolios/tenencias/DisponibleParaInvertir'
 import RowIconActions from '@/components/portfolios/tenencias/RowIconActions'
 import RowFormFooter from '@/components/portfolios/tenencias/RowFormFooter'
 import SectionShell from '@/components/portfolios/tenencias/SectionShell'
@@ -28,7 +29,12 @@ interface Props {
   tenencias:        TenenciaItem[]
   catalogo:         CatalogoOpcion[]
   isMutating:       boolean
+  disponible:       number | null
+  monedaBase:       string
+  moneda:           'ARS' | 'USD'
+  tipoCambio?:      number
   error?:           string | null
+  onDescartarError?: () => void
   cantidadLabel?:   string
   cantidadTooltip?: string
   montoInvertidoTooltip?: string
@@ -46,7 +52,12 @@ export default function CatalogoTenenciaSection({
   tenencias,
   catalogo,
   isMutating,
+  disponible,
+  monedaBase,
+  moneda,
+  tipoCambio,
   error,
+  onDescartarError,
   cantidadLabel = 'Cantidad',
   cantidadTooltip,
   montoInvertidoTooltip,
@@ -63,7 +74,7 @@ export default function CatalogoTenenciaSection({
     cancelarAgregar,
     guardarEdicionYCerrar,
     guardarAltaYCerrar,
-  } = useEditableSectionState()
+  } = useEditableSectionState(onDescartarError)
 
   return (
     <SectionShell
@@ -79,6 +90,10 @@ export default function CatalogoTenenciaSection({
           emptyMessage={emptyMessage}
           catalogo={catalogo}
           isMutating={isMutating}
+          disponible={disponible}
+          monedaBase={monedaBase}
+          moneda={moneda}
+          tipoCambio={tipoCambio}
           onCancel={cancelarAgregar}
           cantidadLabel={cantidadLabel}
           cantidadTooltip={cantidadTooltip}
@@ -95,6 +110,10 @@ export default function CatalogoTenenciaSection({
             key={t.idCatalogo}
             tenencia={t}
             isMutating={isMutating}
+            disponible={disponible}
+            monedaBase={monedaBase}
+            moneda={moneda}
+            tipoCambio={tipoCambio}
             onCancel={cancelarEdicion}
             cantidadLabel={cantidadLabel}
             cantidadTooltip={cantidadTooltip}
@@ -151,6 +170,10 @@ function ViewRow({
 function EditExistingRow({
   tenencia,
   isMutating,
+  disponible,
+  monedaBase,
+  moneda,
+  tipoCambio,
   onCancel,
   cantidadLabel,
   cantidadTooltip,
@@ -159,6 +182,10 @@ function EditExistingRow({
 }: {
   tenencia: TenenciaItem
   isMutating: boolean
+  disponible: number | null
+  monedaBase: string
+  moneda: 'ARS' | 'USD'
+  tipoCambio?: number
   onCancel: () => void
   cantidadLabel: string
   cantidadTooltip?: string
@@ -177,6 +204,7 @@ function EditExistingRow({
   return (
     <Form {...form}>
       <div className="compare-card gap-2.5">
+        <DisponibleParaInvertir disponible={disponible} monedaBase={monedaBase} />
         <CamposCantidadYPreview
           control={form.control}
           previewFields={tenencia.previewFields}
@@ -185,6 +213,9 @@ function EditExistingRow({
           cantidadLabel={cantidadLabel}
           cantidadTooltip={cantidadTooltip}
           montoInvertidoTooltip={montoInvertidoTooltip}
+          moneda={moneda}
+          monedaBase={monedaBase}
+          tipoCambio={tipoCambio}
         />
         <CronogramaFlujos flujos={tenencia.flujos} cantidadLotes={cantidadNum} esCer={tenencia.esCer} />
         <RowFormFooter

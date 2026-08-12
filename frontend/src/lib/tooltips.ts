@@ -39,6 +39,9 @@ function montoInvertidoTooltip(instrumento: string): string {
 export const MONTO_INVERTIDO_TOOLTIP_BONO = montoInvertidoTooltip('este bono')
 export const MONTO_INVERTIDO_TOOLTIP_LETRA = montoInvertidoTooltip('esta letra')
 
+export const MONTO_CONVERTIDO_TOOLTIP =
+  'Conversión aproximada al tipo de cambio de referencia de hoy. Los bancos suelen ofrecer una cotización algo distinta, con un pequeño spread, así que el monto real en pesos puede variar.'
+
 export const SECCION_TOOLTIPS = {
   acciones: 'Participaciones de una empresa cotizante. Su valor sube o baja con el mercado; sin vencimiento.',
   bonos: 'Deuda emitida por el Estado o una empresa. Puede tener tasa fija o ajustar por CER (inflación).',

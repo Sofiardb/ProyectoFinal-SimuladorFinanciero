@@ -4,7 +4,7 @@ import { useState } from 'react'
  * Estado de edición/alta inline compartido por las secciones de tenencias (acciones, bonos,
  * letras, plazo fijo). 
  */
-export function useEditableSectionState() {
+export function useEditableSectionState(onCancelar?: () => void) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [isAdding, setIsAdding] = useState(false)
 
@@ -21,9 +21,15 @@ export function useEditableSectionState() {
     editingId,
     isAdding,
     editar: (id: number) => setEditingId(id),
-    cancelarEdicion: () => setEditingId(null),
+    cancelarEdicion: () => {
+      setEditingId(null)
+      onCancelar?.()
+    },
     empezarAgregar: () => setIsAdding(true),
-    cancelarAgregar: () => setIsAdding(false),
+    cancelarAgregar: () => {
+      setIsAdding(false)
+      onCancelar?.()
+    },
     guardarEdicionYCerrar: (accion: () => Promise<unknown>) => guardarYCerrar(accion, () => setEditingId(null)),
     guardarAltaYCerrar: (accion: () => Promise<unknown>) => guardarYCerrar(accion, () => setIsAdding(false)),
   }

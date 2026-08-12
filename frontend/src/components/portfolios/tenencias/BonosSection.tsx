@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAddBono, useDeleteBono, useUpdateBono } from '@/api/hooks'
+import { useAddBono, useDeleteBono, useTipoCambio, useUpdateBono } from '@/api/hooks'
 import { conCaptura } from '@/lib/mutationHelpers'
+import { calcularDisponible } from '@/lib/presupuesto'
 import { bonoCatalogoPorId, bonoPreview, bonoRow } from '@/lib/tenenciaDisplay'
 import { formatFechaCorta } from '@/lib/format'
 import { onErrorToast } from '@/lib/toast'
@@ -23,6 +24,7 @@ export default function BonosSection({
   const addBono = useAddBono(idPortfolio)
   const updateBono = useUpdateBono(idPortfolio)
   const deleteBono = useDeleteBono(idPortfolio)
+  const { data: tipoCambio } = useTipoCambio()
   const [error, setError] = useState<string | null>(null)
 
   const bonosPorId = bonoCatalogoPorId(bonosCatalogo)
@@ -34,7 +36,7 @@ export default function BonosSection({
       precioActual: b.precioActual ?? c?.precioActual,
       flujos: c?.flujos,
       esCer: c?.tipoBono === 'INDEXADO_INFLACION',
-      ...bonoRow(b, bonosPorId),
+      ...bonoRow(b, bonosPorId, detalle.codigoMonedaBase, tipoCambio?.valor),
     }
   })
   const opciones: CatalogoOpcion[] = (bonosCatalogo ?? [])
@@ -65,7 +67,12 @@ export default function BonosSection({
         tenencias={tenencias}
         catalogo={opciones}
         isMutating={addBono.isPending || updateBono.isPending || deleteBono.isPending}
+        disponible={calcularDisponible(detalle, tipoCambio?.valor)}
+        monedaBase={detalle.codigoMonedaBase}
+        moneda="ARS"
+        tipoCambio={tipoCambio?.valor}
         error={error}
+        onDescartarError={() => setError(null)}
         onAdd={(idBono, cantidad, precioCompra) =>
           conCaptura(setError, () => addBono.mutateAsync({ idBono, cantidad, precioCompra }))
         }

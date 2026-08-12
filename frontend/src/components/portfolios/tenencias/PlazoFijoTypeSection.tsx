@@ -38,10 +38,12 @@ export default function PlazoFijoTypeSection({
         tooltip={moneda === 'USD' ? SECCION_TOOLTIPS.plazoFijoUsd : SECCION_TOOLTIPS.plazoFijoArs}
         moneda={moneda}
         addButtonDataTour={addButtonDataTour}
+        detalle={detalle}
         tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === moneda)}
         tipos={tipos}
         isMutating={addPlazoFijo.isPending || updatePlazoFijo.isPending || deletePlazoFijo.isPending}
         error={error}
+        onDescartarError={() => setError(null)}
         onAdd={(payload) => conCaptura(setError, () => addPlazoFijo.mutateAsync({ ...payload, idMoneda }))}
         onUpdate={(idPortfolioPlazoFijo, payload) =>
           conCaptura(setError, () => updatePlazoFijo.mutateAsync({ id: idPortfolioPlazoFijo, ...payload }))

@@ -10,7 +10,15 @@ import DetallePortfolioResumenCard from '@/components/simulaciones/nuevaSimulaci
 import SeleccionarPortfolio from '@/components/simulaciones/nuevaSimulacion/SeleccionarPortfolio'
 import SimulacionFinalizadaCard from '@/components/simulaciones/nuevaSimulacion/SimulacionFinalizadaCard'
 import { construirFilasPortfolio } from '@/components/simulaciones/nuevaSimulacion/filasPortfolio'
-import { usePortfolio, usePortfolioPreview, useLanzarSimulacion, useAccionesCatalogo, useBonosCatalogo, useLetrasCatalogo } from '@/api/hooks'
+import {
+  usePortfolio,
+  usePortfolioPreview,
+  useLanzarSimulacion,
+  useAccionesCatalogo,
+  useBonosCatalogo,
+  useLetrasCatalogo,
+  useTipoCambio,
+} from '@/api/hooks'
 import { onErrorToast } from '@/lib/toast'
 import type { SimulacionResumen } from '@/types'
 
@@ -42,6 +50,7 @@ function ConfigurarSimulacion({
   const { data: accionesCatalogo } = useAccionesCatalogo()
   const { data: bonosCatalogo } = useBonosCatalogo()
   const { data: letrasCatalogo } = useLetrasCatalogo()
+  const { data: tipoCambio } = useTipoCambio()
   const lanzarSimulacion = useLanzarSimulacion(idPortfolio)
 
   const [horizonteMeses, setHorizonteMeses] = useState(HORIZONTE_DEFAULT)
@@ -89,7 +98,11 @@ function ConfigurarSimulacion({
 
   const bloqueado = preview ? !preview.puedeSimular : false
   const editHref = `/portfolios/${idPortfolio}`
-  const { usdFilas, arsFilas } = construirFilasPortfolio(detalle, { accionesCatalogo, bonosCatalogo, letrasCatalogo })
+  const { usdFilas, arsFilas } = construirFilasPortfolio(
+    detalle,
+    { accionesCatalogo, bonosCatalogo, letrasCatalogo },
+    tipoCambio?.valor,
+  )
 
   const handleLanzar = () => {
     lanzarSimulacion.mutate(

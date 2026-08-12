@@ -1,6 +1,6 @@
-import { formatFechaCorta, formatPorcentaje } from '@/lib/format'
+import { formatFechaCorta, formatMoneda, formatPorcentaje } from '@/lib/format'
 import { TASA_TOOLTIP, TIPO_TASA_TOOLTIP } from '@/lib/tooltips'
-import { precioVnField, tasaTexto, valorNominalField } from '@/lib/tenenciaDisplay/comun'
+import { montoConvertidoField, precioVnField, tasaTexto, valorNominalField } from '@/lib/tenenciaDisplay/comun'
 import type { CampoPreview, CardDisplay, TenenciaRowCore } from '@/lib/tenenciaDisplay/tipos'
 import type { BonoCatalogo, PortfolioBono } from '@/types'
 
@@ -30,20 +30,36 @@ export function bonoCatalogoPorId(catalogo: BonoCatalogo[] | undefined): Map<num
   return new Map((catalogo ?? []).map((b) => [b.idBono, b]))
 }
 
-export function bonoHeldPreview(b: PortfolioBono, catalogo: Map<number, BonoCatalogo>): CampoPreview[] {
+export function bonoHeldPreview(
+  b: PortfolioBono,
+  catalogo: Map<number, BonoCatalogo>,
+  monedaBase: string,
+  tipoCambio?: number,
+): CampoPreview[] {
   const c = catalogo.get(b.idBono)
+  const montoInvertido = b.cantidad * b.precioCompra
   const resto = !c
     ? [{ label: 'Emisor', value: b.emisor ?? '—' }, precioVnField(b.precioActual)]
     : bonoPreview({ ...c, precioActual: b.precioActual ?? c.precioActual })
-  return [valorNominalField(b.cantidad), ...resto]
+  return [
+    valorNominalField(b.cantidad),
+    { label: 'Monto invertido', value: formatMoneda(montoInvertido, 'ARS') },
+    montoConvertidoField(montoInvertido, 'ARS', monedaBase, tipoCambio),
+    ...resto,
+  ].filter((f): f is CampoPreview => f != null)
 }
 
-export function bonoRow(b: PortfolioBono, catalogo: Map<number, BonoCatalogo>): TenenciaRowCore {
+export function bonoRow(
+  b: PortfolioBono,
+  catalogo: Map<number, BonoCatalogo>,
+  monedaBase: string,
+  tipoCambio?: number,
+): TenenciaRowCore {
   const c = catalogo.get(b.idBono)
   return {
     titulo: `${b.ticker} · ${b.nombre}`,
     subtitulo: c ? bonoSubtitulo(c) : (b.emisor ?? ''),
-    previewFields: bonoHeldPreview(b, catalogo),
+    previewFields: bonoHeldPreview(b, catalogo, monedaBase, tipoCambio),
   }
 }
 
