@@ -1,7 +1,7 @@
 -- =============================================================================
 --  SIMULADOR FINANCIERO - ESQUEMA DE BASE DE DATOS
 --  Autor: Sofía Rodríguez del Busto
---  Proyecto Final - Simulador de estrategias de inversión
+--  Proyecto Final - Simulador de carteras de inversión
 -- =============================================================================
 --  Convenciones:
 --   * Nombres en español, snake_case, singular para tablas de entidad.

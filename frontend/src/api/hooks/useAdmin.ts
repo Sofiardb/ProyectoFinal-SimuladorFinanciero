@@ -2,6 +2,7 @@ import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import { onErrorToast } from '@/lib/toast'
+import type { EscenarioEconomico } from '@/types'
 
 export interface EstadoConexion {
   ok:      boolean
@@ -116,6 +117,27 @@ export function useRefreshTipoCambio() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['referencia', 'tipo-cambio'] })
       toast.success(data.mensaje)
+    },
+    onError: onErrorToast,
+  })
+}
+
+export interface ActualizarEscenarioEconomicoItem {
+  idTipoEscenario:        number
+  inflacionMensualMin:    number
+  inflacionMensualMax:    number
+  inflacionMensualMinUsd: number
+  inflacionMensualMaxUsd: number
+}
+
+export function useActualizarEscenariosEconomicos() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (escenarios: ActualizarEscenarioEconomicoItem[]) =>
+      api.put<EscenarioEconomico[]>('/admin/escenarios-economicos', { escenarios }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['referencia', 'escenarios-economicos'], data)
+      toast.success('Rangos de inflación actualizados.')
     },
     onError: onErrorToast,
   })

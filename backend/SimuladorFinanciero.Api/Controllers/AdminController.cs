@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SimuladorFinanciero.Api.DTOs.Referencia;
+using SimuladorFinanciero.Api.Infrastructure.Exceptions;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Docta;
+using SimuladorFinanciero.Api.Repositories;
 using SimuladorFinanciero.Api.Services.Catalogo;
 
 namespace SimuladorFinanciero.Api.Controllers;
@@ -25,6 +28,7 @@ public sealed class AdminController : ControllerBase
     private readonly ITipoCambioService     _tipoCambio;
     private readonly IDoctaApiClient        _docta;
     private readonly IBymaApiClient         _byma;
+    private readonly IReferenciaRepository  _referencia;
     private readonly ILogger<AdminController> _log;
 
     public AdminController(
@@ -34,6 +38,7 @@ public sealed class AdminController : ControllerBase
         ITipoCambioService     tipoCambio,
         IDoctaApiClient        docta,
         IBymaApiClient         byma,
+        IReferenciaRepository  referencia,
         ILogger<AdminController> log)
     {
         _letras     = letras;
@@ -42,6 +47,7 @@ public sealed class AdminController : ControllerBase
         _tipoCambio = tipoCambio;
         _docta      = docta;
         _byma       = byma;
+        _referencia = referencia;
         _log        = log;
     }
 
@@ -169,5 +175,31 @@ public sealed class AdminController : ControllerBase
         _log.LogInformation("Admin: refresco manual de cotización USD/ARS (BCRA) solicitado por {User}.", User.Identity?.Name);
         var valor = await _tipoCambio.RefrescarAsync(ct);
         return Ok(new { mensaje = "Cotización USD/ARS actualizada.", cotizacionUsdArs = valor });
+    }
+
+    /// <summary>
+    /// Actualiza los rangos de inflación mensual vigentes por escenario económico (Favorable/Moderado/Desfavorable).
+    /// Versiona el cambio: cierra el rango vigente actual y abre uno nuevo, solo para los escenarios que
+    /// realmente cambiaron. No afecta simulaciones ya corridas, que leen su propio snapshot.
+    /// </summary>
+    [HttpPut("/admin/escenarios-economicos")]
+    [ProducesResponseType<IReadOnlyList<EscenarioEconomicoResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ActualizarEscenariosEconomicos(ActualizarEscenariosEconomicosRequest req, CancellationToken ct)
+    {
+        if (req.Escenarios.Count == 0)
+            throw new ValidationException("Debe incluir al menos un escenario.");
+
+        foreach (var item in req.Escenarios)
+        {
+            if (item.InflacionMensualMin > item.InflacionMensualMax)
+                throw new ValidationException($"Escenario {item.IdTipoEscenario}: la inflación mensual mínima no puede ser mayor a la máxima.");
+            if (item.InflacionMensualMinUsd > item.InflacionMensualMaxUsd)
+                throw new ValidationException($"Escenario {item.IdTipoEscenario}: la inflación mensual mínima (USD) no puede ser mayor a la máxima (USD).");
+        }
+
+        _log.LogInformation("Admin: actualización manual de rangos de inflación solicitada por {User}.", User.Identity?.Name);
+        await _referencia.ActualizarEscenariosVigentesAsync(req.Escenarios, ct);
+        return Ok(await _referencia.ObtenerEscenariosVigentesAsync(ct));
     }
 }
