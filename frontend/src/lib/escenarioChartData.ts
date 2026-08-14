@@ -12,11 +12,13 @@ export interface SerieEscenario {
   colorSecundaria?: string
   p25Secundaria?: number[]
   p75Secundaria?: number[]
+  montoInvertido?: number
 }
 
 export interface VencimientoMarcador {
-  mes:   number
-  label: string
+  mes:    number
+  label:  string
+  monto?: number
 }
 
 export interface BreakevenMarcador {

@@ -115,23 +115,32 @@ export function usePanelGraficoState({
       if (esVistaPortfolio) return true
       return ambitosSeleccionados.includes(inst.ambito)
     })
-    const porMes = new Map<number, string[]>()
+    const porMes = new Map<number, { labels: string[]; monto: number }>()
     for (const inst of relevantes) {
       const corto = detalle ? resolveAmbitoInfo(inst.ambito, detalle).corto : inst.ambito
-      porMes.set(inst.tVencMeses!, [...(porMes.get(inst.tVencMeses!) ?? []), corto])
+      const montoInst = filaFor(inst.ambito, 'global', 'patrimonio')?.media[inst.tVencMeses!]
+      const acumulado = porMes.get(inst.tVencMeses!) ?? { labels: [], monto: 0 }
+      acumulado.labels.push(corto)
+      if (montoInst != null) acumulado.monto += montoInst
+      porMes.set(inst.tVencMeses!, acumulado)
     }
-    return Array.from(porMes.entries()).map(([mes, labels]) => ({ mes, label: labels.join(', ') }))
+    return Array.from(porMes.entries()).map(([mes, { labels, monto }]) => ({
+      mes,
+      label: labels.join(', '),
+      monto: monto > 0 ? monto : undefined,
+    }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instrumentos, ambitosSeleccionados, detalle])
+  }, [instrumentos, ambitosSeleccionados, detalle, filas])
 
   const series: SerieEscenario[] = useMemo(() => {
     if (ambitosSeleccionados.length === 0) return []
 
     if (modoA && ambitosSeleccionados.length === 1) {
       const ambito = ambitosSeleccionados[0]
+      const montoInvertido = metrica !== 'patrimonio' ? montoInvertidoDe(ambito) : undefined
       return ESCENARIOS_COLOR.flatMap(({ key, label, color }) => {
         const stats = filaFor(ambito, key, metrica)
-        return stats ? [{ key, label, color, media: stats.media }] : []
+        return stats ? [{ key, label, color, media: stats.media, montoInvertido }] : []
       })
     }
 
@@ -171,6 +180,7 @@ export function usePanelGraficoState({
         colorSecundaria,
         p25Secundaria,
         p75Secundaria,
+        montoInvertido: metrica !== 'patrimonio' ? montoInvertidoDe(ambito) : undefined,
         p25: mostrarBanda ? stats.p25 : undefined,
         p75: mostrarBanda ? stats.p75 : undefined,
         minimo: mostrarBanda ? stats.minimo : undefined,

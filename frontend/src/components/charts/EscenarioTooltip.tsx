@@ -1,5 +1,6 @@
 import type { TooltipContentProps } from 'recharts'
 import type { SerieEscenario } from '@/lib/escenarioChartData'
+import { formatPorcentaje } from '@/lib/format'
 
 interface Props extends TooltipContentProps {
   series: SerieEscenario[]
@@ -30,10 +31,13 @@ export default function EscenarioTooltip({ active, label, payload, series, forma
         const esSecundaria = typeof p.dataKey === 'string' && p.dataKey.endsWith('_secundaria')
         const serie = series.find((s) => p.dataKey === `${s.key}_${esSecundaria ? 'secundaria' : 'media'}`)
         const nombre = esSecundaria ? serie?.labelSecundaria : serie?.label
+        const valor = p.value as number
+        const porcentaje = serie?.montoInvertido ? (valor / serie.montoInvertido) * 100 : undefined
         return (
           <p key={String(p.dataKey)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ display: 'inline-block', width: 10, height: 2, background: p.color }} />
-            <strong>{formatY(p.value as number)}</strong>
+            <strong>{formatY(valor)}</strong>
+            {porcentaje != null && <span style={{ color: 'var(--color-ink-soft)' }}>({formatPorcentaje(porcentaje)})</span>}
             <span style={{ color: 'var(--color-ink-soft)' }}>{nombre}</span>
           </p>
         )

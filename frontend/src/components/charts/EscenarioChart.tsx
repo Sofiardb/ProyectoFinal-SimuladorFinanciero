@@ -88,6 +88,7 @@ export default function EscenarioChart({
 
         {vencimientosOrdenados.map((v, i) => {
           const fila = i % FILAS_ETIQUETA
+          const texto = v.monto != null ? `${v.label} (${formatY(v.monto)} en caja libre)` : v.label
           return (
             <ReferenceLine
               key={`venc-${v.mes}-${v.label}`}
@@ -103,7 +104,7 @@ export default function EscenarioChart({
                   fontSize={9}
                   fill="var(--color-ink-soft)"
                 >
-                  {v.label}
+                  {texto}
                 </text>
               )}
             />
