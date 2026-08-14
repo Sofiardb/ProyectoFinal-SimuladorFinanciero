@@ -2,6 +2,7 @@ import AccionesCard from '@/components/admin/AccionesCard'
 import BonosCard from '@/components/admin/BonosCard'
 import ConectividadCard from '@/components/admin/ConectividadCard'
 import EscenariosEconomicosCard from '@/components/admin/EscenariosEconomicosCard'
+import HacerAdminCard from '@/components/admin/HacerAdminCard'
 import LetrasCard from '@/components/admin/LetrasCard'
 import TipoCambioCard from '@/components/admin/TipoCambioCard'
 
@@ -24,6 +25,7 @@ export default function AdminPage() {
         <AccionesCard />
         <TipoCambioCard />
         <EscenariosEconomicosCard />
+        <HacerAdminCard />
       </div>
     </div>
   )

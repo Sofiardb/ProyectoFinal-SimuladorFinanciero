@@ -142,3 +142,28 @@ export function useActualizarEscenariosEconomicos() {
     onError: onErrorToast,
   })
 }
+
+export interface UsuarioAdmin {
+  idUsuario: number
+  username:  string
+  email:     string
+  esAdmin:   boolean
+}
+
+export function useHacerAdmin() {
+  return useMutation({
+    mutationFn: (usernameOEmail: string) =>
+      api.post<UsuarioAdmin>('/admin/usuarios/hacer-admin', { usernameOEmail }),
+    onSuccess: (data) => toast.success(`${data.username} ahora es administrador.`),
+    onError: onErrorToast,
+  })
+}
+
+export function useQuitarAdmin() {
+  return useMutation({
+    mutationFn: (usernameOEmail: string) =>
+      api.post<UsuarioAdmin>('/admin/usuarios/quitar-admin', { usernameOEmail }),
+    onSuccess: (data) => toast.success(`Se le quitó el rol de administrador a ${data.username}.`),
+    onError: onErrorToast,
+  })
+}

@@ -15,6 +15,7 @@ public interface IUsuarioRepository
     Task GuardarResetTokenAsync(long idUsuario, string tokenHash, DateTimeOffset expira);
     Task ActualizarPasswordAsync(long idUsuario, string nuevoPasswordHash);
     Task ActualizarPerfilAsync(long idUsuario, string email, string username, string? nombre, string? apellido);
+    Task ActualizarEsAdminAsync(long idUsuario, bool esAdmin);
 }
 
 public class UsuarioRepository : IUsuarioRepository
@@ -102,6 +103,14 @@ public class UsuarioRepository : IUsuarioRepository
             WHERE id_usuario = @idUsuario
             """,
             new { idUsuario, nuevoPasswordHash });
+    }
+
+    public async Task ActualizarEsAdminAsync(long idUsuario, bool esAdmin)
+    {
+        using var conn = _db.Crear();
+        await conn.ExecuteAsync(
+            "UPDATE usuario SET es_admin = @esAdmin WHERE id_usuario = @idUsuario",
+            new { idUsuario, esAdmin });
     }
 
     public async Task<long> CrearAsync(Usuario usuario)

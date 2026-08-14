@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SimuladorFinanciero.Api.DTOs.Admin;
 using SimuladorFinanciero.Api.DTOs.Referencia;
 using SimuladorFinanciero.Api.Infrastructure.Exceptions;
 using SimuladorFinanciero.Api.Infrastructure.ExternalApis.Byma;
@@ -29,6 +31,7 @@ public sealed class AdminController : ControllerBase
     private readonly IDoctaApiClient        _docta;
     private readonly IBymaApiClient         _byma;
     private readonly IReferenciaRepository  _referencia;
+    private readonly IUsuarioRepository     _usuarios;
     private readonly ILogger<AdminController> _log;
 
     public AdminController(
@@ -39,6 +42,7 @@ public sealed class AdminController : ControllerBase
         IDoctaApiClient        docta,
         IBymaApiClient         byma,
         IReferenciaRepository  referencia,
+        IUsuarioRepository     usuarios,
         ILogger<AdminController> log)
     {
         _letras     = letras;
@@ -48,8 +52,13 @@ public sealed class AdminController : ControllerBase
         _docta      = docta;
         _byma       = byma;
         _referencia = referencia;
+        _usuarios   = usuarios;
         _log        = log;
     }
+
+    private long GetUserId() =>
+        long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? throw new InvalidOperationException("Token inválido: no contiene el claim sub."));
 
     /// <summary>
     /// Verifica la conectividad con las APIs externas (BYMA y Docta Capital).
@@ -201,5 +210,44 @@ public sealed class AdminController : ControllerBase
         _log.LogInformation("Admin: actualización manual de rangos de inflación solicitada por {User}.", User.Identity?.Name);
         await _referencia.ActualizarEscenariosVigentesAsync(req.Escenarios, ct);
         return Ok(await _referencia.ObtenerEscenariosVigentesAsync(ct));
+    }
+
+    /// <summary>Otorga el rol de administrador a otro usuario, buscado por username o email.</summary>
+    [HttpPost("/admin/usuarios/hacer-admin")]
+    [ProducesResponseType<UsuarioAdminResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> HacerAdmin(HacerAdminRequest req)
+    {
+        var valor = req.UsernameOEmail.Trim();
+        var usuario = await _usuarios.BuscarPorUsernameAsync(valor) ?? await _usuarios.BuscarPorEmailAsync(valor)
+            ?? throw new NotFoundException($"No se encontró ningún usuario activo con username o email '{valor}'.");
+
+        await _usuarios.ActualizarEsAdminAsync(usuario.IdUsuario, true);
+        _log.LogInformation("Admin: {Admin} otorgó rol de administrador a {Usuario}.", User.Identity?.Name, usuario.Username);
+
+        return Ok(new UsuarioAdminResponse(usuario.IdUsuario, usuario.Username, usuario.Email, true));
+    }
+
+    /// <summary>
+    /// Revoca el rol de administrador de otro usuario, buscado por username o email. No permite
+    /// que un admin se quite el rol a sí mismo, para evitar dejar la app sin ningún administrador.
+    /// </summary>
+    [HttpPost("/admin/usuarios/quitar-admin")]
+    [ProducesResponseType<UsuarioAdminResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> QuitarAdmin(HacerAdminRequest req)
+    {
+        var valor = req.UsernameOEmail.Trim();
+        var usuario = await _usuarios.BuscarPorUsernameAsync(valor) ?? await _usuarios.BuscarPorEmailAsync(valor)
+            ?? throw new NotFoundException($"No se encontró ningún usuario activo con username o email '{valor}'.");
+
+        if (usuario.IdUsuario == GetUserId())
+            throw new ValidationException("No podés quitarte el rol de administrador a vos mismo.");
+
+        await _usuarios.ActualizarEsAdminAsync(usuario.IdUsuario, false);
+        _log.LogInformation("Admin: {Admin} quitó el rol de administrador a {Usuario}.", User.Identity?.Name, usuario.Username);
+
+        return Ok(new UsuarioAdminResponse(usuario.IdUsuario, usuario.Username, usuario.Email, false));
     }
 }
