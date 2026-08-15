@@ -4,8 +4,8 @@ import { useState } from 'react'
  * Estado de edición/alta inline compartido por las secciones de tenencias (acciones, bonos,
  * letras, plazo fijo). 
  */
-export function useEditableSectionState(onCancelar?: () => void) {
-  const [editingId, setEditingId] = useState<number | null>(null)
+export function useEditableSectionState(onCancelar?: () => void, initialEditingId?: number | null) {
+  const [editingId, setEditingId] = useState<number | null>(initialEditingId ?? null)
   const [isAdding, setIsAdding] = useState(false)
 
   async function guardarYCerrar(accion: () => Promise<unknown>, cerrar: () => void) {

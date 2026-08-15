@@ -94,15 +94,16 @@ export default function PortfoliosPage() {
                   </p>
                 </div>
 
-                {portfoliosDelPerfil.length >= 3 && (
-                  <button
-                    type="button"
-                    onClick={() => setCreateOpen(true)}
-                    className="btn-primary shrink-0 self-center"
-                  >
-                    + Crear portfolio
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(true)}
+                  className={cn(
+                    'btn-primary shrink-0 self-center',
+                    portfoliosDelPerfil.length < 3 && 'lg:hidden',
+                  )}
+                >
+                  + Crear portfolio
+                </button>
               </div>
             )}
 

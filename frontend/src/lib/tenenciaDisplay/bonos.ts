@@ -70,5 +70,6 @@ export function bonoCardDisplay(b: PortfolioBono, catalogo: Map<number, BonoCata
     title: `${b.ticker} · ${b.nombre}`,
     subtitle: c ? bonoSubtitulo(c) : b.emisor ? `Emisor: ${b.emisor}` : '',
     stat: c ? tasaTexto(c.tipoBono === 'TASA_FIJA' ? 'Fija' : 'CER', c.tasaDescuento) : '—',
+    instrumento: { tipo: 'bono', id: b.idBono },
   }
 }

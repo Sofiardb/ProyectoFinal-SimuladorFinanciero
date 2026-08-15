@@ -141,7 +141,10 @@
   }
 
   .field-label {
-    @apply mb-1 block text-[11px] text-ink-muted;
+    @apply mb-1 flex min-h-4 items-center gap-1 text-[11px] text-ink-muted;
+  }
+  .field-label-tenencia {
+    @apply mb-2 flex min-h-4 items-center gap-1 text-sm leading-none text-foreground;
   }
   .field-input {
     @apply h-9 w-full rounded-[7px] border-[1.5px] border-field-border bg-white px-2.5 text-[12.5px] text-navy-950 outline-none focus:border-blue-brand;

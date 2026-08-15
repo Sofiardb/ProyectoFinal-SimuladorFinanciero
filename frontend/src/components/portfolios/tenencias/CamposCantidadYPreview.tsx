@@ -36,7 +36,7 @@ export default function CamposCantidadYPreview<TFieldValues extends FieldValues 
     <div className="grid grid-cols-2 gap-2">
       {previewFields.map((f) => (
         <div key={f.label}>
-          <span className="field-label inline-flex items-center gap-1">
+          <span className="field-label-tenencia">
             {f.label}
             {f.tooltip && <InfoTooltip term={f.label} definition={f.tooltip} />}
           </span>
@@ -47,16 +47,17 @@ export default function CamposCantidadYPreview<TFieldValues extends FieldValues 
         control={control}
         name={'cantidad' as FieldPath<TFieldValues>}
         label={
-          <span className="inline-flex items-center gap-1">
+          <>
             {cantidadLabel}
             {cantidadTooltip && <InfoTooltip term={cantidadLabel} definition={cantidadTooltip} />}
-          </span>
+          </>
         }
+        labelClassName="min-h-4"
         inputProps={{ type: 'number', step: '1', placeholder: '0' }}
       />
       {montoInvertido != null && cantidadNum > 0 && (
         <div>
-          <span className="field-label inline-flex items-center gap-1">
+          <span className="field-label-tenencia">
             Monto invertido
             {montoInvertidoTooltip && <InfoTooltip term="Monto invertido" definition={montoInvertidoTooltip} />}
           </span>
@@ -65,7 +66,7 @@ export default function CamposCantidadYPreview<TFieldValues extends FieldValues 
       )}
       {convertido && cantidadNum > 0 && (
         <div>
-          <span className="field-label inline-flex items-center gap-1">
+          <span className="field-label-tenencia">
             {convertido.label}
             {convertido.tooltip && <InfoTooltip term={convertido.label} definition={convertido.tooltip} />}
           </span>

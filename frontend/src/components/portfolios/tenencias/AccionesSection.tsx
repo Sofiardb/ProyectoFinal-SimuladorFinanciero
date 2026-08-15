@@ -15,12 +15,14 @@ export default function AccionesSection({
   accionesCatalogo,
   sigmaMaxAccion,
   perfilLower,
+  editarKey,
 }: {
   idPortfolio: number
   detalle: PortfolioDetalle
   accionesCatalogo: AccionCatalogo[] | undefined
   sigmaMaxAccion: number | undefined
   perfilLower: string
+  editarKey?: string | null
 }) {
   const addAccion = useAddAccion(idPortfolio)
   const updateAccion = useUpdateAccion(idPortfolio)
@@ -56,6 +58,8 @@ export default function AccionesSection({
     <TypeSectionCard>
       <CatalogoTenenciaSection
         titulo="Acciones"
+        tipo="accion"
+        editarKey={editarKey}
         tooltip={SECCION_TOOLTIPS.acciones}
         pickLabel="Elegí una acción"
         addLabel="+ Agregar acción"

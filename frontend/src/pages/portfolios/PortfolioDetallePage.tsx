@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useTour } from '@/contexts/TourContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -34,6 +34,8 @@ export default function PortfolioDetallePage() {
   const { id } = useParams<{ id: string }>()
   const idPortfolio = Number(id)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const editarKey = searchParams.get('editar')
 
   const { data: detalle, isLoading } = usePortfolio(idPortfolio)
   const tieneInstrumentos = useTienePortfolioInstrumentos(detalle)
@@ -62,6 +64,24 @@ export default function PortfolioDetallePage() {
   useEffect(() => {
     if (idMonedaArs != null) avanzarSiEsperando('crear-portfolio-form')
   }, [idMonedaArs, avanzarSiEsperando])
+
+  useEffect(() => {
+    if (!editarKey) return
+    const targetId = `tenencia-${editarKey}`
+    const scrollSiEstaPresente = () => {
+      const el = document.getElementById(targetId)
+      if (!el) return false
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return true
+    }
+    if (scrollSiEstaPresente()) return
+
+    const observer = new MutationObserver(() => {
+      if (scrollSiEstaPresente()) observer.disconnect()
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [editarKey])
 
   if (isLoading) {
     return (
@@ -124,6 +144,7 @@ export default function PortfolioDetallePage() {
             accionesCatalogo={accionesCatalogo}
             sigmaMaxAccion={sigmaMaxAccion}
             perfilLower={perfilLower}
+            editarKey={editarKey}
           />
           {idMonedaUsd != null && (
             <PlazoFijoTypeSection
@@ -132,6 +153,7 @@ export default function PortfolioDetallePage() {
               moneda="USD"
               idMoneda={idMonedaUsd}
               tiposPlazoFijo={tiposPlazoFijo}
+              editarKey={editarKey}
             />
           )}
         </div>
@@ -143,12 +165,14 @@ export default function PortfolioDetallePage() {
             detalle={detalle}
             bonosCatalogo={bonosCatalogo}
             perfilLower={perfilLower}
+            editarKey={editarKey}
           />
           <LetrasSection
             idPortfolio={idPortfolio}
             detalle={detalle}
             letrasCatalogo={letrasCatalogo}
             perfilLower={perfilLower}
+            editarKey={editarKey}
           />
           {idMonedaArs != null && (
             <PlazoFijoTypeSection
@@ -158,6 +182,7 @@ export default function PortfolioDetallePage() {
               idMoneda={idMonedaArs}
               tiposPlazoFijo={tiposPlazoFijo}
               addButtonDataTour="tour-agregar-instrumento"
+              editarKey={editarKey}
             />
           )}
         </div>

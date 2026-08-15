@@ -82,5 +82,6 @@ export function accionCardDisplay(a: PortfolioAccion): CardDisplay {
     title: `${a.ticker} · ${a.nombre}`,
     subtitle: a.sector ?? '',
     stat: `${a.cantidad} acciones`,
+    instrumento: { tipo: 'accion', id: a.idAccion },
   }
 }

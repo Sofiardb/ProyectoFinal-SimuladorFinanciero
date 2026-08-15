@@ -14,11 +14,13 @@ export default function LetrasSection({
   detalle,
   letrasCatalogo,
   perfilLower,
+  editarKey,
 }: {
   idPortfolio: number
   detalle: PortfolioDetalle
   letrasCatalogo: LetraCatalogo[] | undefined
   perfilLower: string
+  editarKey?: string | null
 }) {
   const addLetra = useAddLetra(idPortfolio)
   const updateLetra = useUpdateLetra(idPortfolio)
@@ -54,6 +56,8 @@ export default function LetrasSection({
     <TypeSectionCard>
       <CatalogoTenenciaSection
         titulo="Letras"
+        tipo="letra"
+        editarKey={editarKey}
         tooltip={SECCION_TOOLTIPS.letras}
         pickLabel="Elegí una letra"
         addLabel="+ Agregar letra"

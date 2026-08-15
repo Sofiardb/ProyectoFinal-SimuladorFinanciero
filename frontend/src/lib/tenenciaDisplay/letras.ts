@@ -71,5 +71,6 @@ export function letraCardDisplay(l: PortfolioLetra, catalogo: Map<number, LetraC
     title: `${l.ticker} · ${l.nombre}`,
     subtitle: letraSubtitulo({ fechaVencimiento: l.fechaVencimiento }),
     stat: tasaTexto(c?.tipoLetra === 'LECER' ? 'CER' : 'Fija', l.tasa),
+    instrumento: { tipo: 'letra', id: l.idLetra },
   }
 }

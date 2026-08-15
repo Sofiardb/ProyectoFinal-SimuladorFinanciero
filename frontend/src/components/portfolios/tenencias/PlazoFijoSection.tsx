@@ -18,6 +18,7 @@ import {
 } from '@/components/portfolios/tenencias/plazoFijoForm'
 import { useEditableSectionState } from '@/hooks/useEditableSectionState'
 import { formatMoneda, hoyISO } from '@/lib/format'
+import { instrumentoAnchorId, parseInstrumentoRefKey } from '@/lib/instrumentoRef'
 import { capitalHoy, esVencido, mesesEntre } from '@/lib/plazoFijo'
 import { calcularDisponible } from '@/lib/presupuesto'
 import { plazoFijoPreview, type CampoPreview } from '@/lib/tenenciaDisplay'
@@ -36,6 +37,7 @@ interface Props {
   isMutating:        boolean
   error?:            string | null
   onDescartarError?: () => void
+  editarKey?:        string | null
   onAdd:    (payload: NuevoPlazoFijo) => Promise<void>
   onUpdate: (idPortfolioPlazoFijo: number, payload: EditarPlazoFijo) => Promise<void>
   onDelete: (idPortfolioPlazoFijo: number) => void
@@ -52,10 +54,13 @@ export default function PlazoFijoSection({
   isMutating,
   error,
   onDescartarError,
+  editarKey,
   onAdd,
   onUpdate,
   onDelete,
 }: Props) {
+  const editarRef = parseInstrumentoRefKey(editarKey)
+  const initialEditingId = editarRef?.tipo === 'pf' ? editarRef.id : null
   const {
     editingId,
     isAdding,
@@ -65,7 +70,7 @@ export default function PlazoFijoSection({
     cancelarAgregar,
     guardarEdicionYCerrar,
     guardarAltaYCerrar,
-  } = useEditableSectionState(onDescartarError)
+  } = useEditableSectionState(onDescartarError, initialEditingId)
   const { data: tipoCambio } = useTipoCambio()
 
   return (
@@ -94,6 +99,7 @@ export default function PlazoFijoSection({
         editingId === t.idPortfolioPlazoFijo ? (
           <Row
             key={t.idPortfolioPlazoFijo}
+            domId={instrumentoAnchorId({ tipo: 'pf', id: t.idPortfolioPlazoFijo })}
             tenencia={t}
             moneda={moneda}
             tipos={tipos}
@@ -107,6 +113,7 @@ export default function PlazoFijoSection({
         ) : (
           <ViewRow
             key={t.idPortfolioPlazoFijo}
+            domId={instrumentoAnchorId({ tipo: 'pf', id: t.idPortfolioPlazoFijo })}
             tenencia={t}
             moneda={moneda}
             monedaBase={detalle.codigoMonedaBase}
@@ -124,6 +131,7 @@ export default function PlazoFijoSection({
 
 function ViewRow({
   tenencia,
+  domId,
   moneda,
   monedaBase,
   tipoCambio,
@@ -133,6 +141,7 @@ function ViewRow({
   onRenovar,
 }: {
   tenencia: PortfolioPlazoFijo
+  domId?: string
   moneda: string
   monedaBase: string
   tipoCambio: number | undefined
@@ -149,7 +158,7 @@ function ViewRow({
   }
 
   return (
-    <div className="tenencia-row">
+    <div id={domId} className="tenencia-row">
       <div className="min-w-0 flex-1 basis-32">
         <div className="flex items-center gap-1.5">
           <TruncatedText text={tenencia.entidadFinanciera} className="tenencia-row-title" />
@@ -184,6 +193,7 @@ function ViewRow({
 
 function Row({
   tenencia,
+  domId,
   moneda,
   tipos,
   isMutating,
@@ -194,6 +204,7 @@ function Row({
   onSave,
 }: {
   tenencia?: PortfolioPlazoFijo
+  domId?: string
   moneda: string
   tipos: TipoPlazoFijo[]
   isMutating: boolean
@@ -240,7 +251,7 @@ function Row({
 
   return (
     <Form {...form}>
-      <div className="compare-card gap-2">
+      <div id={domId} className="compare-card gap-2">
         <DisponibleParaInvertir disponible={disponible ?? null} monedaBase={monedaBase ?? moneda} />
         <PlazoFijoFormGrid
           moneda={moneda}

@@ -97,7 +97,6 @@ function ConfigurarSimulacion({
   }
 
   const bloqueado = preview ? !preview.puedeSimular : false
-  const editHref = `/portfolios/${idPortfolio}`
   const { usdFilas, arsFilas } = construirFilasPortfolio(
     detalle,
     { accionesCatalogo, bonosCatalogo, letrasCatalogo },
@@ -179,7 +178,7 @@ function ConfigurarSimulacion({
 
       <RangosInflacionCard />
 
-      <DetallePortfolioResumenCard usdFilas={usdFilas} arsFilas={arsFilas} editHref={editHref} bloqueado={bloqueado} />
+      <DetallePortfolioResumenCard usdFilas={usdFilas} arsFilas={arsFilas} idPortfolio={idPortfolio} bloqueado={bloqueado} />
 
       <div className="card flex flex-wrap items-center justify-between gap-4">
         <p className="max-w-[400px] text-[12.5px] text-ink-soft">

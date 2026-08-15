@@ -1,18 +1,21 @@
-import { Link } from 'react-router-dom'
 import InfoTooltip from '@/components/portfolios/InfoTooltip'
 import TruncatedText from '@/components/portfolios/TruncatedText'
+import EditarInstrumentoLink from '@/components/portfolios/tenencias/EditarInstrumentoLink'
 import type { CampoPreview } from '@/lib/tenenciaDisplay'
+import type { InstrumentoRef } from '@/lib/instrumentoRef'
 
 export default function TenenciaResumenRow({
   titulo,
   subtitulo,
   campos,
-  editHref,
+  idPortfolio,
+  instrumento,
 }: {
   titulo: string
   subtitulo: string
   campos: CampoPreview[]
-  editHref: string
+  idPortfolio: number
+  instrumento: InstrumentoRef
 }) {
   return (
     <div className="tenencia-row">
@@ -31,12 +34,7 @@ export default function TenenciaResumenRow({
           </div>
         ))}
       </div>
-      <Link
-        to={editHref}
-        className="tenencia-row-action ml-auto"
-      >
-        Editar →
-      </Link>
+      <EditarInstrumentoLink idPortfolio={idPortfolio} instrumento={instrumento} className="ml-auto" />
     </div>
   )
 }

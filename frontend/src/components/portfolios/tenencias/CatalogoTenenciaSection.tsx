@@ -11,6 +11,7 @@ import CamposCantidadYPreview from '@/components/portfolios/tenencias/CamposCant
 import CatalogoTenenciaAddRow from '@/components/portfolios/tenencias/CatalogoTenenciaAddRow'
 import { Form } from '@/components/ui/form'
 import { useEditableSectionState } from '@/hooks/useEditableSectionState'
+import { instrumentoAnchorId, parseInstrumentoRefKey, type TipoInstrumento } from '@/lib/instrumentoRef'
 import {
   editSchema,
   type CatalogoOpcion,
@@ -23,6 +24,7 @@ export type { CatalogoOpcion, TenenciaItem }
 interface Props {
   titulo:           string
   tooltip:          string
+  tipo:             TipoInstrumento
   pickLabel:        string
   addLabel:         string
   emptyMessage:     string
@@ -35,6 +37,7 @@ interface Props {
   tipoCambio?:      number
   error?:           string | null
   onDescartarError?: () => void
+  editarKey?:       string | null
   cantidadLabel?:   string
   cantidadTooltip?: string
   montoInvertidoTooltip?: string
@@ -46,6 +49,7 @@ interface Props {
 export default function CatalogoTenenciaSection({
   titulo,
   tooltip,
+  tipo,
   pickLabel,
   addLabel,
   emptyMessage,
@@ -58,6 +62,7 @@ export default function CatalogoTenenciaSection({
   tipoCambio,
   error,
   onDescartarError,
+  editarKey,
   cantidadLabel = 'Cantidad',
   cantidadTooltip,
   montoInvertidoTooltip,
@@ -65,6 +70,8 @@ export default function CatalogoTenenciaSection({
   onUpdate,
   onDelete,
 }: Props) {
+  const editarRef = parseInstrumentoRefKey(editarKey)
+  const initialEditingId = editarRef?.tipo === tipo ? editarRef.id : null
   const {
     editingId,
     isAdding,
@@ -74,7 +81,7 @@ export default function CatalogoTenenciaSection({
     cancelarAgregar,
     guardarEdicionYCerrar,
     guardarAltaYCerrar,
-  } = useEditableSectionState(onDescartarError)
+  } = useEditableSectionState(onDescartarError, initialEditingId)
 
   return (
     <SectionShell
@@ -108,6 +115,7 @@ export default function CatalogoTenenciaSection({
         editingId === t.idCatalogo ? (
           <EditExistingRow
             key={t.idCatalogo}
+            domId={instrumentoAnchorId({ tipo, id: t.idCatalogo })}
             tenencia={t}
             isMutating={isMutating}
             disponible={disponible}
@@ -123,6 +131,7 @@ export default function CatalogoTenenciaSection({
         ) : (
           <ViewRow
             key={t.idCatalogo}
+            domId={instrumentoAnchorId({ tipo, id: t.idCatalogo })}
             tenencia={t}
             onEdit={() => editar(t.idCatalogo)}
             onDelete={() => onDelete(t.idCatalogo)}
@@ -135,15 +144,17 @@ export default function CatalogoTenenciaSection({
 
 function ViewRow({
   tenencia,
+  domId,
   onEdit,
   onDelete,
 }: {
   tenencia: TenenciaItem
+  domId?: string
   onEdit: () => void
   onDelete: () => void
 }) {
   return (
-    <div className="flex flex-col">
+    <div id={domId} className="flex flex-col">
       <div className="tenencia-row">
         <div className="min-w-0 flex-1 basis-32">
           <TruncatedText text={tenencia.titulo} className="tenencia-row-title" />
@@ -169,6 +180,7 @@ function ViewRow({
 
 function EditExistingRow({
   tenencia,
+  domId,
   isMutating,
   disponible,
   monedaBase,
@@ -181,6 +193,7 @@ function EditExistingRow({
   onSave,
 }: {
   tenencia: TenenciaItem
+  domId?: string
   isMutating: boolean
   disponible: number | null
   monedaBase: string
@@ -203,7 +216,8 @@ function EditExistingRow({
 
   return (
     <Form {...form}>
-      <div className="compare-card gap-2.5">
+      <div id={domId} className="compare-card gap-2.5">
+        <p className="tenencia-row-title">{tenencia.titulo}</p>
         <DisponibleParaInvertir disponible={disponible} monedaBase={monedaBase} />
         <CamposCantidadYPreview
           control={form.control}

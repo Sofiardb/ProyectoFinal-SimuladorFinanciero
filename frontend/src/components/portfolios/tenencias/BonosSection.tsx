@@ -15,11 +15,13 @@ export default function BonosSection({
   detalle,
   bonosCatalogo,
   perfilLower,
+  editarKey,
 }: {
   idPortfolio: number
   detalle: PortfolioDetalle
   bonosCatalogo: BonoCatalogo[] | undefined
   perfilLower: string
+  editarKey?: string | null
 }) {
   const addBono = useAddBono(idPortfolio)
   const updateBono = useUpdateBono(idPortfolio)
@@ -57,6 +59,8 @@ export default function BonosSection({
     <TypeSectionCard>
       <CatalogoTenenciaSection
         titulo="Bonos"
+        tipo="bono"
+        editarKey={editarKey}
         tooltip={SECCION_TOOLTIPS.bonos}
         pickLabel="Elegí un bono"
         addLabel="+ Agregar bono"

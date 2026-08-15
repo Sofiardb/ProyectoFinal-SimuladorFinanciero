@@ -4,13 +4,13 @@ import type { FilaTenenciaResumen } from './filasPortfolio'
 export default function DetallePortfolioResumenCard({
   usdFilas,
   arsFilas,
-  editHref,
+  idPortfolio,
   bloqueado,
 }: {
-  usdFilas:  FilaTenenciaResumen[]
-  arsFilas:  FilaTenenciaResumen[]
-  editHref:  string
-  bloqueado: boolean
+  usdFilas:    FilaTenenciaResumen[]
+  arsFilas:    FilaTenenciaResumen[]
+  idPortfolio: number
+  bloqueado:   boolean
 }) {
   return (
     <div className="card mb-5 flex flex-col gap-5">
@@ -22,7 +22,14 @@ export default function DetallePortfolioResumenCard({
           </p>
           <div className="flex flex-col gap-2">
             {usdFilas.map((f) => (
-              <TenenciaResumenRow key={f.id} titulo={f.titulo} subtitulo={f.subtitulo} campos={f.campos} editHref={editHref} />
+              <TenenciaResumenRow
+                key={f.id}
+                titulo={f.titulo}
+                subtitulo={f.subtitulo}
+                campos={f.campos}
+                idPortfolio={idPortfolio}
+                instrumento={f.instrumento}
+              />
             ))}
           </div>
         </div>
@@ -34,7 +41,14 @@ export default function DetallePortfolioResumenCard({
           </p>
           <div className="flex flex-col gap-2">
             {arsFilas.map((f) => (
-              <TenenciaResumenRow key={f.id} titulo={f.titulo} subtitulo={f.subtitulo} campos={f.campos} editHref={editHref} />
+              <TenenciaResumenRow
+                key={f.id}
+                titulo={f.titulo}
+                subtitulo={f.subtitulo}
+                campos={f.campos}
+                idPortfolio={idPortfolio}
+                instrumento={f.instrumento}
+              />
             ))}
           </div>
         </div>

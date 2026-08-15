@@ -23,5 +23,6 @@ export function plazoFijoCardDisplay(pf: PortfolioPlazoFijo): CardDisplay {
     title: pf.entidadFinanciera,
     subtitle: `${pf.codigoMoneda} · ${pf.nombreTipoPlazoFijo}`,
     stat: `${formatPorcentaje(pf.tnaPactada * 100)} ${esUva ? 'real' : 'TNA'}`,
+    instrumento: { tipo: 'pf', id: pf.idPortfolioPlazoFijo },
   }
 }

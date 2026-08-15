@@ -1,3 +1,5 @@
+import type { InstrumentoRef } from '@/lib/instrumentoRef'
+
 export interface CampoPreview {
   label:    string
   value:    string
@@ -11,10 +13,11 @@ export interface TenenciaRowCore {
 }
 
 export interface CardDisplay {
-  id:       string
-  title:    string
-  subtitle: string
-  stat:     string
+  id:          string
+  title:       string
+  subtitle:    string
+  stat:        string
+  instrumento: InstrumentoRef
 }
 
 export interface AmbitoInfo {

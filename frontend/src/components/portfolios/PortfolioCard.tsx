@@ -110,10 +110,20 @@ export default function PortfolioCard({
       {detalle && <PresupuestoBoxes detalle={detalle} />}
 
       {visibleUsd.length > 0 && (
-        <GrupoMonedaList titulo="USD · ACCIONES Y PLAZO FIJO" tituloClassName="text-currency-usd" items={visibleUsd} />
+        <GrupoMonedaList
+          titulo="USD · ACCIONES Y PLAZO FIJO"
+          tituloClassName="text-currency-usd"
+          items={visibleUsd}
+          idPortfolio={portfolio.idPortfolio}
+        />
       )}
       {visibleArs.length > 0 && (
-        <GrupoMonedaList titulo="ARS · BONOS, LETRAS Y PLAZO FIJO" tituloClassName="text-currency-ars" items={visibleArs} />
+        <GrupoMonedaList
+          titulo="ARS · BONOS, LETRAS Y PLAZO FIJO"
+          tituloClassName="text-currency-ars"
+          items={visibleArs}
+          idPortfolio={portfolio.idPortfolio}
+        />
       )}
       {detalle && totalCount === 0 && (
         <div className="flex flex-col items-start gap-2">

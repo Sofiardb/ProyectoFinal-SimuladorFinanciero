@@ -41,7 +41,7 @@ export default function PlazoFijoFormGrid({ moneda, tipos, control, monedaBase, 
       <div className="grid grid-cols-2 gap-2">
         {tipos.length <= 1 ? (
           <div>
-            <span className="field-label">Tipo</span>
+            <span className="field-label-tenencia">Tipo</span>
             <div className="readonly-chip">{tipos[0]?.nombre ?? '—'}</div>
           </div>
         ) : (
@@ -49,6 +49,7 @@ export default function PlazoFijoFormGrid({ moneda, tipos, control, monedaBase, 
             control={control}
             name="idTipoPlazoFijo"
             label="Tipo"
+            labelClassName="min-h-4"
             options={tipos.map((t) => ({ value: String(t.idTipoPlazoFijo), label: t.nombre }))}
           />
         )}
@@ -56,17 +57,19 @@ export default function PlazoFijoFormGrid({ moneda, tipos, control, monedaBase, 
           control={control}
           name="montoInvertido"
           label={`Monto (${moneda})`}
+          labelClassName="min-h-4"
           inputProps={{ type: 'number', min: 0, placeholder: '0' }}
         />
         <TextFormField
           control={control}
           name="tnaPactada"
           label={`${tasaLabel} (%)`}
+          labelClassName="min-h-4"
           inputProps={{ type: 'number', min: 0, max: 100, step: 'any', placeholder: 'Ej: 42' }}
         />
         {convertido && (
           <div>
-            <span className="field-label inline-flex items-center gap-1">
+            <span className="field-label-tenencia">
               {convertido.label}
               {convertido.tooltip && <InfoTooltip term={convertido.label} definition={convertido.tooltip} />}
             </span>
@@ -77,12 +80,14 @@ export default function PlazoFijoFormGrid({ moneda, tipos, control, monedaBase, 
           control={control}
           name="duracionDias"
           label="Plazo (días)"
+          labelClassName="min-h-4"
           inputProps={{ type: 'number', min: 1, placeholder: '180' }}
         />
         <TextFormField
           control={control}
           name="fechaInicio"
           label="Fecha de inicio"
+          labelClassName="min-h-4"
           inputProps={{ type: 'date', min: hoyISO() }}
         />
         <FormField

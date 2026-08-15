@@ -9,17 +9,19 @@ import {
   type CampoPreview,
   type TenenciaRowCore,
 } from '@/lib/tenenciaDisplay'
+import type { InstrumentoRef } from '@/lib/instrumentoRef'
 import type { AccionCatalogo, BonoCatalogo, LetraCatalogo, PortfolioDetalle, PortfolioPlazoFijo } from '@/types'
 
 export interface FilaTenenciaResumen {
-  id:        string
-  titulo:    string
-  subtitulo: string
-  campos:    CampoPreview[]
+  id:          string
+  titulo:      string
+  subtitulo:   string
+  campos:      CampoPreview[]
+  instrumento: InstrumentoRef
 }
 
-function fila(id: string, row: TenenciaRowCore): FilaTenenciaResumen {
-  return { id, titulo: row.titulo, subtitulo: row.subtitulo, campos: row.previewFields }
+function fila(id: string, instrumento: InstrumentoRef, row: TenenciaRowCore): FilaTenenciaResumen {
+  return { id, titulo: row.titulo, subtitulo: row.subtitulo, campos: row.previewFields, instrumento }
 }
 
 function plazoFijoFila(pf: PortfolioPlazoFijo, monedaBase: string, tipoCambio: number | undefined): FilaTenenciaResumen {
@@ -28,6 +30,7 @@ function plazoFijoFila(pf: PortfolioPlazoFijo, monedaBase: string, tipoCambio: n
     titulo: pf.entidadFinanciera,
     subtitulo: pf.nombreTipoPlazoFijo,
     campos: plazoFijoPreview(pf, monedaBase, tipoCambio),
+    instrumento: { tipo: 'pf', id: pf.idPortfolioPlazoFijo },
   }
 }
 
@@ -47,13 +50,13 @@ export function construirFilasPortfolio(
 
   const monedaBase = detalle.codigoMonedaBase
   const accionesFilas = detalle.acciones.map((a) =>
-    fila(`accion_${a.idPortfolioAccion}`, accionRow(a, accionesPorId, monedaBase, tipoCambio)),
+    fila(`accion_${a.idPortfolioAccion}`, { tipo: 'accion', id: a.idAccion }, accionRow(a, accionesPorId, monedaBase, tipoCambio)),
   )
   const bonosFilas = detalle.bonos.map((b) =>
-    fila(`bono_${b.idPortfolioBono}`, bonoRow(b, bonosPorId, monedaBase, tipoCambio)),
+    fila(`bono_${b.idPortfolioBono}`, { tipo: 'bono', id: b.idBono }, bonoRow(b, bonosPorId, monedaBase, tipoCambio)),
   )
   const letrasFilas = detalle.letras.map((l) =>
-    fila(`letra_${l.idPortfolioLetra}`, letraRow(l, letrasPorId, monedaBase, tipoCambio)),
+    fila(`letra_${l.idPortfolioLetra}`, { tipo: 'letra', id: l.idLetra }, letraRow(l, letrasPorId, monedaBase, tipoCambio)),
   )
 
   const usdFilas = [
