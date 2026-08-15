@@ -21,7 +21,7 @@ export default function FilaPanelGraficos({
 }) {
   return (
     <FilaComparacion>
-      <Columna view={viewA}>
+      <Columna view={viewA} lado="a">
         {({ filas, detalle, instrumentos }) => (
           <PanelGraficoResultados
             titulo={titulo}
@@ -35,7 +35,7 @@ export default function FilaPanelGraficos({
           />
         )}
       </Columna>
-      <Columna view={viewB}>
+      <Columna view={viewB} lado="b">
         {({ filas, detalle, instrumentos }) => (
           <PanelGraficoResultados
             titulo={titulo}

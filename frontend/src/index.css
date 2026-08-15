@@ -84,6 +84,12 @@
   --color-compare-bg:     #f5f9fe;
   --color-accent-blue-strong: #3a6fc4;
 
+  /* Colores para distinguir simulación A vs. B en "Comparar simulaciones" */
+  --color-compara-a:    #7c5cf0;
+  --color-compara-a-bg: #f2eefc;
+  --color-compara-b:    #0d9488;
+  --color-compara-b-bg: #e6f5f3;
+
   /* Estados negativos */
   --color-danger:        #d1503f;
   --color-danger-bg:     #faeae6;
@@ -197,6 +203,11 @@
   /* Grilla de tarjetas de portfolio — agregar un xl:grid-cols-* puntual según el contexto */
   .portfolio-grid {
     @apply grid grid-cols-1 gap-5 lg:grid-cols-2;
+  }
+
+  /* Grilla lado a lado (A/B) de "Comparar simulaciones" — apilada en mobile */
+  .comparacion-grid {
+    @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
   }
 
   /* Ítem del menú mobile de TopNav — agregar el color (normal o destructivo) en el call site */

@@ -3,25 +3,38 @@ import { useResultadosSimulacionView } from '@/hooks/useResultadosSimulacionView
 import CabeceraSimulacion from './CabeceraSimulacion'
 import { Columna, FilaComparacion } from './ComparacionGrid'
 import FilaPanelGraficos from './FilaPanelGraficos'
+import type { Grupo } from './SelectorSimulacion'
 import KpisComparacion from './KpisComparacion'
 import TablaPercentiles from './TablaPercentiles'
 
-export default function ComparacionSimulaciones({ idA, idB }: { idA: number | null; idB: number | null }) {
+export default function ComparacionSimulaciones({
+  idA,
+  idB,
+  onChangeA,
+  onChangeB,
+  grupos,
+}: {
+  idA: number | null
+  idB: number | null
+  onChangeA: (id: number | null) => void
+  onChangeB: (id: number | null) => void
+  grupos: Grupo[]
+}) {
   const viewA = useResultadosSimulacionView(idA ?? NaN)
   const viewB = useResultadosSimulacionView(idB ?? NaN)
 
   return (
     <>
       <FilaComparacion>
-        <CabeceraSimulacion view={viewA} />
-        <CabeceraSimulacion view={viewB} />
+        <CabeceraSimulacion lado="a" view={viewA} idSimulacion={idA} onChange={onChangeA} grupos={grupos} />
+        <CabeceraSimulacion lado="b" view={viewB} idSimulacion={idB} onChange={onChangeB} grupos={grupos} />
       </FilaComparacion>
 
       <FilaComparacion>
-        <Columna view={viewA} alto="h-52">
+        <Columna view={viewA} lado="a" alto="h-52">
           {({ sim, filas }) => <KpisComparacion sim={sim} filas={filas} view={viewA} />}
         </Columna>
-        <Columna view={viewB} alto="h-52">
+        <Columna view={viewB} lado="b" alto="h-52">
           {({ sim, filas }) => <KpisComparacion sim={sim} filas={filas} view={viewB} />}
         </Columna>
       </FilaComparacion>
@@ -54,7 +67,7 @@ export default function ComparacionSimulaciones({ idA, idB }: { idA: number | nu
       />
 
       <FilaComparacion>
-        <Columna view={viewA} alto="h-56">
+        <Columna view={viewA} lado="a" alto="h-56">
           {() => (
             <InflacionChart
               mensualArs={viewA.mensualArs}
@@ -64,7 +77,7 @@ export default function ComparacionSimulaciones({ idA, idB }: { idA: number | nu
             />
           )}
         </Columna>
-        <Columna view={viewB} alto="h-56">
+        <Columna view={viewB} lado="b" alto="h-56">
           {() => (
             <InflacionChart
               mensualArs={viewB.mensualArs}
@@ -77,8 +90,8 @@ export default function ComparacionSimulaciones({ idA, idB }: { idA: number | nu
       </FilaComparacion>
 
       <FilaComparacion>
-        <Columna view={viewA}>{() => <TablaPercentiles view={viewA} />}</Columna>
-        <Columna view={viewB}>{() => <TablaPercentiles view={viewB} />}</Columna>
+        <Columna view={viewA} lado="a">{() => <TablaPercentiles view={viewA} />}</Columna>
+        <Columna view={viewB} lado="b">{() => <TablaPercentiles view={viewB} />}</Columna>
       </FilaComparacion>
     </>
   )

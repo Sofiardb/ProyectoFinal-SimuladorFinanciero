@@ -2,9 +2,8 @@ import { useMemo } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SlowLoadingHint } from '@/components/ui/slow-loading-hint'
-import { FilaComparacion } from '@/components/simulaciones/comparar/ComparacionGrid'
 import ComparacionSimulaciones from '@/components/simulaciones/comparar/ComparacionSimulaciones'
-import SelectorSimulacion, { type Grupo } from '@/components/simulaciones/comparar/SelectorSimulacion'
+import type { Grupo } from '@/components/simulaciones/comparar/SelectorSimulacion'
 import { useTodasLasSimulaciones } from '@/api/hooks'
 
 export default function CompararPage() {
@@ -52,19 +51,20 @@ export default function CompararPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="comparacion-grid">
           <Skeleton className="h-11 w-full" />
           <Skeleton className="h-11 w-full" />
           <SlowLoadingHint isLoading={isLoading} />
         </div>
       ) : (
         <div className="fade-in-content">
-          <FilaComparacion>
-            <SelectorSimulacion idSimulacion={idA} onChange={(id) => setId('a', id)} grupos={grupos} />
-            <SelectorSimulacion idSimulacion={idB} onChange={(id) => setId('b', id)} grupos={grupos} />
-          </FilaComparacion>
-
-          <ComparacionSimulaciones idA={idA} idB={idB} />
+          <ComparacionSimulaciones
+            idA={idA}
+            idB={idB}
+            onChangeA={(id) => setId('a', id)}
+            onChangeB={(id) => setId('b', id)}
+            grupos={grupos}
+          />
         </div>
       )}
     </div>
