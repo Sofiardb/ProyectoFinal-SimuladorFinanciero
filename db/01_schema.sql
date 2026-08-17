@@ -118,17 +118,6 @@ CREATE TABLE indice_mercado (
 COMMENT ON TABLE indice_mercado IS 'Índices de referencia utilizados para el modelo GBM (factor sistemático). El universo de acciones se limita al S&P 500 (SR-01).';
 
 
-CREATE TABLE precio_historico_indice (
-    id_precio_historico_indice BIGSERIAL PRIMARY KEY,
-    id_indice_mercado          SMALLINT      NOT NULL REFERENCES indice_mercado(id_indice_mercado) ON DELETE CASCADE,
-    fecha                      DATE          NOT NULL,
-    valor_cierre               NUMERIC(20,6) NOT NULL,
-    UNIQUE (id_indice_mercado, fecha)
-);
-
-CREATE INDEX idx_phi_indice_fecha ON precio_historico_indice(id_indice_mercado, fecha DESC);
-
-
 -- =============================================================================
 -- 3. INSTRUMENTOS FINANCIEROS DISPONIBLES (CATÁLOGO)
 -- =============================================================================
@@ -160,24 +149,6 @@ COMMENT ON COLUMN accion.mu_retorno_esperado    IS 'Drift del GBM (μ): retorno 
 COMMENT ON COLUMN accion.sigma_volatilidad      IS 'Volatilidad del GBM (σ): desvío estándar de los retornos logarítmicos anualizado (el motor lo convierte a paso mensual internamente, /√12).';
 COMMENT ON COLUMN accion.rho_correlacion_indice IS 'Correlación (ρ) entre los retornos de la acción y su índice de referencia.';
 COMMENT ON COLUMN accion.meses_de_datos         IS 'Meses de historia real usados para estimar μ, σ, ρ. Menor a 120 en empresas con historial corto (RIVN, COIN, etc.).';
-
-
-CREATE TABLE precio_historico_accion (
-    id_precio_historico_accion BIGSERIAL PRIMARY KEY,
-    id_accion                  BIGINT        NOT NULL REFERENCES accion(id_accion) ON DELETE CASCADE,
-    fecha                      DATE          NOT NULL,
-    precio_apertura            NUMERIC(20,6),
-    precio_cierre              NUMERIC(20,6) NOT NULL,
-    precio_maximo              NUMERIC(20,6),
-    precio_minimo              NUMERIC(20,6),
-    precio_ajustado            NUMERIC(20,6),
-    volumen                    BIGINT,
-    UNIQUE (id_accion, fecha)
-);
-
-CREATE INDEX idx_pha_accion_fecha ON precio_historico_accion(id_accion, fecha DESC);
-
-COMMENT ON TABLE precio_historico_accion IS 'Series de precios históricos diarios utilizadas para estimar μ, σ y ρ del modelo GBM.';
 
 
 -- 3.2 BONOS ------------------------------------------------------------------
