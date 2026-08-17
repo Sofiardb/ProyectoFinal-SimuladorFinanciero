@@ -1,3 +1,4 @@
 -r requirements.txt
 pytest
 pytest-flask
+numexpr  # solo para benchmarks/bench_numexpr_acciones.py, no se usa en produccion

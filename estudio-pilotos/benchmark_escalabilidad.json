@@ -1,38 +1,470 @@
 {
   "csharp": {
     "1": [
-      0.5314629077911377,
-      0.5126736164093018
+      {
+        "wall_total": 1.1344685554504395,
+        "carga_params": 0.213,
+        "simulacion_pura": 0.03,
+        "overhead_proceso": 0.8914685554504395
+      },
+      {
+        "wall_total": 1.0811052322387695,
+        "carga_params": 0.2055,
+        "simulacion_pura": 0.0286,
+        "overhead_proceso": 0.8470052322387696
+      }
     ],
     "5": [
-      0.507598876953125,
-      0.532480001449585
+      {
+        "wall_total": 1.102644681930542,
+        "carga_params": 0.2233,
+        "simulacion_pura": 0.0315,
+        "overhead_proceso": 0.847844681930542
+      },
+      {
+        "wall_total": 1.0836751461029053,
+        "carga_params": 0.1947,
+        "simulacion_pura": 0.0375,
+        "overhead_proceso": 0.8514751461029053
+      }
     ],
     "10": [
-      0.5128741264343262,
-      0.5142822265625
+      {
+        "wall_total": 1.0710570812225342,
+        "carga_params": 0.2088,
+        "simulacion_pura": 0.037,
+        "overhead_proceso": 0.8252570812225342
+      },
+      {
+        "wall_total": 1.117553472518921,
+        "carga_params": 0.218,
+        "simulacion_pura": 0.043,
+        "overhead_proceso": 0.8565534725189209
+      }
     ],
     "20": [
-      0.5306990146636963,
-      0.5525772571563721
+      {
+        "wall_total": 1.1080021858215332,
+        "carga_params": 0.1915,
+        "simulacion_pura": 0.0564,
+        "overhead_proceso": 0.8601021858215332
+      },
+      {
+        "wall_total": 1.1434705257415771,
+        "carga_params": 0.203,
+        "simulacion_pura": 0.0473,
+        "overhead_proceso": 0.8931705257415771
+      }
     ]
   },
-  "python_numpy": {
+  "python_numexpr": {
     "1": [
-      0.1603555679321289,
-      0.14580821990966797
+      {
+        "wall_total": 0.3344593048095703,
+        "carga_params": 0.0172,
+        "simulacion_pura": 0.0039,
+        "overhead_proceso": 0.3133593048095703
+      },
+      {
+        "wall_total": 0.343275785446167,
+        "carga_params": 0.0224,
+        "simulacion_pura": 0.0081,
+        "overhead_proceso": 0.312775785446167
+      }
     ],
     "5": [
-      0.16057157516479492,
-      0.16014885902404785
+      {
+        "wall_total": 0.3672759532928467,
+        "carga_params": 0.0227,
+        "simulacion_pura": 0.0103,
+        "overhead_proceso": 0.3342759532928467
+      },
+      {
+        "wall_total": 0.3392817974090576,
+        "carga_params": 0.0178,
+        "simulacion_pura": 0.0108,
+        "overhead_proceso": 0.31068179740905766
+      }
     ],
     "10": [
-      0.1822509765625,
-      0.17656302452087402
+      {
+        "wall_total": 0.34774088859558105,
+        "carga_params": 0.0203,
+        "simulacion_pura": 0.0183,
+        "overhead_proceso": 0.3091408885955811
+      },
+      {
+        "wall_total": 0.34969234466552734,
+        "carga_params": 0.0194,
+        "simulacion_pura": 0.0191,
+        "overhead_proceso": 0.31119234466552737
+      }
     ],
     "20": [
-      0.2226426601409912,
-      0.22861409187316895
+      {
+        "wall_total": 0.3629610538482666,
+        "carga_params": 0.0244,
+        "simulacion_pura": 0.0308,
+        "overhead_proceso": 0.30776105384826663
+      },
+      {
+        "wall_total": 0.350970983505249,
+        "carga_params": 0.019,
+        "simulacion_pura": 0.0292,
+        "overhead_proceso": 0.302770983505249
+      }
     ]
+  },
+  "csharp_1cpu": {
+    "1": [
+      {
+        "wall_total": 1.0504539012908936,
+        "carga_params": 0.1957,
+        "simulacion_pura": 0.0231,
+        "overhead_proceso": 0.8316539012908936
+      },
+      {
+        "wall_total": 1.1264197826385498,
+        "carga_params": 0.2121,
+        "simulacion_pura": 0.0255,
+        "overhead_proceso": 0.8888197826385499
+      }
+    ],
+    "5": [
+      {
+        "wall_total": 1.1660246849060059,
+        "carga_params": 0.2308,
+        "simulacion_pura": 0.0362,
+        "overhead_proceso": 0.8990246849060058
+      },
+      {
+        "wall_total": 1.0761139392852783,
+        "carga_params": 0.2091,
+        "simulacion_pura": 0.0336,
+        "overhead_proceso": 0.8334139392852783
+      }
+    ],
+    "10": [
+      {
+        "wall_total": 1.1196317672729492,
+        "carga_params": 0.2112,
+        "simulacion_pura": 0.0509,
+        "overhead_proceso": 0.8575317672729492
+      },
+      {
+        "wall_total": 1.1110706329345703,
+        "carga_params": 0.2031,
+        "simulacion_pura": 0.0577,
+        "overhead_proceso": 0.8502706329345703
+      }
+    ],
+    "20": [
+      {
+        "wall_total": 1.102945327758789,
+        "carga_params": 0.1998,
+        "simulacion_pura": 0.0726,
+        "overhead_proceso": 0.8305453277587891
+      },
+      {
+        "wall_total": 1.1641099452972412,
+        "carga_params": 0.1958,
+        "simulacion_pura": 0.0837,
+        "overhead_proceso": 0.8846099452972412
+      }
+    ]
+  },
+  "python_numexpr_1cpu": {
+    "1": [
+      {
+        "wall_total": 0.3428916931152344,
+        "carga_params": 0.019,
+        "simulacion_pura": 0.0051,
+        "overhead_proceso": 0.31879169311523436
+      },
+      {
+        "wall_total": 0.3293287754058838,
+        "carga_params": 0.0191,
+        "simulacion_pura": 0.0028,
+        "overhead_proceso": 0.30742877540588376
+      }
+    ],
+    "5": [
+      {
+        "wall_total": 0.3559877872467041,
+        "carga_params": 0.0208,
+        "simulacion_pura": 0.0134,
+        "overhead_proceso": 0.3217877872467041
+      },
+      {
+        "wall_total": 0.3203442096710205,
+        "carga_params": 0.017,
+        "simulacion_pura": 0.0104,
+        "overhead_proceso": 0.2929442096710205
+      }
+    ],
+    "10": [
+      {
+        "wall_total": 0.3388786315917969,
+        "carga_params": 0.0204,
+        "simulacion_pura": 0.0238,
+        "overhead_proceso": 0.2946786315917969
+      },
+      {
+        "wall_total": 0.3421971797943115,
+        "carga_params": 0.0197,
+        "simulacion_pura": 0.0186,
+        "overhead_proceso": 0.3038971797943115
+      }
+    ],
+    "20": [
+      {
+        "wall_total": 0.37645530700683594,
+        "carga_params": 0.0182,
+        "simulacion_pura": 0.0355,
+        "overhead_proceso": 0.32275530700683597
+      },
+      {
+        "wall_total": 0.3662707805633545,
+        "carga_params": 0.0181,
+        "simulacion_pura": 0.0354,
+        "overhead_proceso": 0.3127707805633545
+      }
+    ]
+  },
+  "python_plano": {
+    "1": [
+      {
+        "wall_total": 0.3083357810974121,
+        "carga_params": 0.0187,
+        "simulacion_pura": 0.0423,
+        "overhead_proceso": 0.2473357810974121
+      },
+      {
+        "wall_total": 0.30373048782348633,
+        "carga_params": 0.0195,
+        "simulacion_pura": 0.0417,
+        "overhead_proceso": 0.2425304878234863
+      }
+    ],
+    "5": [
+      {
+        "wall_total": 0.3144569396972656,
+        "carga_params": 0.0178,
+        "simulacion_pura": 0.0526,
+        "overhead_proceso": 0.24405693969726563
+      },
+      {
+        "wall_total": 0.3173198699951172,
+        "carga_params": 0.0169,
+        "simulacion_pura": 0.0498,
+        "overhead_proceso": 0.25061986999511715
+      }
+    ],
+    "10": [
+      {
+        "wall_total": 0.31621408462524414,
+        "carga_params": 0.0171,
+        "simulacion_pura": 0.0578,
+        "overhead_proceso": 0.24131408462524415
+      },
+      {
+        "wall_total": 0.329181432723999,
+        "carga_params": 0.0177,
+        "simulacion_pura": 0.0619,
+        "overhead_proceso": 0.24958143272399902
+      }
+    ],
+    "20": [
+      {
+        "wall_total": 0.33056187629699707,
+        "carga_params": 0.0223,
+        "simulacion_pura": 0.0782,
+        "overhead_proceso": 0.2300618762969971
+      },
+      {
+        "wall_total": 0.3453383445739746,
+        "carga_params": 0.0201,
+        "simulacion_pura": 0.0777,
+        "overhead_proceso": 0.2475383445739746
+      }
+    ]
+  },
+  "python_plano_1cpu": {
+    "1": [
+      {
+        "wall_total": 0.29283952713012695,
+        "carga_params": 0.0184,
+        "simulacion_pura": 0.0383,
+        "overhead_proceso": 0.23613952713012698
+      },
+      {
+        "wall_total": 0.31069159507751465,
+        "carga_params": 0.0225,
+        "simulacion_pura": 0.0413,
+        "overhead_proceso": 0.24689159507751463
+      }
+    ],
+    "5": [
+      {
+        "wall_total": 0.3150005340576172,
+        "carga_params": 0.0212,
+        "simulacion_pura": 0.0489,
+        "overhead_proceso": 0.2449005340576172
+      },
+      {
+        "wall_total": 0.3119852542877197,
+        "carga_params": 0.0193,
+        "simulacion_pura": 0.0527,
+        "overhead_proceso": 0.23998525428771975
+      }
+    ],
+    "10": [
+      {
+        "wall_total": 0.33550333976745605,
+        "carga_params": 0.0215,
+        "simulacion_pura": 0.0602,
+        "overhead_proceso": 0.25380333976745606
+      },
+      {
+        "wall_total": 0.32317662239074707,
+        "carga_params": 0.0195,
+        "simulacion_pura": 0.0626,
+        "overhead_proceso": 0.24107662239074706
+      }
+    ],
+    "20": [
+      {
+        "wall_total": 0.32926273345947266,
+        "carga_params": 0.0181,
+        "simulacion_pura": 0.0742,
+        "overhead_proceso": 0.23696273345947266
+      },
+      {
+        "wall_total": 0.3386554718017578,
+        "carga_params": 0.0188,
+        "simulacion_pura": 0.0809,
+        "overhead_proceso": 0.23895547180175783
+      }
+    ]
+  },
+  "resumen_simulacion_pura": {
+    "1": {
+      "csharp_sim_pura": 0.0293,
+      "python_sim_pura": 0.006,
+      "factor": 4.883333333333333,
+      "ganador": "Python",
+      "csharp_carga_params": 0.20925,
+      "python_carga_params": 0.019799999999999998,
+      "csharp_overhead_proceso": 0.8692368938446045,
+      "python_overhead_proceso": 0.31306754512786866
+    },
+    "5": {
+      "csharp_sim_pura": 0.0345,
+      "python_sim_pura": 0.01055,
+      "factor": 3.270142180094787,
+      "ganador": "Python",
+      "csharp_carga_params": 0.20900000000000002,
+      "python_carga_params": 0.02025,
+      "csharp_overhead_proceso": 0.8496599140167236,
+      "python_overhead_proceso": 0.3224788753509522
+    },
+    "10": {
+      "csharp_sim_pura": 0.039999999999999994,
+      "python_sim_pura": 0.0187,
+      "factor": 2.13903743315508,
+      "ganador": "Python",
+      "csharp_carga_params": 0.2134,
+      "python_carga_params": 0.01985,
+      "csharp_overhead_proceso": 0.8409052768707275,
+      "python_overhead_proceso": 0.3101666166305542
+    },
+    "20": {
+      "csharp_sim_pura": 0.05185,
+      "python_sim_pura": 0.03,
+      "factor": 1.7283333333333335,
+      "ganador": "Python",
+      "csharp_carga_params": 0.19725,
+      "python_carga_params": 0.0217,
+      "csharp_overhead_proceso": 0.8766363557815551,
+      "python_overhead_proceso": 0.30526601867675784
+    }
+  },
+  "resumen_simulacion_pura_1cpu": {
+    "1": {
+      "csharp_sim_pura": 0.0243,
+      "python_sim_pura": 0.00395,
+      "factor": 6.151898734177214,
+      "ganador": "Python"
+    },
+    "5": {
+      "csharp_sim_pura": 0.0349,
+      "python_sim_pura": 0.0119,
+      "factor": 2.9327731092436973,
+      "ganador": "Python"
+    },
+    "10": {
+      "csharp_sim_pura": 0.0543,
+      "python_sim_pura": 0.0212,
+      "factor": 2.561320754716981,
+      "ganador": "Python"
+    },
+    "20": {
+      "csharp_sim_pura": 0.07815,
+      "python_sim_pura": 0.035449999999999995,
+      "factor": 2.204513399153738,
+      "ganador": "Python"
+    }
+  },
+  "resumen_numexpr_vs_plano_multi": {
+    "1": {
+      "numpy_plano": 0.041999999999999996,
+      "numpy_numexpr": 0.006,
+      "factor": 6.999999999999999,
+      "ganador": "numexpr"
+    },
+    "5": {
+      "numpy_plano": 0.051199999999999996,
+      "numpy_numexpr": 0.01055,
+      "factor": 4.853080568720379,
+      "ganador": "numexpr"
+    },
+    "10": {
+      "numpy_plano": 0.05985,
+      "numpy_numexpr": 0.0187,
+      "factor": 3.2005347593582885,
+      "ganador": "numexpr"
+    },
+    "20": {
+      "numpy_plano": 0.07795,
+      "numpy_numexpr": 0.03,
+      "factor": 2.5983333333333336,
+      "ganador": "numexpr"
+    }
+  },
+  "resumen_numexpr_vs_plano_1cpu": {
+    "1": {
+      "numpy_plano": 0.0398,
+      "numpy_numexpr": 0.00395,
+      "factor": 10.075949367088608,
+      "ganador": "numexpr"
+    },
+    "5": {
+      "numpy_plano": 0.0508,
+      "numpy_numexpr": 0.0119,
+      "factor": 4.26890756302521,
+      "ganador": "numexpr"
+    },
+    "10": {
+      "numpy_plano": 0.061399999999999996,
+      "numpy_numexpr": 0.0212,
+      "factor": 2.8962264150943393,
+      "ganador": "numexpr"
+    },
+    "20": {
+      "numpy_plano": 0.07755000000000001,
+      "numpy_numexpr": 0.035449999999999995,
+      "factor": 2.187588152327222,
+      "ganador": "numexpr"
+    }
   }
 }

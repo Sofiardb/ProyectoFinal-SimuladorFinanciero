@@ -32,7 +32,7 @@ def simular():
     num_empresas    = data.get('num_empresas', 1)
     T               = data.get('T', 1)
     pasos           = data.get('pasos', 12)
-    num_simulaciones = data.get('num_simulaciones', 10000)
+    num_simulaciones = data.get('num_simulaciones', 3000)
 
     empresas = [
         Empresa(

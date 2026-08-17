@@ -25,7 +25,7 @@ El simulador permite al usuario:
 
 - Crear portfolios de inversión compuestos por **acciones** (mercado estadounidense), **bonos**, **letras del Tesoro** y **plazos fijos** (mercado argentino).
 - Asociar cada portfolio a un **perfil de riesgo** (conservador, moderado o agresivo).
-- Ejecutar simulaciones **Monte Carlo estratificadas** por escenario económico (favorable, moderado, desfavorable), generando 1.000 trayectorias posibles del valor del portfolio a lo largo del tiempo.
+- Ejecutar simulaciones **Monte Carlo estratificadas** por escenario económico (favorable, moderado, desfavorable), generando 3.000 trayectorias posibles del valor del portfolio a lo largo del tiempo.
 - Visualizar la evolución del patrimonio y la inflación acumulada por escenario, con métricas de dispersión (p25/mediana/p75) y probabilidad de pérdida nominal y real.
 - Consultar simulaciones pasadas sin re-ejecutar el motor, gracias a la persistencia de estadísticas en base de datos.
 
@@ -59,7 +59,7 @@ graph TD
 | **Backend API** | Gestionar usuarios, portfolios e instrumentos; invocar el motor; persistir resultados en base de datos. |
 | **Motor de simulación** | Ejecutar el cálculo numérico: Monte Carlo, GBM para acciones, DCF para bonos, modelos de renta fija indexada. |
 
-El motor corre como microservicio HTTP independiente (`localhost:5050` en desarrollo, [`https://proyectofinal-simuladorfinanciero.onrender.com`](https://proyectofinal-simuladorfinanciero.onrender.com) en producción). Esta separación está justificada por evidencia experimental: Python/NumPy resultó entre **2,4× y 3,4× más rápido** que la implementación equivalente en C# para el rango de portfolios típicos del sistema. El estudio completo se encuentra en [`estudio-pilotos/INFORME_BENCHMARKS.md`](estudio-pilotos/INFORME_BENCHMARKS.md).
+El motor corre como microservicio HTTP independiente (`localhost:5050` en desarrollo, [`https://proyectofinal-simuladorfinanciero.onrender.com`](https://proyectofinal-simuladorfinanciero.onrender.com) en producción). Python fue la tecnología elegida para el motor por preferencia personal y por su relevancia en el área de finanzas cuantitativas y ciencia de datos; un estudio de performance posterior validó que esa elección no compromete el rendimiento: Python (NumPy + numexpr) resultó más rápido que una implementación equivalente en C# en la mayoría de los escenarios medidos, y el mecanismo HTTP reduce el overhead de integración a milisegundos frente al costo de relanzar un proceso por request. El estudio completo se encuentra en [`estudio-pilotos/INFORME_BENCHMARKS.md`](estudio-pilotos/INFORME_BENCHMARKS.md).
 
 El backend queda publicado en [`https://proyectofinal-simuladorfinanciero-1.onrender.com`](https://proyectofinal-simuladorfinanciero-1.onrender.com) y el frontend en [`https://proyectofinal-investlab.vercel.app`](https://proyectofinal-investlab.vercel.app).
 
@@ -71,7 +71,7 @@ El backend queda publicado en [`https://proyectofinal-simuladorfinanciero-1.onre
 |---|---|---|
 | Frontend | React 18 + TypeScript + Vite | Componentes reutilizables para gráficos; tipado estático para datos financieros; Vite reemplaza CRA discontinuado. |
 | Backend API | C# / .NET 8 + ASP.NET Core + Dapper | Plataforma madura para APIs REST; tipado fuerte; Dapper como micro-ORM sobre Npgsql, manteniendo `01_schema.sql` como única fuente de verdad del schema. |
-| Motor de simulación | Python 3 + Flask + NumPy | Vectorización BLAS/LAPACK; 2,4×–3,4× más rápido que C# medido experimentalmente; Flask agrega overhead mínimo para dos endpoints. |
+| Motor de simulación | Python 3 + Flask + NumPy | Elegido por preferencia y relevancia en finanzas cuantitativas/ciencia de datos. Flask agrega overhead mínimo para dos endpoints. |
 | Base de datos | PostgreSQL 15 | ACID, soporte JSONB para persistir arrays de estadísticas de largo variable, schema dedicado `simulador_financiero`. |
 
 ---
@@ -80,7 +80,7 @@ El backend queda publicado en [`https://proyectofinal-simuladorfinanciero-1.onre
 
 | Componente | Estado | Detalle |
 |---|---|---|
-| Motor de simulación | Completo | Todos los instrumentos implementados y testeados (64 tests en verde). Endpoint `POST /simular` activo. |
+| Motor de simulación | Completo | Todos los instrumentos implementados y testeados (66 tests en verde). Endpoint `POST /simular` activo. |
 | Esquema de base de datos | Completo | Schema PostgreSQL diseñado y revisado (`db/01_schema.sql`). |
 | Backend API | Completo | Autenticación JWT, catálogos de referencia e instrumentos, job de refresco automático, CRUD de portfolios y tenencias, integración con el motor, persistencia y lectura de resultados. Tests unitarios en verde. |
 | Frontend | Pendiente | — |

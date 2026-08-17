@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace MonteCarloPilot
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
         }
 
-        public Dictionary<string, double> SimularMonteCarlo(int T, int pasos, int numSimulaciones)
+        public Dictionary<string, double> SimularMonteCarlo(int T, int pasos, int numSimulaciones, int maxDegreeOfParallelism = -1)
         {
             double dt = (double)T / pasos;
             double sqrtDt = Math.Sqrt(dt);
@@ -63,8 +64,10 @@ namespace MonteCarloPilot
             }
 
             // Simulación paralela con Random thread-local (equivalente al NumPy vectorizado)
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism };
             Parallel.For<(Random rng, double[] zIndices)>(
                 0, numSimulaciones,
+                parallelOptions,
                 () => (new Random(Guid.NewGuid().GetHashCode()), new double[pasos]),
                 (sim, state, local) =>
                 {
@@ -130,14 +133,19 @@ namespace MonteCarloPilot
                 return;
             }
 
+            var stopwatchCarga = Stopwatch.StartNew();
             var loader = new DatosAccionesLoader(jsonPath);
             var (mu, sigma) = loader.CalcularParametrosGBM();
+            stopwatchCarga.Stop();
             var S0 = loader.GetPrecioInicial();
 
             int numEmpresas = args.Length > 0 ? int.Parse(args[0]) : 1;
+            // Segundo argumento opcional: tope de hilos para Parallel.For (-1 = sin límite, usa todos los núcleos)
+            int maxDegreeOfParallelism = args.Length > 1 ? int.Parse(args[1]) : -1;
+            // Tercer argumento opcional: cantidad de trayectorias Monte Carlo (default: 3000, la escala real de motor-simulacion)
+            int numSimulaciones = args.Length > 2 ? int.Parse(args[2]) : 3000;
             int T = 1;
             int pasos = 12;
-            int numSimulaciones = 10000;
 
             Console.WriteLine($"\n--- Configuración ---");
             Console.WriteLine($"Número de empresas: {numEmpresas}");
@@ -145,6 +153,7 @@ namespace MonteCarloPilot
             Console.WriteLine($"Pasos: {pasos}");
             Console.WriteLine($"Datos históricos: {loader.Symbol} (reutilizados)");
             Console.WriteLine($"Threads disponibles: {Environment.ProcessorCount}");
+            Console.WriteLine($"MaxDegreeOfParallelism: {(maxDegreeOfParallelism == -1 ? "sin límite" : maxDegreeOfParallelism.ToString())}");
 
             var empresas = new List<Empresa>();
             for (int i = 0; i < numEmpresas; i++)
@@ -170,7 +179,7 @@ namespace MonteCarloPilot
             var mc = new MonteCarloSimulatorMulti(empresas);
 
             var stopwatch = Stopwatch.StartNew();
-            var resultados = mc.SimularMonteCarlo(T, pasos, numSimulaciones);
+            var resultados = mc.SimularMonteCarlo(T, pasos, numSimulaciones, maxDegreeOfParallelism);
             stopwatch.Stop();
 
             Console.WriteLine($"\n--- Resultados Portafolio ---");
@@ -182,7 +191,8 @@ namespace MonteCarloPilot
             Console.WriteLine($"P95: ${resultados["percentil_95"]:F2}");
 
             Console.WriteLine($"\n--- Performance ---");
-            Console.WriteLine($"Tiempo total: {stopwatch.Elapsed.TotalSeconds:F4}s");
+            Console.WriteLine($"Tiempo carga+params: {stopwatchCarga.Elapsed.TotalSeconds.ToString("F4", CultureInfo.InvariantCulture)}s");
+            Console.WriteLine($"Tiempo total: {stopwatch.Elapsed.TotalSeconds.ToString("F4", CultureInfo.InvariantCulture)}s");
             Console.WriteLine($"Tiempo/simulación: {(stopwatch.Elapsed.TotalMilliseconds / numSimulaciones):F6}ms");
             Console.WriteLine($"Tiempo/empresa/simulación: {(stopwatch.Elapsed.TotalMilliseconds / (numSimulaciones * numEmpresas)):F6}ms");
         }

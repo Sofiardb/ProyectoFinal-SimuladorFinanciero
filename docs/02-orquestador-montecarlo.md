@@ -48,20 +48,20 @@ El motor siempre genera su propia semilla y la retorna en el output; no lee ning
 
 La semilla se mantiene en rango `int32` (`2**31`) pese a que `numpy.random.default_rng` acepta enteros de hasta 128 bits, para evitar conversiones o truncamientos frente a la columna `BIGINT` de PostgreSQL y el tipo `long` de .NET. Se usa `default_rng` en vez de `np.random.seed` porque el primero crea un generador con estado local, sin modificar estado global: `np.random.seed` interferiría entre requests simultáneos al motor, ya que Flask puede atender varias solicitudes en paralelo.
 
-Toda la aleatoriedad de la corrida (inflación, shocks de mercado, shocks idiosincráticos) se genera en una única pasada, antes del loop principal de instrumentos, por tres razones. Primero, estabilidad de la reproducibilidad ante cambios en el portfolio: la semilla controla el estado interno del RNG de forma secuencial, y si la generación estuviera intercalada con la lógica de cada instrumento, agregar o quitar un instrumento alteraría los números aleatorios de los instrumentos restantes. Generando upfront y por tipo de variable, agregar un instrumento solo agrega columnas nuevas al final de `z_propios`, sin tocar los números ya generados para los demás. Segundo, rendimiento: `rng.standard_normal((1000, T))` produce 1000×T valores en una sola llamada a código C compilado, mientras que el equivalente con un loop Python haría 1000×T llamadas al intérprete. Tercero, claridad estructural: queda explícito qué variables están determinadas por azar (generadas antes del loop) y cuáles son calculadas (derivadas durante el loop), lo que facilita la lectura y el debugging.
+Toda la aleatoriedad de la corrida (inflación, shocks de mercado, shocks idiosincráticos) se genera en una única pasada, antes del loop principal de instrumentos, por tres razones. Primero, estabilidad de la reproducibilidad ante cambios en el portfolio: la semilla controla el estado interno del RNG de forma secuencial, y si la generación estuviera intercalada con la lógica de cada instrumento, agregar o quitar un instrumento alteraría los números aleatorios de los instrumentos restantes. Generando upfront y por tipo de variable, agregar un instrumento solo agrega columnas nuevas al final de `z_propios`, sin tocar los números ya generados para los demás. Segundo, rendimiento: `rng.standard_normal((3000, T))` produce 3000×T valores en una sola llamada a código C compilado, mientras que el equivalente con un loop Python haría 3000×T llamadas al intérprete. Tercero, claridad estructural: queda explícito qué variables están determinadas por azar (generadas antes del loop) y cuáles son calculadas (derivadas durante el loop), lo que facilita la lectura y el debugging.
 
 ## 4. Estratificación por escenario
 
-Las 1000 simulaciones por defecto (`RNF-01`) se reparten en tres grupos iguales:
+Las 3000 simulaciones por defecto (`RNF-01`) se reparten en tres grupos iguales:
 
 ```python
-N_SIMULACIONES = 1000
-n_favorable    = N_SIMULACIONES // 3        # 333
-n_moderado     = N_SIMULACIONES // 3        # 333
-n_desfavorable = N_SIMULACIONES - n_favorable - n_moderado  # 334
+N_SIMULACIONES = 3000
+n_favorable    = N_SIMULACIONES // 3        # 1000
+n_moderado     = N_SIMULACIONES // 3        # 1000
+n_desfavorable = N_SIMULACIONES - n_favorable - n_moderado  # 1000
 ```
 
-Si `N` no es divisible por 3, el sobrante se asigna a `n_desfavorable`, el escenario de mayor riesgo: para `N=1000` la diferencia (334 contra 333) es estadísticamente despreciable, pero sobredimensionar el escenario adverso es preferible desde el punto de vista del análisis de riesgo.
+Si `N` no es divisible por 3, el sobrante se asigna a `n_desfavorable`, el escenario de mayor riesgo — sobredimensionar el escenario adverso es preferible desde el punto de vista del análisis de riesgo. Con el valor por defecto actual la división es exacta (1000/1000/1000) y esta regla no entra en juego, pero sigue siendo relevante si `N_SIMULACIONES` cambia a un valor no múltiplo de 3.
 
 Los grupos se ordenan de forma contigua — primero todas las favorables, luego las moderadas, luego las desfavorables — en vez de intercalados, porque simplifica la extracción de estadísticas por escenario a un slice contiguo sobre el eje 0 de la matriz, la operación más eficiente que ofrece NumPy para este propósito (sin reindexado ni máscaras booleanas):
 
@@ -137,9 +137,9 @@ def calcular_estadisticas(matriz):
     }
 ```
 
-Por cada instrumento y cada portfolio, el motor calcula media, mediana (p50), p25, p75, mínimo y máximo en cuatro vistas: global, favorable, moderado y desfavorable. Los cuartiles se calculan en una sola llamada (`np.percentile(matriz, [25, 50, 75])`, una única pasada sobre la matriz en vez de tres) porque, junto con mínimo y máximo, forman el resumen de cinco números necesario para construir los gráficos definidos, y cubren los modos de visualización del frontend. Se descartaron percentiles extremos (p5/p95) porque los box-whisker usan cuartiles por convención y p25–p75 ya comunica la dispersión central de forma reconocible. La vista `global` es la estadística sobre las 1000 simulaciones completas, sin condicionar por escenario — no es el promedio de los tres escenarios, sino la estadística sobre la totalidad de las trayectorias — y permite ver el comportamiento marginal del instrumento antes de filtrar.
+Por cada instrumento y cada portfolio, el motor calcula media, mediana (p50), p25, p75, mínimo y máximo en cuatro vistas: global, favorable, moderado y desfavorable. Los cuartiles se calculan en una sola llamada (`np.percentile(matriz, [25, 50, 75])`, una única pasada sobre la matriz en vez de tres) porque, junto con mínimo y máximo, forman el resumen de cinco números necesario para construir los gráficos definidos, y cubren los modos de visualización del frontend. Se descartaron percentiles extremos (p5/p95) porque los box-whisker usan cuartiles por convención y p25–p75 ya comunica la dispersión central de forma reconocible. La vista `global` es la estadística sobre las 3000 simulaciones completas, sin condicionar por escenario — no es el promedio de los tres escenarios, sino la estadística sobre la totalidad de las trayectorias — y permite ver el comportamiento marginal del instrumento antes de filtrar.
 
-RF-06 especifica que el sistema debe "ejecutar simulaciones Monte Carlo estratificadas por escenario y devolver las trayectorias generadas". El orquestador calcula las matrices `(1000, T+1)` completas por instrumento y por portfolio, pero no las serializa en el output: se descartan una vez calculadas las estadísticas anteriores. La tabla `trayectoria` existe en el esquema (`db/01_schema.sql`) pero no se usa — no hay ningún `INSERT` sobre ella en el backend. Se optó por exponer solo el resumen estadístico por mes en lugar de las 1000 trayectorias individuales por costo-beneficio: para un usuario que se está iniciando en inversión, los valores agregados (mediana, banda p25–p75) tienen un significado directo e interpretable, mientras que 1000 líneas superpuestas generan ruido visual que oscurece la señal en vez de aportar información adicional a la ya resumida en los percentiles; y devolver `1000 × T` valores por instrumento multiplicaría el tamaño de la respuesta y el trabajo de renderizado en el frontend en varios órdenes de magnitud, sin una ganancia proporcional de utilidad. La interpretación de RF-06 se ajustó, en consecuencia, de "devolver las trayectorias generadas" a "devolver el resultado agregado derivado de las trayectorias generadas": el motor sí genera y usa las 1000 trayectorias por escenario, pero el contrato de salida expone su resumen estadístico en lugar de los datos crudos.
+RF-06 especifica que el sistema debe "ejecutar simulaciones Monte Carlo estratificadas por escenario y devolver las trayectorias generadas". El orquestador calcula las matrices `(3000, T+1)` completas por instrumento y por portfolio, pero no las serializa en el output: se descartan una vez calculadas las estadísticas anteriores. La tabla `trayectoria` existe en el esquema (`db/01_schema.sql`) pero no se usa — no hay ningún `INSERT` sobre ella en el backend. Se optó por exponer solo el resumen estadístico por mes en lugar de las 3000 trayectorias individuales por costo-beneficio: para un usuario que se está iniciando en inversión, los valores agregados (mediana, banda p25–p75) tienen un significado directo e interpretable, mientras que 3000 líneas superpuestas generan ruido visual que oscurece la señal en vez de aportar información adicional a la ya resumida en los percentiles; y devolver `3000 × T` valores por instrumento multiplicaría el tamaño de la respuesta y el trabajo de renderizado en el frontend en varios órdenes de magnitud, sin una ganancia proporcional de utilidad. La interpretación de RF-06 se ajustó, en consecuencia, de "devolver las trayectorias generadas" a "devolver el resultado agregado derivado de las trayectorias generadas": el motor sí genera y usa las 3000 trayectorias por escenario, pero el contrato de salida expone su resumen estadístico en lugar de los datos crudos.
 
 ## 9. Separación de portfolios por moneda
 
@@ -199,6 +199,19 @@ elif tipo == "lecap":
 ```
 
 El resultado es 0.55 segundos por portfolio equivalente — un speedup de 5×. NumPy delega las operaciones matriciales a rutinas BLAS/LAPACK escritas en C, que explotan instrucciones SIMD del procesador y evitan el overhead del intérprete Python por elemento: el loop `for n` iteraba 1000 veces sobre el intérprete, mientras que la versión vectorizada hace una sola llamada a código C compilado. Como consecuencia verificable, las matrices de instrumentos determinísticos tienen filas idénticas, y la estadística resultante cumple `minimo == media == maximo` en todos los meses — invariante verificado explícitamente por el test `test_instrumento_deterministico_sin_dispersion`, que distingue instrumentos determinísticos de estocásticos.
+
+### 12.1 Optimización de `ganancias_nominales`: desplazamiento en vez de recálculo
+
+Perfilando el orquestador a la escala real (`N_SIMULACIONES=3000`) se encontró que el costo dominante no es la simulación GBM/CER en sí, sino el cálculo de estadísticas: `np.percentile` (vía `numpy.ndarray.partition`) concentraba más de la mitad del tiempo total, porque `calcular_estadisticas()` se invoca 128 veces por request (una vez por instrumento × 4 subconjuntos [global + 3 escenarios] × 3 métricas [patrimonio/ganancias_nominales/ganancias_reales]).
+
+`ganancias_nominales = patrimonio - monto` es un desplazamiento constante, y percentiles, media, mínimo y máximo son equivariantes ante desplazamientos: `percentil(X − c) = percentil(X) − c`. Por eso `metricas_completas()` calcula las estadísticas de `patrimonio` una sola vez y deriva `ganancias_nominales` restándole `monto` a cada valor ya calculado, en vez de volver a llamar a `np.percentile` sobre `matriz - monto`:
+
+```python
+def _desplazar_estadisticas(stats, delta):
+    return {clave: [v - delta for v in valores] for clave, valores in stats.items()}
+```
+
+Esto elimina 36 de las 128 llamadas a `calcular_estadisticas()` por request (las de `ganancias_nominales`), y midió una mejora de ~21%–25% en tiempo total según `N_SIMULACIONES` (66ms→52ms a N=1000, 279ms→210ms a N=5000). Es una optimización exacta, no una aproximación — la transformación es matemáticamente idéntica, y los 66 tests existentes pasan sin cambios. `ganancias_reales` no admite la misma optimización porque divide por `factor_acum_matrix`, que varía por trayectoria (no es un desplazamiento constante), así que sigue recalculándose desde cero.
 
 ## 13. Diseño del endpoint `/simular`
 

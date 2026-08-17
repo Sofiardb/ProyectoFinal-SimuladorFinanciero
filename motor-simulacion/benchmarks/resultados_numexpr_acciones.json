@@ -1,0 +1,132 @@
+{
+  "1000": {
+    "12": {
+      "numpy_plano_ms": 0.1629480000216669,
+      "numpy_numexpr_ms": 0.7613816666707862,
+      "factor": 4.6725437966071794,
+      "ganador": "NumPy plano (actual)"
+    },
+    "24": {
+      "numpy_plano_ms": 0.2962836666362515,
+      "numpy_numexpr_ms": 0.9318009999697097,
+      "factor": 3.144962429244151,
+      "ganador": "NumPy plano (actual)"
+    },
+    "36": {
+      "numpy_plano_ms": 0.9820990000055949,
+      "numpy_numexpr_ms": 0.8787293333443813,
+      "factor": 1.1176353886671746,
+      "ganador": "numexpr"
+    },
+    "60": {
+      "numpy_plano_ms": 1.5973280000616796,
+      "numpy_numexpr_ms": 2.284168000041973,
+      "factor": 1.4299930884287833,
+      "ganador": "NumPy plano (actual)"
+    }
+  },
+  "3000": {
+    "12": {
+      "numpy_plano_ms": 0.6565903333345583,
+      "numpy_numexpr_ms": 1.0679250000005898,
+      "factor": 1.6264707927956052,
+      "ganador": "NumPy plano (actual)"
+    },
+    "24": {
+      "numpy_plano_ms": 1.7475370000465773,
+      "numpy_numexpr_ms": 2.0796050000353716,
+      "factor": 1.1900205832436987,
+      "ganador": "NumPy plano (actual)"
+    },
+    "36": {
+      "numpy_plano_ms": 2.4434309999924153,
+      "numpy_numexpr_ms": 2.589386000036029,
+      "factor": 1.0597336286738062,
+      "ganador": "NumPy plano (actual)"
+    },
+    "60": {
+      "numpy_plano_ms": 5.70754800006398,
+      "numpy_numexpr_ms": 5.785125999973388,
+      "factor": 1.0135921765193283,
+      "ganador": "NumPy plano (actual)"
+    }
+  },
+  "5000": {
+    "12": {
+      "numpy_plano_ms": 1.2581840000348166,
+      "numpy_numexpr_ms": 1.673902999900747,
+      "factor": 1.3304119269156394,
+      "ganador": "NumPy plano (actual)"
+    },
+    "24": {
+      "numpy_plano_ms": 3.381091000046581,
+      "numpy_numexpr_ms": 2.9036630000337027,
+      "factor": 1.1644226619987708,
+      "ganador": "numexpr"
+    },
+    "36": {
+      "numpy_plano_ms": 6.1255450001044665,
+      "numpy_numexpr_ms": 5.822403000056511,
+      "factor": 1.0520647574626856,
+      "ganador": "numexpr"
+    },
+    "60": {
+      "numpy_plano_ms": 9.898763999954099,
+      "numpy_numexpr_ms": 9.225326999876415,
+      "factor": 1.072998713225743,
+      "ganador": "numexpr"
+    }
+  },
+  "10000": {
+    "12": {
+      "numpy_plano_ms": 3.3033260000229347,
+      "numpy_numexpr_ms": 3.8651489999028854,
+      "factor": 1.1700779759176205,
+      "ganador": "NumPy plano (actual)"
+    },
+    "24": {
+      "numpy_plano_ms": 8.243129000038607,
+      "numpy_numexpr_ms": 7.6178479999362025,
+      "factor": 1.082081054926226,
+      "ganador": "numexpr"
+    },
+    "36": {
+      "numpy_plano_ms": 11.138049000001047,
+      "numpy_numexpr_ms": 11.769927999994252,
+      "factor": 1.0567315694151773,
+      "ganador": "NumPy plano (actual)"
+    },
+    "60": {
+      "numpy_plano_ms": 20.996876666807417,
+      "numpy_numexpr_ms": 19.766286666466232,
+      "factor": 1.0622570147395918,
+      "ganador": "numexpr"
+    }
+  },
+  "20000": {
+    "12": {
+      "numpy_plano_ms": 8.99473700003,
+      "numpy_numexpr_ms": 8.499619999929564,
+      "factor": 1.0582516630278223,
+      "ganador": "numexpr"
+    },
+    "24": {
+      "numpy_plano_ms": 21.657565999921644,
+      "numpy_numexpr_ms": 24.400322000001324,
+      "factor": 1.1266419319737777,
+      "ganador": "NumPy plano (actual)"
+    },
+    "36": {
+      "numpy_plano_ms": 36.41066999989562,
+      "numpy_numexpr_ms": 34.32988333321797,
+      "factor": 1.0606115274695458,
+      "ganador": "numexpr"
+    },
+    "60": {
+      "numpy_plano_ms": 66.39109333336819,
+      "numpy_numexpr_ms": 59.17482999987745,
+      "factor": 1.1219481886725433,
+      "ganador": "numexpr"
+    }
+  }
+}

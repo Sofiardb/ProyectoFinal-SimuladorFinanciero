@@ -37,11 +37,20 @@ class MonteCarloPythonNumPyMulti:
 
     def simular_monte_carlo_vectorizado(self, T: int, pasos: int, num_simulaciones: int) -> Dict:
         """
-        Simulación vectorizada para múltiples empresas
-        Matrices: (num_simulaciones x pasos) para Z_indice
-                  (num_simulaciones x pasos x num_empresas) para Z_propio
+        Simulación completamente vectorizada para múltiples empresas: sin bucle
+        Python sobre las N empresas, solo operaciones NumPy con broadcasting
+        sobre el eje (num_simulaciones, pasos, num_empresas).
         """
         dt = T / pasos
+
+        # Parámetros por empresa como vectores (num_empresas,)
+        rhos = np.array([e.rho for e in self.empresas])
+        mus = np.array([e.mu for e in self.empresas])
+        sigmas = np.array([e.sigma for e in self.empresas])
+        s0s = np.array([e.S0 for e in self.empresas])
+        cantidades = np.array([e.cantidad for e in self.empresas])
+
+        sqrt_rho2 = np.sqrt(1.0 - rhos ** 2)
 
         # Factor de mercado compartido: (num_sim, pasos)
         Z_indice = np.random.standard_normal((num_simulaciones, pasos))
@@ -49,24 +58,19 @@ class MonteCarloPythonNumPyMulti:
         # Variables propias por empresa: (num_sim, pasos, num_empresas)
         Z_propio = np.random.standard_normal((num_simulaciones, pasos, self.num_empresas))
 
+        # Z_accion = ρ · Z_indice + √(1-ρ²) · Z_propio, broadcast sobre las N empresas
+        Z_accion = rhos * Z_indice[:, :, None] + sqrt_rho2 * Z_propio
+
+        # Incrementos logarítmicos: (num_sim, pasos, num_empresas)
+        incrementos = (mus - 0.5 * sigmas ** 2) * dt + sigmas * np.sqrt(dt) * Z_accion
+
+        # Log-retorno acumulado al final del horizonte = suma sobre los pasos
+        log_retornos_finales = np.sum(incrementos, axis=1)  # (num_sim, num_empresas)
+
         # Precios finales por empresa: (num_sim, num_empresas)
-        precios_finales = np.zeros((num_simulaciones, self.num_empresas))
-
-        # Calcular para cada empresa
-        for emp_idx, empresa in enumerate(self.empresas):
-            # Factor sistemático: Z_accion = ρ * Z_indice + √(1-ρ²) * Z_propio
-            sqrt_rho2 = np.sqrt(1.0 - empresa.rho ** 2)
-            Z_accion = empresa.rho * Z_indice + sqrt_rho2 * Z_propio[:, :, emp_idx]
-
-            # Incrementos logarítmicos
-            incrementos = (empresa.mu - 0.5 * empresa.sigma ** 2) * dt + empresa.sigma * np.sqrt(dt) * Z_accion
-
-            # Precios finales de esta empresa
-            log_retornos = np.cumsum(incrementos, axis=1)
-            precios_finales[:, emp_idx] = empresa.S0 * np.exp(log_retornos[:, -1])
+        precios_finales = s0s * np.exp(log_retornos_finales)
 
         # Valor del portafolio: suma ponderada de todas las empresas
-        cantidades = np.array([e.cantidad for e in self.empresas])
         valor_portafolio = np.sum(precios_finales * cantidades, axis=1)
 
         # Estadísticas
@@ -88,17 +92,21 @@ def main():
     # Argumentos
     import sys
     num_empresas = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+    # Segundo argumento opcional: cantidad de trayectorias Monte Carlo
+    # (default: 3000, la escala real de motor-simulacion)
+    num_simulaciones = int(sys.argv[2]) if len(sys.argv) > 2 else 3000
 
     # Cargar datos históricos (reutilizados N veces)
     json_path = os.path.join(os.path.dirname(__file__), '../../DatosAccionesDiaria.json')
+    inicio_carga = time.time()
     loader = DatosAccionesLoader(json_path)
     mu, sigma = loader.calcular_parametros_gbm()
+    tiempo_carga = time.time() - inicio_carga
     S0 = loader.get_precio_inicial()
 
     # Configuración
     T = 1
     pasos = 12
-    num_simulaciones = 10000
 
     print(f"\n--- Configuracion ---")
     print(f"Numero de empresas: {num_empresas}")
@@ -142,6 +150,7 @@ def main():
     print(f"P95: ${resultados['percentil_95']:.2f}")
 
     print(f"\n--- Performance ---")
+    print(f"Tiempo carga+params: {tiempo_carga:.4f}s")
     print(f"Tiempo total: {tiempo_total:.4f}s")
     print(f"Tiempo/simulacion: {(tiempo_total / num_simulaciones) * 1000:.6f}ms")
     print(f"Tiempo/empresa/simulacion: {(tiempo_total / (num_simulaciones * num_empresas)) * 1000:.6f}ms")

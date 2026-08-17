@@ -204,7 +204,7 @@ public class SimulacionServiceTests
         result.IdSimulacion.Should().Be(99L);
         result.IdPortfolio.Should().Be(IdPortfolio);
         result.HorizonteMeses.Should().Be(12);
-        result.NumTrayectorias.Should().Be(1000);
+        result.NumTrayectorias.Should().Be(3000);
 
         await _simRepo.Received(1).InsertSimulacionAsync(
             Arg.Any<InsertSimulacionData>(),

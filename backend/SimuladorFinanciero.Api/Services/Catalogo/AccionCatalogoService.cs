@@ -14,10 +14,6 @@ public interface IAccionCatalogoService
 
 public sealed class AccionCatalogoService : IAccionCatalogoService
 {
-    // El motor (acciones.py) espera μ/σ ANUALIZADOS y los convierte a paso mensual internamente
-    // (/12, /√12 — Euler-Maruyama estándar, docs/01 §7); anualizar con menos de 252 días
-    // sobrestimaría el ajuste que ya hace el motor y dejaría el drift/volatilidad efectivos muy
-    // por debajo de lo real.
     private const int TradingDaysPerYear = 252;
     private const int LookbackYears      = 10;
 

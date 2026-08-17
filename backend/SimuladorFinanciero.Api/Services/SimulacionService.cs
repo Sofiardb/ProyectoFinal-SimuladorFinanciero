@@ -13,6 +13,8 @@ public interface ISimulacionService
 
 public sealed class SimulacionService : ISimulacionService
 {
+    private const int NumTrayectoriasMotor = 3000;
+
     private readonly IPortfolioRepository  _portfolioRepo;
     private readonly ISimulacionRepository _simRepo;
     private readonly IMotorClientService   _motor;
@@ -102,7 +104,7 @@ public sealed class SimulacionService : ISimulacionService
         var insertData = new InsertSimulacionData(
             IdPortfolio:            idPortfolio,
             HorizonteMeses:         tMeses,
-            NumTrayectorias:        1000,
+            NumTrayectorias:        NumTrayectoriasMotor,
             SeedAleatoria:          semillaUsada,
             ValorInicial:           valorInicial,
             ValorEsperado:          m.ValorEsperado,
@@ -139,7 +141,7 @@ public sealed class SimulacionService : ISimulacionService
             IdPortfolio:            idPortfolio,
             FechaEjecucion:         DateTimeOffset.UtcNow,
             HorizonteMeses:         tMeses,
-            NumTrayectorias:        1000,
+            NumTrayectorias:        NumTrayectoriasMotor,
             SeedAleatoria:          semillaUsada,
             ValorInicial:           valorInicial,
             ValorEsperado:          m.ValorEsperado,

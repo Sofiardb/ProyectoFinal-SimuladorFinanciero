@@ -138,7 +138,7 @@ Todos los endpoints de simulaciones requieren autenticación, con el mismo aisla
   "idPortfolio":        1,
   "fechaEjecucion":     "2026-07-04T18:00:00Z",
   "horizonteMeses":     12,
-  "numTrayectorias":    1000,
+  "numTrayectorias":    3000,
   "seedAleatoria":      987654321,
   "valorInicial":       100000.00,
   "valorEsperado":      115230.50,

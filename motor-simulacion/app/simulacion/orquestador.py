@@ -18,7 +18,22 @@ def calcular_estadisticas(matriz):
     }
 
 
-N_SIMULACIONES = 1000
+def _desplazar_estadisticas(stats, delta):
+    """Resta `delta` a cada estadística de un dict de calcular_estadisticas().
+    Percentiles, media, mínimo y máximo son equivariantes ante desplazamientos
+    constantes: percentil(X - c) = percentil(X) - c. Se usa para derivar
+    ganancias_nominales = patrimonio - monto sin recalcular np.percentile."""
+    return {clave: [v - delta for v in valores] for clave, valores in stats.items()}
+
+
+def _desplazar_estadisticas_por_escenario(stats_por_escenario, delta):
+    return {
+        escenario: _desplazar_estadisticas(stats, delta)
+        for escenario, stats in stats_por_escenario.items()
+    }
+
+
+N_SIMULACIONES = 3000
 
 
 def simular_portfolio(parametros: dict) -> dict:
@@ -171,9 +186,10 @@ def simular_portfolio(parametros: dict) -> dict:
         }
 
     def metricas_completas(matriz, monto, matriz_real):
+        stats_patrimonio = estadisticas_por_escenario(matriz)
         return {
-            "patrimonio":          estadisticas_por_escenario(matriz),
-            "ganancias_nominales": estadisticas_por_escenario(matriz - monto),
+            "patrimonio":          stats_patrimonio,
+            "ganancias_nominales": _desplazar_estadisticas_por_escenario(stats_patrimonio, monto),
             "ganancias_reales":    estadisticas_por_escenario(matriz_real - monto),
         }
 

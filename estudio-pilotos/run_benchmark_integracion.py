@@ -1,6 +1,7 @@
 """
-Benchmark de costo de integracion: Subprocess vs HTTP vs C# nativo
+Benchmark de costo de integracion del motor Python: Subprocess vs HTTP
 Mide el overhead de cada mecanismo y lo compara con el ahorro de simulacion.
+No compara contra C# -- esa comparacion es el Benchmark 1 (run_benchmark_escalable.py).
 """
 import subprocess
 import time
@@ -14,7 +15,6 @@ import urllib.error
 
 PYTHON_CMD  = 'python' if platform.system() == 'Windows' else 'python3'
 PYTHON_DIR  = os.path.join('piloto-python', 'src')
-CSHARP_DIR  = 'piloto-csharp'
 FLASK_URL   = 'http://127.0.0.1:5050'
 ITERACIONES = 5
 N_LISTA     = [1, 5, 10, 20]
@@ -114,7 +114,7 @@ def medir_http_simulacion(n):
     for _ in range(ITERACIONES):
         t0 = time.perf_counter()
         resp = http_post(f'{FLASK_URL}/simular',
-                         {'num_empresas': n, 'T': 1, 'pasos': 12, 'num_simulaciones': 10000})
+                         {'num_empresas': n, 'T': 1, 'pasos': 12, 'num_simulaciones': 3000})
         tiempos_total.append((time.perf_counter() - t0) * 1000)
         tiempos_sim.append(resp.get('tiempo_simulacion_ms', 0))
 
@@ -123,31 +123,12 @@ def medir_http_simulacion(n):
 
 
 # ---------------------------------------------
-# Medicion C# nativo
-# ---------------------------------------------
-
-def medir_csharp(n):
-    """Costo C# con Parallel.For, sin overhead de integracion."""
-    tiempos = []
-    for _ in range(ITERACIONES):
-        t0 = time.perf_counter()
-        resultado = subprocess.run(
-            ['dotnet', 'run', '-c', 'Release', '--no-build', '--', str(n)],
-            capture_output=True, timeout=120, cwd=CSHARP_DIR
-        )
-        tiempos.append((time.perf_counter() - t0) * 1000)
-        if resultado.returncode != 0:
-            print(f'  ERR Error C# N={n}: {resultado.stderr[:200]}')
-    return sum(tiempos) / len(tiempos)
-
-
-# ---------------------------------------------
 # Main
 # ---------------------------------------------
 
 def main():
     print('\n' + '=' * 75)
-    print('BENCHMARK DE COSTO DE INTEGRACION -- Subprocess vs HTTP vs C# nativo')
+    print('BENCHMARK DE COSTO DE INTEGRACION -- Subprocess vs HTTP (motor Python)')
     print('=' * 75)
 
     # -- Verificar Flask ------------------------------------------------------
@@ -158,14 +139,6 @@ def main():
         subprocess.run([PYTHON_CMD, '-m', 'pip', 'install', 'flask'],
                        check=True, capture_output=True)
         print('  OK Flask instalado')
-
-    # -- Compilar C# ---------------------------------------------------------
-    print('\n[PREP] Compilando C# Release...')
-    r = subprocess.run(['dotnet', 'build', '-c', 'Release'],
-                       cwd=CSHARP_DIR, capture_output=True, timeout=60)
-    if r.returncode != 0:
-        print('  ERR Error compilando C#'); return
-    print('  OK C# compilado')
 
     resultados = {}
 
@@ -231,17 +204,12 @@ def main():
             http_overhead_ms = http_total_ms - http_sim_ms
             print(f'{http_total_ms:.1f} ms total  (sim={http_sim_ms:.1f} ms, overhead={http_overhead_ms:.1f} ms)')
 
-            print(f'    C# nativo  ...', end=' ', flush=True)
-            cs_ms = medir_csharp(n)
-            print(f'{cs_ms:.1f} ms total')
-
             datos_n[n] = {
                 'subprocess_total_ms':   sub_total_ms,
                 'subprocess_overhead_ms': sub_total_ms - http_sim_ms,
                 'http_total_ms':         http_total_ms,
                 'http_sim_ms':           http_sim_ms,
                 'http_overhead_ms':      http_overhead_ms,
-                'csharp_total_ms':       cs_ms,
             }
 
         resultados['por_n'] = datos_n
@@ -261,32 +229,25 @@ def main():
     print(f'  Python startup + NumPy:      {numpy_ms:7.1f} ms')
     print(f'  HTTP round-trip (/ping):     {ping_ms:7.2f} ms')
 
-    print(f'\n{"N":>4}  {"Subprocess":>12}  {"HTTP total":>12}  {"C# nativo":>12}  {"Sim. pura":>10}  {"Sub. overhead%":>14}  {"HTTP overhead%":>14}')
-    print('-' * 95)
+    print(f'\n{"N":>4}  {"Subprocess":>12}  {"HTTP total":>12}  {"Sim. pura":>10}  {"Sub. overhead%":>14}  {"HTTP overhead%":>14}')
+    print('-' * 80)
     for n, d in datos_n.items():
         sub_pct  = (d['subprocess_overhead_ms'] / d['subprocess_total_ms'] * 100)
         http_pct = (d['http_overhead_ms']        / d['http_total_ms']        * 100)
         print(f'{n:>4}  {d["subprocess_total_ms"]:>11.1f}ms'
               f'  {d["http_total_ms"]:>11.1f}ms'
-              f'  {d["csharp_total_ms"]:>11.1f}ms'
               f'  {d["http_sim_ms"]:>9.1f}ms'
               f'  {sub_pct:>13.0f}%'
               f'  {http_pct:>13.0f}%')
 
-    # Punto de cruce subprocess vs C#
+    # Punto de cruce HTTP vs Subprocess
     print(f'\n{"PUNTO DE CRUCE":}')
-    cruces_sub  = [n for n, d in datos_n.items() if d['subprocess_total_ms'] < d['csharp_total_ms']]
-    cruces_http = [n for n, d in datos_n.items() if d['http_total_ms']       < d['csharp_total_ms']]
-
-    if cruces_sub:
-        print(f'  Subprocess supera C# a partir de N={min(cruces_sub)}')
-    else:
-        print(f'  Subprocess nunca supera C# en el rango medido (overhead domina)')
+    cruces_http = [n for n, d in datos_n.items() if d['http_total_ms'] < d['subprocess_total_ms']]
 
     if cruces_http:
-        print(f'  HTTP supera C# a partir de N={min(cruces_http)}')
+        print(f'  HTTP supera a Subprocess a partir de N={min(cruces_http)}')
     else:
-        print(f'  HTTP nunca supera C# en el rango medido')
+        print(f'  HTTP nunca supera a Subprocess en el rango medido')
 
     # Guardar reporte
     with open('benchmark_integracion.json', 'w') as f:
