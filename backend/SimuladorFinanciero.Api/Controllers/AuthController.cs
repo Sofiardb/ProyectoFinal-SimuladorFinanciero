@@ -73,15 +73,13 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Si la cuenta existe y todavía no fue verificada, te reenviamos el enlace." });
     }
 
-    /// <summary>Envía un email con un enlace para restablecer la contraseña, si el email existe.</summary>
+    /// <summary>Envía un email con un enlace para restablecer la contraseña a la cuenta encontrada por email o usuario.</summary>
     [HttpPost("forgot-password")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
-    {
-        await _auth.SolicitarResetPasswordAsync(request);
-        return Ok(new { message = "Si el email existe, vas a recibir un enlace para restablecer tu contraseña." });
-    }
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request) =>
+        Ok(await _auth.SolicitarResetPasswordAsync(request));
 
     /// <summary>Establece una nueva contraseña a partir de un token de recuperación válido.</summary>
     [HttpPost("reset-password")]

@@ -9,48 +9,77 @@ import { Form } from '@/components/ui/form'
 import TextFormField from '@/components/forms/TextFormField'
 import MutationErrorAlert from '@/components/forms/MutationErrorAlert'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout'
+import { ApiError } from '@/api/client'
 import { useForgotPassword } from '@/api/hooks'
 
 const schema = z.object({
-  email: z.string().min(1, 'Ingresá tu email.').email('Email inválido.'),
+  identificador: z.string().min(1, 'Ingresá tu email o usuario.'),
 })
 
 type Values = z.infer<typeof schema>
 
 export default function ForgotPasswordPage() {
-  const [sent, setSent] = useState(false)
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null)
+  const [reenviado, setReenviado] = useState(false)
   const forgotPassword = useForgotPassword()
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '' },
+    defaultValues: { identificador: '' },
   })
 
   const onSubmit = (values: Values) => {
-    forgotPassword.mutate(values, { onSuccess: () => setSent(true) })
+    setReenviado(false)
+    forgotPassword.mutate(values, {
+      onSuccess: (data) => setMaskedEmail(data.maskedEmail),
+      onError: (error) => {
+        if (error instanceof ApiError && error.status === 404) {
+          form.setError('identificador', { message: error.message })
+        }
+      },
+    })
   }
+
+  const onReenviar = () => {
+    forgotPassword.mutate(form.getValues(), { onSuccess: () => setReenviado(true) })
+  }
+
+  const errorEsNoEncontrado =
+    forgotPassword.error instanceof ApiError && forgotPassword.error.status === 404
 
   return (
     <AuthSplitLayout
       headline="¿Olvidaste tu contraseña?"
-      body="No pasa nada. Ingresá tu email y te mandamos un enlace para elegir una nueva."
+      body="No pasa nada. Ingresá tu email o usuario y te mandamos un enlace para elegir una nueva."
     >
       <h2 className="mb-1.5 font-display text-xl font-semibold text-navy-950 sm:text-2xl">
         Recuperar contraseña
       </h2>
 
-      {sent ? (
+      {maskedEmail ? (
         <>
           <Alert className="mb-6 border-green-brand bg-[#eaf7f0] text-[#1c6b45]">
-            <AlertDescription className="space-y-1.5 text-[#1c6b45]">
+            <AlertDescription className="space-y-2 text-[#1c6b45]">
               <p>
-                Si el email existe en InvestLab, vas a recibir un enlace para restablecer tu
-                contraseña en los próximos minutos.
+                Te enviamos un enlace para restablecer tu contraseña a{' '}
+                <span className="font-semibold">{maskedEmail}</span>.
               </p>
               <p className="font-semibold">
                 <span className="text-base">⚠</span> Si no lo ves, revisá tu carpeta de spam o
                 correo no deseado.
               </p>
+              {reenviado ? (
+                <p>Te lo volvimos a enviar.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onReenviar}
+                  disabled={forgotPassword.isPending}
+                  className="font-semibold underline underline-offset-2"
+                >
+                  {forgotPassword.isPending ? 'Reenviando…' : 'Reenviar enlace'}
+                </button>
+              )}
             </AlertDescription>
           </Alert>
           <Link
@@ -70,14 +99,14 @@ export default function ForgotPasswordPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <TextFormField
                 control={form.control}
-                name="email"
-                label="Email"
+                name="identificador"
+                label="Email o usuario"
                 itemClassName="space-y-1.5"
                 labelClassName="text-navy-950"
-                inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'vos@ejemplo.com', autoComplete: 'email' }}
+                inputProps={{ className: 'h-11 rounded-[9px]', placeholder: 'vos@ejemplo.com', autoComplete: 'username' }}
               />
 
-              <MutationErrorAlert error={forgotPassword.error} />
+              <MutationErrorAlert error={errorEsNoEncontrado ? null : forgotPassword.error} />
 
               <Button
                 type="submit"

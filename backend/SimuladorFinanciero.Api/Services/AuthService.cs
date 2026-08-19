@@ -14,7 +14,7 @@ public interface IAuthService
 {
     Task RegistrarAsync(RegisterRequest request);
     Task<AuthResponse?> LoginAsync(LoginRequest request);
-    Task SolicitarResetPasswordAsync(ForgotPasswordRequest request);
+    Task<ForgotPasswordResponse> SolicitarResetPasswordAsync(ForgotPasswordRequest request);
     Task ResetearPasswordAsync(ResetPasswordRequest request);
     Task<PerfilResponse> ActualizarPerfilAsync(long idUsuario, ActualizarPerfilRequest request);
     Task VerificarEmailAsync(VerifyEmailRequest request);
@@ -173,10 +173,15 @@ public class AuthService : IAuthService
         await _email.EnviarEmailAsync(pendiente.Email, "Verificá tu email — InvestLab", cuerpo);
     }
 
-    public async Task SolicitarResetPasswordAsync(ForgotPasswordRequest request)
+    public async Task<ForgotPasswordResponse> SolicitarResetPasswordAsync(ForgotPasswordRequest request)
     {
-        var usuario = await _usuarios.BuscarPorEmailAsync(request.Email.Trim().ToLowerInvariant());
-        if (usuario is null) return; // no revelar si el email existe
+        var id = request.Identificador.Trim();
+        var usuario = id.Contains('@')
+            ? await _usuarios.BuscarPorEmailAsync(id.ToLowerInvariant())
+            : await _usuarios.BuscarPorUsernameAsync(id);
+
+        if (usuario is null)
+            throw new NotFoundException("No encontramos ninguna cuenta con ese email o usuario.");
 
         var token     = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var tokenHash = HashToken(token);
@@ -194,7 +199,23 @@ public class AuthService : IAuthService
             <p>Si no solicitaste esto, podés ignorar este email.</p>
             """;
 
+        // El link siempre se manda al mail que ya está guardado en la cuenta, nunca a uno
+        // arbitrario: el identificador que mandó el usuario solo sirvió para encontrarla.
         await _email.EnviarEmailAsync(usuario.Email, "Restablecer tu contraseña — InvestLab", cuerpo);
+
+        return new ForgotPasswordResponse { MaskedEmail = EnmascararEmail(usuario.Email!) };
+    }
+
+    private static string EnmascararEmail(string email)
+    {
+        var arroba = email.IndexOf('@');
+        if (arroba <= 0) return email;
+
+        var local    = email[..arroba];
+        var dominio  = email[arroba..];
+        var visibles = local.Length >= 2 ? local[^2..] : local;
+
+        return $"****{visibles}{dominio}";
     }
 
     public async Task ResetearPasswordAsync(ResetPasswordRequest request)

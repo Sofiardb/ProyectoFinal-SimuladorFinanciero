@@ -41,7 +41,11 @@ export function useResendVerification() {
 }
 
 export interface ForgotPasswordPayload {
-  email: string
+  identificador: string
+}
+
+export interface ForgotPasswordResult {
+  maskedEmail: string
 }
 
 export interface ResetPasswordPayload {
@@ -52,7 +56,7 @@ export interface ResetPasswordPayload {
 export function useForgotPassword() {
   return useMutation({
     mutationFn: (payload: ForgotPasswordPayload) =>
-      api.post<{ message: string }>('/auth/forgot-password', payload),
+      api.post<ForgotPasswordResult>('/auth/forgot-password', payload),
   })
 }
 
