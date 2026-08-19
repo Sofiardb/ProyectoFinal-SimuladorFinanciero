@@ -16,6 +16,7 @@ Aplicación web que permite simular y comparar carteras de inversión bajo múlt
 4. [Estado de implementación](#4-estado-de-implementación)
 5. [Configuración del entorno de desarrollo](#5-configuración-del-entorno-de-desarrollo)
 6. [Documentación de decisiones de diseño](#6-documentación-de-decisiones-de-diseño)
+7. [Manual de usuario](#7-manual-de-usuario)
 
 ---
 
@@ -168,3 +169,11 @@ Las decisiones técnicas, matemáticas y de arquitectura tomadas durante el desa
 | [docs/08-integracion-motor.md](docs/08-integracion-motor.md) | Flujo completo de POST /simular: construcción del payload por tipo de instrumento, semilla, validaciones, métricas agregadas y persistencia transaccional. |
 | [docs/09-staleness-mercado.md](docs/09-staleness-mercado.md) | Datos de mercado desactualizados al simular: snapshot de tasa/GBM en la tenencia, decisión global de portfolio vía Vista Comparativa, y el mecanismo aparte para el tipo de cambio. |
 | [docs/10-plazo-fijo-vencido.md](docs/10-plazo-fijo-vencido.md) | Un plazo fijo vencido bloquea la simulación con 422; el usuario puede eliminarlo o renovarlo desde el detalle del portfolio. Incluye el fix de cálculo de interés devengado. |
+
+---
+
+## 7. Manual de usuario
+
+Guía orientada al usuario final de InvestLab: primeros pasos, alta y gestión de portfolios, instrumentos disponibles explicados en lenguaje llano, cómo ejecutar una simulación e interpretar sus resultados, historial, casos especiales y glosario. Incluye capturas reales de la aplicación.
+
+[docs/MANUAL_USUARIO.md](MANUAL_USUARIO.md)

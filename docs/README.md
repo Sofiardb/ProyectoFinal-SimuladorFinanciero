@@ -28,6 +28,7 @@ Los instrumentos soportados son: acciones (mercado estadounidense), bonos sobera
 | [08-integracion-motor.md](08-integracion-motor.md) | Integración con el motor Python: flujo completo del endpoint POST /simular, mapeo de cada tipo de instrumento al payload del motor, manejo de la semilla, validaciones previas, métricas agregadas de cabecera y persistencia transaccional. |
 | [09-staleness-mercado.md](09-staleness-mercado.md) | Datos de mercado desactualizados al simular: snapshot de tasa/GBM en la tenencia, decisión global de portfolio (mantener / actualizar sin simular / actualizar y simular) vía la pantalla Vista Comparativa, y el mecanismo aparte para el tipo de cambio. |
 | [10-plazo-fijo-vencido.md](10-plazo-fijo-vencido.md) | Un plazo fijo vencido bloquea la simulación con 422; el usuario puede eliminarlo o renovarlo desde el detalle del portfolio. Incluye el fix de cálculo que suma el interés ya devengado desde la fecha de inicio real. |
+| [MANUAL_USUARIO.md](MANUAL_USUARIO.md) | Manual de usuario de InvestLab, orientado al usuario final (no técnico): primeros pasos, alta y gestión de portfolios, instrumentos disponibles en lenguaje llano, ejecución e interpretación de simulaciones, historial, casos especiales y glosario. Con capturas reales de la app. |
 
 La arquitectura general del sistema y las decisiones de stack tecnológico se encuentran en el [README.md raíz](../README.md).
 
