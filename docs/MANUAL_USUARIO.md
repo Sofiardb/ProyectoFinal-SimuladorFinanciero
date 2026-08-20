@@ -1,6 +1,6 @@
 # Manual de usuario — InvestLab
 
-**Simulador de estrategias de inversión**
+**Simulador de carteras de inversión**
 Proyecto Final — Ingeniería en Informática — FACET — UNT
 Autora: Sofía Rodríguez del Busto
 
@@ -251,13 +251,15 @@ Desde ahí se puede volver a ver el detalle de resultados de cualquier corrida (
 
 La vista de "Mis portfolios" complementa al Historial: agrupa las carteras por perfil de riesgo y permite lanzar una nueva simulación directamente desde cada tarjeta.
 
-![Mis portfolios, perfil Conservador sin carteras](./assets/19-mis-portfolios-conservador.jpg)
-
 ![Mis portfolios, perfil Moderado con una cartera](./assets/20-mis-portfolios-moderado.jpg)
 
 ### 8.1. Comparar dos simulaciones
 
-Desde el Historial se puede tildar el checkbox de hasta dos corridas — del mismo portfolio o de portfolios distintos, incluso de perfiles de riesgo diferentes — y presionar **"Comparar (2/2)"** para ponerlas lado a lado en la pantalla "Comparar simulaciones":
+Desde el Historial se puede tildar el checkbox de hasta dos corridas — del mismo portfolio o de portfolios distintos, incluso de perfiles de riesgo diferentes — y presionar **"Comparar (2/2)"**:
+
+![Seleccionar dos simulaciones para habilitar comparación](./assets/19-habilitar-comparar.jpg)
+
+Se carga la pantalla "Comparar simulaciones":
 
 ![Comparar simulaciones: monto invertido, valor final e inflación de cada una](./assets/25-comparar-simulaciones-kpis.jpg)
 

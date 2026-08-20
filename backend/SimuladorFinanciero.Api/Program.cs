@@ -78,7 +78,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Simulador Financiero API",
         Version = "v1",
-        Description = "Backend del simulador de estrategias de inversión — FACET UNT"
+        Description = "Backend del simulador de carteras de inversión — FACET UNT"
     });
 
     // Permite enviar el token JWT desde Swagger UI

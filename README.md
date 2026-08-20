@@ -1,4 +1,4 @@
-# Simulador de estrategias de inversión
+# Simulador de carteras de inversión
 
 **Proyecto Final — Ingeniería en Informática — FACET — UNT**  
 **Autora:** Sofía Rodríguez del Busto  
