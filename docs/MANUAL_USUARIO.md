@@ -285,6 +285,8 @@ Esta vista es útil para responder preguntas concretas como "¿esta cartera rind
 
 **Datos de mercado desactualizados.** Si el precio, la tasa o los parámetros de alguna acción, bono o letra cambiaron en el catálogo desde que se cargaron en el portfolio, InvestLab lo avisa antes de simular con un banner "Ver comparación", que lleva a una pantalla (Vista Comparativa) donde se puede elegir, para todo el portfolio en conjunto: mantener los valores originales, actualizarlos sin simular todavía, o actualizarlos y continuar directo a simular.
 
+![Vista Comparativa: datos de mercado desactualizados frente al snapshot del portfolio](./assets/28-ver-comparacion.jpg)
+
 ![Vista Comparativa: datos de mercado desactualizados frente al snapshot del portfolio](./assets/24-vista-comparativa-staleness.jpg)
 
 En el ejemplo, InvestLab detectó que 2 de los 2 instrumentos del portfolio (una acción y un bono) tienen precio y tasa más recientes en el catálogo que los que se usaron al armar la cartera, y muestra para cada uno el valor original junto al valor de hoy, además de cómo cambiaría el monto invertido si se actualiza. Al pie de la pantalla están las tres acciones posibles:
