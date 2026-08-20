@@ -85,11 +85,16 @@ public sealed class SimulacionRepository : ISimulacionRepository
 
     private sealed class InstrumentoRow
     {
-        public string  Ambito         { get; set; } = "";
-        public string  Tipo           { get; set; } = "";
-        public decimal Monto          { get; set; }
-        public string  Parametros     { get; set; } = "{}";
-        public int     HorizonteMeses { get; set; }
+        public string  Ambito              { get; set; } = "";
+        public string  Tipo                { get; set; } = "";
+        public decimal Monto               { get; set; }
+        public string  Parametros          { get; set; } = "{}";
+        public int     HorizonteMeses      { get; set; }
+        public string? Ticker              { get; set; }
+        public string? Nombre              { get; set; }
+        public string? EntidadFinanciera   { get; set; }
+        public string? NombreTipoPlazoFijo { get; set; }
+        public string? CodigoMoneda        { get; set; }
     }
 
     private sealed class PreviewAccionRow
@@ -195,7 +200,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
         };
 
         var tVencDentroDelHorizonte = tVenc.HasValue && tVenc.Value < r.HorizonteMeses ? tVenc : null;
-        return new InstrumentoSimulacionResponse(r.Ambito, r.Tipo, r.Monto, tVencDentroDelHorizonte);
+        return new InstrumentoSimulacionResponse(
+            r.Ambito, r.Tipo, r.Monto, tVencDentroDelHorizonte,
+            r.Ticker, r.Nombre, r.EntidadFinanciera, r.NombreTipoPlazoFijo, r.CodigoMoneda);
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────
@@ -346,10 +353,21 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    si.tipo,
                    si.monto,
                    si.parametros::text AS parametros,
-                   s.horizonte_meses::int
+                   s.horizonte_meses::int,
+                   COALESCE(a.ticker, bo.ticker, le.ticker) AS ticker,
+                   COALESCE(a.nombre, bo.nombre, le.nombre) AS nombre,
+                   COALESCE(si.entidad_financiera, pf.entidad_financiera)     AS entidad_financiera,
+                   COALESCE(si.nombre_tipo_plazo_fijo, tpf.nombre)            AS nombre_tipo_plazo_fijo,
+                   COALESCE(si.codigo_moneda, m.codigo_iso)                   AS codigo_moneda
             FROM simulacion_instrumento si
             JOIN simulacion s ON s.id_simulacion = si.id_simulacion
             JOIN portfolio  p ON p.id_portfolio  = s.id_portfolio
+            LEFT JOIN accion             a   ON a.id_accion              = si.id_accion
+            LEFT JOIN bono               bo  ON bo.id_bono               = si.id_bono
+            LEFT JOIN letra              le  ON le.id_letra              = si.id_letra
+            LEFT JOIN portfolio_plazo_fijo pf ON pf.id_portfolio_plazo_fijo = si.id_portfolio_plazo_fijo
+            LEFT JOIN tipo_plazo_fijo    tpf ON tpf.id_tipo_plazo_fijo   = pf.id_tipo_plazo_fijo
+            LEFT JOIN moneda             m   ON m.id_moneda              = pf.id_moneda
             WHERE si.id_simulacion = @idSimulacion
               AND p.id_usuario     = @idUsuario
             ORDER BY si.ambito
@@ -803,7 +821,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    ppf.tna_pactada,
                    ppf.fecha_inicio,
                    ppf.duracion_dias::int,
-                   ppf.reinvertir_al_vencimiento
+                   ppf.reinvertir_al_vencimiento,
+                   ppf.entidad_financiera,
+                   tpf.nombre AS nombre_tipo_plazo_fijo
             FROM portfolio_plazo_fijo ppf
             JOIN tipo_plazo_fijo tpf ON tpf.id_tipo_plazo_fijo = ppf.id_tipo_plazo_fijo
             JOIN moneda mo           ON mo.id_moneda            = ppf.id_moneda
@@ -842,7 +862,9 @@ public sealed class SimulacionRepository : ISimulacionRepository
             .ToList();
 
         var plazosFijos = plazosFijosTask.Result
-            .Select(r => new PlazoFijoTenenciaSimulacion(r.IdPortfolioPlazoFijo, r.TipoCodigo, r.MonedaCodigo, r.MontoInvertido, r.TnaPactada, r.FechaInicio, r.DuracionDias, r.ReinvertirAlVencimiento))
+            .Select(r => new PlazoFijoTenenciaSimulacion(
+                r.IdPortfolioPlazoFijo, r.TipoCodigo, r.MonedaCodigo, r.MontoInvertido, r.TnaPactada,
+                r.FechaInicio, r.DuracionDias, r.ReinvertirAlVencimiento, r.EntidadFinanciera, r.NombreTipoPlazoFijo))
             .ToList();
 
         return new TenenciasSimulacionData(acciones, bonos, letras, plazosFijos);
@@ -932,7 +954,8 @@ public sealed class SimulacionRepository : ISimulacionRepository
     {
         const string sql = """
             INSERT INTO simulacion_instrumento
-                (id_simulacion, ambito, tipo, id_accion, id_bono, id_letra, id_portfolio_plazo_fijo, monto, parametros)
+                (id_simulacion, ambito, tipo, id_accion, id_bono, id_letra, id_portfolio_plazo_fijo, monto, parametros,
+                 entidad_financiera, nombre_tipo_plazo_fijo, codigo_moneda)
             SELECT @idSimulacion,
                    unnest(@ambitos::varchar[]),
                    unnest(@tipos::varchar[]),
@@ -941,19 +964,25 @@ public sealed class SimulacionRepository : ISimulacionRepository
                    unnest(@idsLetra::bigint[]),
                    unnest(@idsPlazoFijo::bigint[]),
                    unnest(@montos::numeric[]),
-                   unnest(@parametros::jsonb[])
+                   unnest(@parametros::jsonb[]),
+                   unnest(@entidadesFinancieras::varchar[]),
+                   unnest(@nombresTipoPlazoFijo::varchar[]),
+                   unnest(@codigosMoneda::char(3)[])
             """;
         await conn.ExecuteAsync(new CommandDefinition(sql, new
         {
             idSimulacion,
-            ambitos      = snapshots.Select(s => s.Ambito).ToArray(),
-            tipos        = snapshots.Select(s => s.Tipo).ToArray(),
-            idsAccion    = snapshots.Select(s => s.IdAccion).ToArray(),
-            idsBono      = snapshots.Select(s => s.IdBono).ToArray(),
-            idsLetra     = snapshots.Select(s => s.IdLetra).ToArray(),
-            idsPlazoFijo = snapshots.Select(s => s.IdPortfolioPlazoFijo).ToArray(),
-            montos       = snapshots.Select(s => s.Monto).ToArray(),
-            parametros   = snapshots.Select(s => s.ParametrosJson).ToArray()
+            ambitos                = snapshots.Select(s => s.Ambito).ToArray(),
+            tipos                   = snapshots.Select(s => s.Tipo).ToArray(),
+            idsAccion               = snapshots.Select(s => s.IdAccion).ToArray(),
+            idsBono                 = snapshots.Select(s => s.IdBono).ToArray(),
+            idsLetra                = snapshots.Select(s => s.IdLetra).ToArray(),
+            idsPlazoFijo            = snapshots.Select(s => s.IdPortfolioPlazoFijo).ToArray(),
+            montos                  = snapshots.Select(s => s.Monto).ToArray(),
+            parametros              = snapshots.Select(s => s.ParametrosJson).ToArray(),
+            entidadesFinancieras    = snapshots.Select(s => s.EntidadFinanciera).ToArray(),
+            nombresTipoPlazoFijo    = snapshots.Select(s => s.NombreTipoPlazoFijo).ToArray(),
+            codigosMoneda           = snapshots.Select(s => s.CodigoMoneda).ToArray()
         }, transaction: tx, cancellationToken: ct));
     }
 
@@ -1093,6 +1122,8 @@ public sealed class SimulacionRepository : ISimulacionRepository
         public DateOnly FechaInicio             { get; set; }
         public int      DuracionDias           { get; set; }
         public bool     ReinvertirAlVencimiento { get; set; }
+        public string   EntidadFinanciera       { get; set; } = "";
+        public string   NombreTipoPlazoFijo     { get; set; } = "";
     }
 
     private sealed class EscenarioRow

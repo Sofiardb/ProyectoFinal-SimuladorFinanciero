@@ -50,7 +50,9 @@ public sealed record PlazoFijoTenenciaSimulacion(
     decimal  TnaPactada,
     DateOnly FechaInicio,
     int      DuracionDias,
-    bool     ReinvertirAlVencimiento
+    bool     ReinvertirAlVencimiento,
+    string   EntidadFinanciera = "",
+    string   NombreTipoPlazoFijo = ""
 );
 
 public sealed record EscenarioSimulacion(
@@ -96,5 +98,8 @@ public sealed record InstrumentoSimulacionSnapshot(
     long?    IdLetra,
     long?    IdPortfolioPlazoFijo,
     decimal  Monto,
-    string   ParametrosJson
+    string   ParametrosJson,
+    string?  EntidadFinanciera = null,
+    string?  NombreTipoPlazoFijo = null,
+    string?  CodigoMoneda = null
 );

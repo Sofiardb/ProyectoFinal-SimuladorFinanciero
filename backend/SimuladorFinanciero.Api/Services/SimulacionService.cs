@@ -388,7 +388,8 @@ internal static class MotorPayloadBuilder
             instrumentos.Add(inst);
             snapshots.Add(new InstrumentoSimulacionSnapshot(
                 ambito, tipo, null, null, null, pf.IdPortfolioPlazoFijo, monto,
-                JsonSerializer.Serialize(inst)));
+                JsonSerializer.Serialize(inst),
+                pf.EntidadFinanciera, pf.NombreTipoPlazoFijo, pf.MonedaCodigo));
         }
 
         var escenariosPayload = new Dictionary<string, object>();

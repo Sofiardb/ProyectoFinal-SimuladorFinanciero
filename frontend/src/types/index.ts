@@ -321,12 +321,21 @@ export interface SimulacionDetalle extends SimulacionResumen {
 
 /** Instrumento de una simulación con su mes de vencimiento dentro del horizonte (GET /simulaciones/{id}/instrumentos).
  * tVencMeses es null si no hay vencimiento que marcar: acciones, instrumentos que vencen después
- * del horizonte, o plazo fijo con reinvertir=true. */
+ * del horizonte, o plazo fijo con reinvertir=true.
+ * ticker/nombre (accion/bono/letra) salen del catálogo maestro, que nunca se borra, así que
+ * siguen resolviendo aunque la tenencia del portfolio ya no exista. entidadFinanciera/
+ * nombreTipoPlazoFijo/codigoMoneda (plazo fijo) en cambio solo resuelven mientras la tenencia
+ * siga viva: no hay catálogo maestro de plazos fijos. */
 export interface InstrumentoSimulacion {
-  ambito:     string
-  tipo:       string
-  monto:      number
-  tVencMeses: number | null
+  ambito:               string
+  tipo:                 string
+  monto:                number
+  tVencMeses:           number | null
+  ticker?:              string | null
+  nombre?:              string | null
+  entidadFinanciera?:   string | null
+  nombreTipoPlazoFijo?: string | null
+  codigoMoneda?:        string | null
 }
 
 export type EscenarioNombre = 'global' | 'favorable' | 'moderado' | 'desfavorable'

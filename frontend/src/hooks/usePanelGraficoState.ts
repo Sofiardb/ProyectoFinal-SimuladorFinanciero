@@ -66,7 +66,7 @@ export function usePanelGraficoState({
   function labelDe(ambito: string): string {
     if (ambito === 'portfolio_ars') return 'Portfolio (ARS)'
     if (ambito === 'portfolio_usd') return 'Portfolio (USD)'
-    return detalle ? resolveAmbitoInfo(ambito, detalle).label : ambito
+    return resolveAmbitoInfo(ambito, instrumentos, detalle).label
   }
 
   function monedaDe(ambito: string): 'ARS' | 'USD' {
@@ -117,7 +117,7 @@ export function usePanelGraficoState({
     })
     const porMes = new Map<number, { labels: string[]; monto: number }>()
     for (const inst of relevantes) {
-      const corto = detalle ? resolveAmbitoInfo(inst.ambito, detalle).corto : inst.ambito
+      const corto = resolveAmbitoInfo(inst.ambito, instrumentos, detalle).corto
       const montoInst = filaFor(inst.ambito, 'global', 'patrimonio')?.media[inst.tVencMeses!]
       const acumulado = porMes.get(inst.tVencMeses!) ?? { labels: [], monto: 0 }
       acumulado.labels.push(corto)

@@ -443,6 +443,9 @@ CREATE TABLE simulacion_instrumento (
     id_portfolio_plazo_fijo   BIGINT       REFERENCES portfolio_plazo_fijo(id_portfolio_plazo_fijo) ON DELETE SET NULL,
     monto                     NUMERIC(20,6) NOT NULL,
     parametros                JSONB         NOT NULL,  -- snapshot completo del instrumento enviado al motor
+    entidad_financiera        VARCHAR(150),  -- solo plazo_fijo; no hay catálogo maestro del que recuperarlo si se borra la tenencia
+    nombre_tipo_plazo_fijo    VARCHAR(80),   -- solo plazo_fijo
+    codigo_moneda             CHAR(3),       -- solo plazo_fijo
     UNIQUE (id_simulacion, ambito)
 );
 

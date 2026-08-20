@@ -30,13 +30,13 @@ export function useResultadosSimulacionView(idSimulacion: number) {
   function monedaDe(ambito: string): 'ARS' | 'USD' {
     if (ambito === 'portfolio_ars') return 'ARS'
     if (ambito === 'portfolio_usd') return 'USD'
-    return detalle ? resolveAmbitoInfo(ambito, detalle).moneda : 'ARS'
+    return resolveAmbitoInfo(ambito, instrumentos, detalle).moneda
   }
 
   function labelDe(ambito: string): string {
     if (ambito === 'portfolio_ars') return 'Portfolio (ARS)'
     if (ambito === 'portfolio_usd') return 'Portfolio (USD)'
-    return detalle ? resolveAmbitoInfo(ambito, detalle).label : ambito
+    return resolveAmbitoInfo(ambito, instrumentos, detalle).label
   }
 
   /** Monto invertido para cualquier ámbito (no solo el "KPI" fijo de más abajo) — usado por la
@@ -65,14 +65,14 @@ export function useResultadosSimulacionView(idSimulacion: number) {
     return Array.from(new Set(filas.filter((f) => f.ambito !== 'global' && !f.ambito.startsWith('portfolio_')).map((f) => f.ambito)))
       .filter((a) => monedaDe(a) === 'ARS')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filas, detalle])
+  }, [filas, detalle, instrumentos])
 
   const ambitosUsd = useMemo(() => {
     if (!filas) return []
     return Array.from(new Set(filas.filter((f) => f.ambito !== 'global' && !f.ambito.startsWith('portfolio_')).map((f) => f.ambito)))
       .filter((a) => monedaDe(a) === 'USD')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filas, detalle])
+  }, [filas, detalle, instrumentos])
 
   const kpisPortfolio: KpiPortfolioMoneda[] = ambitosPortfolio.map((ambito) => {
     const patrimonio = filaFor(ambito, 'global', 'patrimonio')
