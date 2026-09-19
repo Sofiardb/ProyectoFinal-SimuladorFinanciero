@@ -57,12 +57,15 @@ public sealed class SimulacionController : ControllerBase
         return CreatedAtAction(nameof(GetDetalle), new { id = result.IdSimulacion }, result);
     }
 
-    /// <summary>Lista el historial de simulaciones de un portfolio del usuario autenticado.</summary>
+    /// <summary>Lista el historial de simulaciones de un portfolio del usuario autenticado (las más recientes primero).</summary>
     [HttpGet("/portfolios/{idPortfolio:long}/simulaciones")]
     [ProducesResponseType<IReadOnlyList<SimulacionResumenResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPorPortfolio(long idPortfolio, CancellationToken ct) =>
-        Ok(await _repo.ObtenerPorPortfolioAsync(idPortfolio, GetUserId(), ct));
+    public async Task<IActionResult> GetPorPortfolio(long idPortfolio, [FromQuery] int limit, CancellationToken ct)
+    {
+        var limitEfectivo = limit is > 0 and <= 200 ? limit : 50;
+        return Ok(await _repo.ObtenerPorPortfolioAsync(idPortfolio, GetUserId(), limitEfectivo, ct));
+    }
 
     /// <summary>Devuelve la cabecera de una simulación: fecha, horizonte, seed y métricas agregadas.</summary>
     [HttpGet("{id:long}")]
@@ -88,11 +91,15 @@ public sealed class SimulacionController : ControllerBase
         [FromQuery] string? ambito,
         CancellationToken ct)
     {
-        var existe = await _repo.ObtenerDetalleAsync(id, GetUserId(), ct);
-        if (existe is null)
+        var userId = GetUserId();
+        var existeTask = _repo.ExisteParaUsuarioAsync(id, userId, ct);
+        var resultadosTask = _repo.ObtenerResultadosAsync(id, userId, ambito, ct);
+        await Task.WhenAll(existeTask, resultadosTask);
+
+        if (!existeTask.Result)
             throw new NotFoundException($"Simulación {id} no encontrada.");
 
-        return Ok(await _repo.ObtenerResultadosAsync(id, GetUserId(), ambito, ct));
+        return Ok(resultadosTask.Result);
     }
 
     /// <summary>
@@ -106,11 +113,15 @@ public sealed class SimulacionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetInstrumentos(long id, CancellationToken ct)
     {
-        var existe = await _repo.ObtenerDetalleAsync(id, GetUserId(), ct);
-        if (existe is null)
+        var userId = GetUserId();
+        var existeTask = _repo.ExisteParaUsuarioAsync(id, userId, ct);
+        var instrumentosTask = _repo.ObtenerInstrumentosAsync(id, userId, ct);
+        await Task.WhenAll(existeTask, instrumentosTask);
+
+        if (!existeTask.Result)
             throw new NotFoundException($"Simulación {id} no encontrada.");
 
-        return Ok(await _repo.ObtenerInstrumentosAsync(id, GetUserId(), ct));
+        return Ok(instrumentosTask.Result);
     }
 
     /// <summary>Elimina una simulación y sus datos asociados (resultados, instrumentos, trayectorias — CASCADE).</summary>

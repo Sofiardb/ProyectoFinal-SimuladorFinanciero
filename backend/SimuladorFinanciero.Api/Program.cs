@@ -1,7 +1,9 @@
+using System.IO.Compression;
 using System.Security.Claims;
 using System.Text;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SimuladorFinanciero.Api.Infrastructure.Database;
@@ -25,6 +27,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/json"]);
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
 
 // Dapper + Npgsql
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
@@ -170,6 +183,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseExceptionHandler();
+app.UseResponseCompression();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -9,8 +9,9 @@ namespace SimuladorFinanciero.Api.Repositories;
 
 public interface ISimulacionRepository
 {
-    Task<IReadOnlyList<SimulacionResumenResponse>> ObtenerPorPortfolioAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
+    Task<IReadOnlyList<SimulacionResumenResponse>> ObtenerPorPortfolioAsync(long idPortfolio, long idUsuario, int limit = 50, CancellationToken ct = default);
     Task<SimulacionDetalleResponse?> ObtenerDetalleAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
+    Task<bool> ExisteParaUsuarioAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
     Task<IReadOnlyList<ResultadoSimulacionResponse>> ObtenerResultadosAsync(long idSimulacion, long idUsuario, string? ambito, CancellationToken ct = default);
     Task<IReadOnlyList<InstrumentoSimulacionResponse>> ObtenerInstrumentosAsync(long idSimulacion, long idUsuario, CancellationToken ct = default);
     Task<SimulacionPreviewResponse?> ObtenerPreviewAsync(long idPortfolio, long idUsuario, CancellationToken ct = default);
@@ -208,7 +209,7 @@ public sealed class SimulacionRepository : ISimulacionRepository
     // ── Queries ───────────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyList<SimulacionResumenResponse>> ObtenerPorPortfolioAsync(
-        long idPortfolio, long idUsuario, CancellationToken ct = default)
+        long idPortfolio, long idUsuario, int limit = 50, CancellationToken ct = default)
     {
         using var conn = _db.Crear();
         const string sql = """
@@ -243,10 +244,27 @@ public sealed class SimulacionRepository : ISimulacionRepository
             WHERE s.id_portfolio = @idPortfolio
               AND p.id_usuario   = @idUsuario
             ORDER BY s.fecha_ejecucion DESC
+            LIMIT @limit
             """;
         var rows = await conn.QueryAsync<SimulacionRow>(
-            new CommandDefinition(sql, new { idPortfolio, idUsuario }, cancellationToken: ct));
+            new CommandDefinition(sql, new { idPortfolio, idUsuario, limit }, cancellationToken: ct));
         return rows.Select(ToResumen).ToList();
+    }
+
+    public async Task<bool> ExisteParaUsuarioAsync(long idSimulacion, long idUsuario, CancellationToken ct = default)
+    {
+        using var conn = _db.Crear();
+        const string sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM simulacion s
+                JOIN portfolio  p ON p.id_portfolio = s.id_portfolio
+                WHERE s.id_simulacion = @idSimulacion
+                  AND p.id_usuario    = @idUsuario
+            )
+            """;
+        return await conn.ExecuteScalarAsync<bool>(
+            new CommandDefinition(sql, new { idSimulacion, idUsuario }, cancellationToken: ct));
     }
 
     public async Task<SimulacionDetalleResponse?> ObtenerDetalleAsync(
