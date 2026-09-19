@@ -4,6 +4,7 @@ Mide el overhead de cada mecanismo y lo compara con el ahorro de simulacion.
 No compara contra C# -- esa comparacion es el Benchmark 1 (run_benchmark_escalable.py).
 """
 import subprocess
+import statistics
 import time
 import json
 import sys
@@ -16,7 +17,7 @@ import urllib.error
 PYTHON_CMD  = 'python' if platform.system() == 'Windows' else 'python3'
 PYTHON_DIR  = os.path.join('piloto-python', 'src')
 FLASK_URL   = 'http://127.0.0.1:5050'
-ITERACIONES = 5
+ITERACIONES = 10  # mediana de 10 corridas por punto (no promedio) para reducir el efecto del ruido del SO
 N_LISTA     = [1, 5, 10, 20]
 
 
@@ -60,7 +61,7 @@ def medir_subprocess_noop():
         subprocess.run([PYTHON_CMD, '-c', 'print("ok")'],
                        capture_output=True, timeout=30)
         tiempos.append((time.perf_counter() - t0) * 1000)
-    return sum(tiempos) / len(tiempos)
+    return statistics.median(tiempos)
 
 
 def medir_subprocess_numpy():
@@ -71,7 +72,7 @@ def medir_subprocess_numpy():
         subprocess.run([PYTHON_CMD, '-c', 'import numpy; print("ok")'],
                        capture_output=True, timeout=30, cwd=PYTHON_DIR)
         tiempos.append((time.perf_counter() - t0) * 1000)
-    return sum(tiempos) / len(tiempos)
+    return statistics.median(tiempos)
 
 
 def medir_subprocess_simulacion(n):
@@ -86,7 +87,7 @@ def medir_subprocess_simulacion(n):
         tiempos.append((time.perf_counter() - t0) * 1000)
         if resultado.returncode != 0:
             print(f'  ERR Error subprocess N={n}: {resultado.stderr[:200]}')
-    return sum(tiempos) / len(tiempos)
+    return statistics.median(tiempos)
 
 
 # ---------------------------------------------
@@ -103,23 +104,30 @@ def medir_http_ping():
         t0 = time.perf_counter()
         http_get(f'{FLASK_URL}/ping')
         tiempos.append((time.perf_counter() - t0) * 1000)
-    return sum(tiempos) / len(tiempos)
+    return statistics.median(tiempos)
 
 
 def medir_http_simulacion(n):
     """Costo HTTP total: IPC + simulacion (datos ya cargados en servidor)."""
-    tiempos_total = []
-    tiempos_sim   = []
+    tiempos_total    = []
+    tiempos_sim      = []
+    tiempos_overhead = []   # overhead por request (total - sim de ESA misma request)
 
     for _ in range(ITERACIONES):
         t0 = time.perf_counter()
         resp = http_post(f'{FLASK_URL}/simular',
                          {'num_empresas': n, 'T': 1, 'pasos': 12, 'num_simulaciones': 3000})
-        tiempos_total.append((time.perf_counter() - t0) * 1000)
-        tiempos_sim.append(resp.get('tiempo_simulacion_ms', 0))
+        total_ms = (time.perf_counter() - t0) * 1000
+        sim_ms   = resp.get('tiempo_simulacion_ms', 0)
+        tiempos_total.append(total_ms)
+        tiempos_sim.append(sim_ms)
+        tiempos_overhead.append(total_ms - sim_ms)
 
-    return (sum(tiempos_total) / len(tiempos_total),
-            sum(tiempos_sim)   / len(tiempos_sim))
+    # La mediana del overhead se calcula sobre las diferencias por-request, no
+    # como resta de las medianas de total y sim (que no son iguales en general).
+    return (statistics.median(tiempos_total),
+            statistics.median(tiempos_sim),
+            statistics.median(tiempos_overhead))
 
 
 # ---------------------------------------------
@@ -200,8 +208,7 @@ def main():
             print(f'{sub_total_ms:.1f} ms total')
 
             print(f'    HTTP       ...', end=' ', flush=True)
-            http_total_ms, http_sim_ms = medir_http_simulacion(n)
-            http_overhead_ms = http_total_ms - http_sim_ms
+            http_total_ms, http_sim_ms, http_overhead_ms = medir_http_simulacion(n)
             print(f'{http_total_ms:.1f} ms total  (sim={http_sim_ms:.1f} ms, overhead={http_overhead_ms:.1f} ms)')
 
             datos_n[n] = {
