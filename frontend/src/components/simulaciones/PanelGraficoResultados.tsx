@@ -150,15 +150,21 @@ export default function PanelGraficoResultados({
       </div>
 
       <div className="h-[320px]" data-guia={guiaAnchors ? 'panel-grafico' : undefined}>
-        <EscenarioChart
-          series={series}
-          mostrarBanda={mostrarBanda}
-          mostrarMinMax={mostrarBanda && !compararNominalReal}
-          formatY={(v) => formatMoneda(v, monedaActual)}
-          vencimientos={vencimientos}
-          breakeven={breakeven}
-          height="100%"
-        />
+        {ambitosSeleccionados.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-center text-[13px] text-ink-muted">
+            Debe seleccionar una opción para mostrar información en el gráfico.
+          </div>
+        ) : (
+          <EscenarioChart
+            series={series}
+            mostrarBanda={mostrarBanda}
+            mostrarMinMax={mostrarBanda && !compararNominalReal}
+            formatY={(v) => formatMoneda(v, monedaActual)}
+            vencimientos={vencimientos}
+            breakeven={breakeven}
+            height="100%"
+          />
+        )}
       </div>
 
       {vencimientos.length > 0 && metrica === 'ganancias_reales' && (

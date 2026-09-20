@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { driver, type Driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { PASOS, SIGUIENTE, type PasoConfig, type PasoId } from '@/lib/tourSteps'
@@ -21,6 +21,7 @@ const TourContext = createContext<TourContextValue | undefined>(undefined)
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [pasoActual, setPasoActual] = useState<PasoId | null>(null)
   const pasoActualRef = useRef<PasoId | null>(null)
   const driverRef = useRef<Driver | null>(null)
@@ -29,6 +30,18 @@ export function TourProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     pasoActualRef.current = pasoActual
   }, [pasoActual])
+
+  // 'crear-portfolio-form' y 'agregar-instrumento-form' no tienen popover ni botón de cierre —
+  // esperan en silencio a que el usuario complete el formulario en la página de detalle del
+  // portfolio. Si la abandona sin completarla (navega a otra pantalla), el paso queda "colgado" en
+  // memoria y más adelante cualquier otra visita a un portfolio que cumpla esa misma condición
+  // (crear otro, agregarle un instrumento) hace que la guía reaparezca sin que el usuario la haya
+  // pedido. Se lo trata como abandono definitivo: solo vuelve a iniciarse haciendo clic en la guía.
+  useEffect(() => {
+    if (!pasoActual || PASOS[pasoActual]) return
+    if (/^\/portfolios\/\d+/.test(location.pathname)) return
+    setPasoActual(null)
+  }, [location.pathname, pasoActual])
 
   const destruirInstancia = useCallback(() => {
     transicionRef.current = true
