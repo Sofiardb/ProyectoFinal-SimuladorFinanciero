@@ -1,3 +1,5 @@
+import { Loader2Icon } from 'lucide-react'
+
 interface Props {
   onCancel:   () => void
   onSave:     () => void
@@ -25,9 +27,10 @@ export default function RowFormFooter({
         type="button"
         disabled={!canSave || isMutating}
         onClick={onSave}
-        className={canSave ? 'btn-save-sm' : 'btn-save-sm-disabled'}
+        className={`inline-flex items-center gap-1.5 ${canSave ? 'btn-save-sm' : 'btn-save-sm-disabled'} ${isMutating ? 'cursor-wait opacity-80' : ''}`}
       >
-        {saveLabel}
+        {isMutating && <Loader2Icon className="size-3.5 animate-spin" />}
+        {isMutating ? 'Guardando…' : saveLabel}
       </button>
     </div>
   )

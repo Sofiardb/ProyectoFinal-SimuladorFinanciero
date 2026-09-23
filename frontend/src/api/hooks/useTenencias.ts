@@ -10,9 +10,9 @@ import type {
 function useInvalidatePortfolio(idPortfolio: number) {
   const queryClient = useQueryClient()
   return () => {
-    queryClient.invalidateQueries({ queryKey: ['portfolio', idPortfolio] })
     queryClient.invalidateQueries({ queryKey: ['portfolios'] })
     queryClient.invalidateQueries({ queryKey: ['portfolio-preview', idPortfolio] })
+    return queryClient.invalidateQueries({ queryKey: ['portfolio', idPortfolio] })
   }
 }
 

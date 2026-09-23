@@ -45,6 +45,7 @@ export default function PlazoFijoTypeSection({
         tenencias={detalle.plazosFijos.filter((pf) => pf.codigoMoneda === moneda)}
         tipos={tipos}
         isMutating={addPlazoFijo.isPending || updatePlazoFijo.isPending || deletePlazoFijo.isPending}
+        deletingId={deletePlazoFijo.isPending ? deletePlazoFijo.variables : null}
         error={error}
         onDescartarError={() => setError(null)}
         onAdd={(payload) => conCaptura(setError, () => addPlazoFijo.mutateAsync({ ...payload, idMoneda }))}

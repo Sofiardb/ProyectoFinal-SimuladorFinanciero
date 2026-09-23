@@ -67,6 +67,7 @@ export default function AccionesSection({
         tenencias={tenencias}
         catalogo={opciones}
         isMutating={addAccion.isPending || updateAccion.isPending || deleteAccion.isPending}
+        deletingId={deleteAccion.isPending ? deleteAccion.variables : null}
         disponible={calcularDisponible(detalle, tipoCambio?.valor)}
         monedaBase={detalle.codigoMonedaBase}
         moneda="USD"

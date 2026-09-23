@@ -31,6 +31,7 @@ interface Props {
   tenencias:        TenenciaItem[]
   catalogo:         CatalogoOpcion[]
   isMutating:       boolean
+  deletingId?:      number | null
   disponible:       number | null
   monedaBase:       string
   moneda:           'ARS' | 'USD'
@@ -56,6 +57,7 @@ export default function CatalogoTenenciaSection({
   tenencias,
   catalogo,
   isMutating,
+  deletingId,
   disponible,
   monedaBase,
   moneda,
@@ -133,6 +135,7 @@ export default function CatalogoTenenciaSection({
             key={t.idCatalogo}
             domId={instrumentoAnchorId({ tipo, id: t.idCatalogo })}
             tenencia={t}
+            isDeleting={deletingId === t.idCatalogo}
             onEdit={() => editar(t.idCatalogo)}
             onDelete={() => onDelete(t.idCatalogo)}
           />
@@ -145,16 +148,18 @@ export default function CatalogoTenenciaSection({
 function ViewRow({
   tenencia,
   domId,
+  isDeleting,
   onEdit,
   onDelete,
 }: {
   tenencia: TenenciaItem
   domId?: string
+  isDeleting: boolean
   onEdit: () => void
   onDelete: () => void
 }) {
   return (
-    <div id={domId} className="flex flex-col">
+    <div id={domId} className={`flex flex-col transition-opacity ${isDeleting ? 'opacity-50' : ''}`}>
       <div className="tenencia-row">
         <div className="min-w-0 flex-1 basis-32">
           <TruncatedText text={tenencia.titulo} className="tenencia-row-title" />
@@ -171,7 +176,7 @@ function ViewRow({
             </div>
           ))}
         </div>
-        <RowIconActions onEdit={onEdit} onDelete={onDelete} />
+        <RowIconActions onEdit={onEdit} onDelete={onDelete} isDeleting={isDeleting} />
       </div>
       <CronogramaFlujos flujos={tenencia.flujos} cantidadLotes={tenencia.cantidadActual} esCer={tenencia.esCer} />
     </div>

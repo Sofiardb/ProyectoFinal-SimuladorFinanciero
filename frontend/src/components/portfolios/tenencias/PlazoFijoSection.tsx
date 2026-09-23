@@ -35,6 +35,7 @@ interface Props {
   tenencias:         PortfolioPlazoFijo[]
   tipos:             TipoPlazoFijo[]
   isMutating:        boolean
+  deletingId?:       number | null
   error?:            string | null
   onDescartarError?: () => void
   editarKey?:        string | null
@@ -52,6 +53,7 @@ export default function PlazoFijoSection({
   tenencias,
   tipos,
   isMutating,
+  deletingId,
   error,
   onDescartarError,
   editarKey,
@@ -119,6 +121,7 @@ export default function PlazoFijoSection({
             monedaBase={detalle.codigoMonedaBase}
             tipoCambio={tipoCambio?.valor}
             isMutating={isMutating}
+            isDeleting={deletingId === t.idPortfolioPlazoFijo}
             onEdit={() => editar(t.idPortfolioPlazoFijo)}
             onDelete={() => onDelete(t.idPortfolioPlazoFijo)}
             onRenovar={(payload) => onUpdate(t.idPortfolioPlazoFijo, payload)}
@@ -136,6 +139,7 @@ function ViewRow({
   monedaBase,
   tipoCambio,
   isMutating,
+  isDeleting,
   onEdit,
   onDelete,
   onRenovar,
@@ -146,6 +150,7 @@ function ViewRow({
   monedaBase: string
   tipoCambio: number | undefined
   isMutating: boolean
+  isDeleting: boolean
   onEdit: () => void
   onDelete: () => void
   onRenovar: (payload: EditarPlazoFijo) => Promise<void>
@@ -158,7 +163,7 @@ function ViewRow({
   }
 
   return (
-    <div id={domId} className="tenencia-row">
+    <div id={domId} className={`tenencia-row transition-opacity ${isDeleting ? 'opacity-50' : ''}`}>
       <div className="min-w-0 flex-1 basis-32">
         <div className="flex items-center gap-1.5">
           <TruncatedText text={tenencia.entidadFinanciera} className="tenencia-row-title" />
@@ -185,7 +190,7 @@ function ViewRow({
         {vencido && (
           <RenovarPlazoFijoDialog tenencia={tenencia} moneda={moneda} isMutating={isMutating} onConfirm={onRenovar} />
         )}
-        <RowIconActions onEdit={onEdit} onDelete={onDelete} />
+        <RowIconActions onEdit={onEdit} onDelete={onDelete} isDeleting={isDeleting} />
       </div>
     </div>
   )

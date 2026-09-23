@@ -71,6 +71,7 @@ export default function BonosSection({
         tenencias={tenencias}
         catalogo={opciones}
         isMutating={addBono.isPending || updateBono.isPending || deleteBono.isPending}
+        deletingId={deleteBono.isPending ? deleteBono.variables : null}
         disponible={calcularDisponible(detalle, tipoCambio?.valor)}
         monedaBase={detalle.codigoMonedaBase}
         moneda="ARS"

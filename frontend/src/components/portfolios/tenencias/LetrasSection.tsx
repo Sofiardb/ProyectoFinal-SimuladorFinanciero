@@ -68,6 +68,7 @@ export default function LetrasSection({
         tenencias={tenencias}
         catalogo={opciones}
         isMutating={addLetra.isPending || updateLetra.isPending || deleteLetra.isPending}
+        deletingId={deleteLetra.isPending ? deleteLetra.variables : null}
         disponible={calcularDisponible(detalle, tipoCambio?.valor)}
         monedaBase={detalle.codigoMonedaBase}
         moneda="ARS"
