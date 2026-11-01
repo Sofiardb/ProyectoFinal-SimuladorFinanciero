@@ -1,0 +1,23 @@
+{
+ "generador": "PCG64",
+ "numpy": "2.2.6",
+ "misma_semilla_identico": true,
+ "semilla_distinta_difiere": true,
+ "normales": {
+  "n": 540000,
+  "media": -0.003209325143234814,
+  "var": 1.0026422061894953,
+  "ks_pvalor": 0.20031942821401916,
+  "autocorr_lag1": -0.0004335308889354184
+ },
+ "uniformes": {
+  "n": 540000,
+  "ks_pvalor": 0.9442960169995,
+  "autocorr_lag1": 0.0007725388578490832
+ },
+ "prob_colision_semillas": {
+  "1000": 0.00023257076423610634,
+  "10000": 0.023011830538216538,
+  "50000": 0.4412566125146411
+ }
+}

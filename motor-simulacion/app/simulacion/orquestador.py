@@ -33,7 +33,7 @@ def _desplazar_estadisticas_por_escenario(stats_por_escenario, delta):
     }
 
 
-N_SIMULACIONES = 3000
+N_SIMULACIONES = 15000  # 5000 por escenario; ver benchmarks/estudio_convergencia.py
 
 
 def simular_portfolio(parametros: dict) -> dict:

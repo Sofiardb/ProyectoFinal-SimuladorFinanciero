@@ -24,7 +24,7 @@ El precio de un activo sigue la ecuación diferencial estocástica:
 dS = μ·S·dt + σ·S·dW
 ```
 
-En forma discreta (esquema de Euler-Maruyama):
+En forma discreta, con el esquema de simulación exacta (log-Euler: solución explícita de la EDE vía lema de Itô; ver `docs/01-modelos-financieros.md`, sección 11):
 
 ```
 S(t+Δt) = S(t) · exp( (μ - σ²/2)·Δt + σ·√Δt · Z )
@@ -35,7 +35,7 @@ donde `Z ~ N(0,1)`.
 Los parámetros `μ` (drift anualizado) y `σ` (volatilidad anualizada) se calculan a partir de 2.520 días históricos (~10 años) de precios de cierre de IBM, obtenidos vía Alpha Vantage API y almacenados en `DatosAccionesDiaria.json`.
 
 **Parámetros estimados:**
-- `μ = 0.0528` (retorno esperado anual: ~5.3%)
+- `μ = 0.0528` (en este piloto, la media anualizada de los retornos logarítmicos, que en rigor estima el drift logarítmico μ − σ²/2; el μ del GBM sería ≈8,6 %. Para medir performance el valor es indiferente; el sistema real usa la estimación corregida, ver `docs/01-modelos-financieros.md`)
 - `σ = 0.2583` (volatilidad anual: ~25.8%)
 
 En el Benchmark 1 (Secciones 3-4) estos valores se usan como constantes fijas en memoria. El Benchmark 2 sí mide el costo real de cargarlos, porque ahí es justamente parte de lo que se compara.
@@ -64,7 +64,7 @@ Cada instrumento recibe un `μ` ligeramente diferente (±0.5%) para simular perf
 | Monto por instrumento | $100.000 |
 | N instrumentos evaluados | 1, 5, 10, 20 |
 
-La cantidad de simulaciones (3.000) coincide con `N_SIMULACIONES` en `motor-simulacion/app/simulacion/orquestador.py` — los benchmarks corren a la escala real del sistema. Los pilotos aceptan este valor como parámetro, así que si `N_SIMULACIONES` cambia en el futuro, el mismo estudio se puede re-correr a la nueva escala sin modificar código — sirve como metodología reutilizable para decidir tecnología si el sistema necesita escalar.
+La cantidad de simulaciones (3.000) coincidía con `N_SIMULACIONES` en `motor-simulacion/app/simulacion/orquestador.py` al momento de este estudio — los benchmarks corrieron a la escala real del sistema. Posteriormente `N_SIMULACIONES` se elevó a 15.000 a partir del estudio de convergencia de `motor-simulacion/benchmarks/`; los tiempos de este informe corresponden a N = 3.000. Los pilotos aceptan este valor como parámetro, así que si `N_SIMULACIONES` cambia en el futuro, el mismo estudio se puede re-correr a la nueva escala sin modificar código — sirve como metodología reutilizable para decidir tecnología si el sistema necesita escalar.
 
 ---
 

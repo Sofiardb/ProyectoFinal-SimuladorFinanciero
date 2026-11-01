@@ -182,7 +182,7 @@ function ConfigurarSimulacion({
 
       <div className="card flex flex-wrap items-center justify-between gap-4">
         <p className="max-w-[400px] text-[12.5px] text-ink-soft">
-          Se van a generar 1.000 trayectorias Monte Carlo por escenario para {detalle.nombre}.
+          Se van a generar 5.000 trayectorias Monte Carlo por escenario para {detalle.nombre}.
         </p>
         <DisabledButtonTooltip title={bloqueado ? 'Hay instrumentos vencidos que bloquean esta simulación.' : undefined}>
           <button

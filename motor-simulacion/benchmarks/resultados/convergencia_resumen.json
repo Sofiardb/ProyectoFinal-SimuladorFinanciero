@@ -1,0 +1,134 @@
+[
+ {
+  "caso": "conservador_T12",
+  "moneda": "ARS",
+  "e95_mediana_global": 0.13584603792692662,
+  "e95_mediana_peor_escenario": 0.26418960593933294,
+  "iqr_global": 36.164095478370946,
+  "peor_e95_sobre_iqr_pct": 6.879177122841062,
+  "peor_estadistico": "ars_ganancia_real|moderado|p75",
+  "N_para_5pct_iqr": 5678.7693464903805,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.2056760349978832
+ },
+ {
+  "caso": "conservador_T12",
+  "moneda": "USD",
+  "e95_mediana_global": 2.861730437938989e-14,
+  "e95_mediana_peor_escenario": 2.861730437938989e-14,
+  "iqr_global": 0.0,
+  "peor_e95_sobre_iqr_pct": 6.847559306186865,
+  "peor_estadistico": "usd_ganancia_real|desfavorable|p75",
+  "N_para_5pct_iqr": 5626.68821420956,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.0450502591344386
+ },
+ {
+  "caso": "conservador_T36",
+  "moneda": "ARS",
+  "e95_mediana_global": 0.3202036678233315,
+  "e95_mediana_peor_escenario": 1.2747301622714995,
+  "iqr_global": 204.49379499415963,
+  "peor_e95_sobre_iqr_pct": 6.9860745349709,
+  "peor_estadistico": "ars_patrimonio|desfavorable|p75",
+  "N_para_5pct_iqr": 5856.628488980265,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.0257916310326363
+ },
+ {
+  "caso": "conservador_T36",
+  "moneda": "USD",
+  "e95_mediana_global": 5.723460875877977e-14,
+  "e95_mediana_peor_escenario": 5.723460875877977e-14,
+  "iqr_global": 0.0,
+  "peor_e95_sobre_iqr_pct": 7.126941343108428,
+  "peor_estadistico": "usd_ganancia_real|desfavorable|p75",
+  "N_para_5pct_iqr": 6095.19514897298,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.099681277931408
+ },
+ {
+  "caso": "moderado_T12",
+  "moneda": "ARS",
+  "e95_mediana_global": 0.10566994730058041,
+  "e95_mediana_peor_escenario": 0.20550398202991302,
+  "iqr_global": 28.13080250031398,
+  "peor_e95_sobre_iqr_pct": 6.850355712502616,
+  "peor_estadistico": "ars_patrimonio|moderado|p25",
+  "N_para_5pct_iqr": 5631.284806538067,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.2056760349977975
+ },
+ {
+  "caso": "moderado_T12",
+  "moneda": "USD",
+  "e95_mediana_global": 0.7972506187712426,
+  "e95_mediana_peor_escenario": 1.381612995755898,
+  "iqr_global": 24.05982332545938,
+  "peor_e95_sobre_iqr_pct": 7.353444381564146,
+  "peor_estadistico": "usd_patrimonio|desfavorable|p75",
+  "N_para_5pct_iqr": 6488.7773127308765,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.0264265067324305
+ },
+ {
+  "caso": "moderado_T36",
+  "moneda": "ARS",
+  "e95_mediana_global": 0.23529865852445103,
+  "e95_mediana_peor_escenario": 0.664082463282364,
+  "iqr_global": 103.9108686292899,
+  "peor_e95_sobre_iqr_pct": 7.014887757726639,
+  "peor_estadistico": "ars_ganancia_real|desfavorable|p75",
+  "N_para_5pct_iqr": 5905.038030420366,
+  "peor_e95_sobre_iqr_pct_N_elegido": 2.976844362673404
+ },
+ {
+  "caso": "moderado_T36",
+  "moneda": "USD",
+  "e95_mediana_global": 1.67564130928668,
+  "e95_mediana_peor_escenario": 2.8230248932366995,
+  "iqr_global": 48.27136544885936,
+  "peor_e95_sobre_iqr_pct": 7.367495006676348,
+  "peor_estadistico": "usd_ganancia_real|favorable|p75",
+  "N_para_5pct_iqr": 6513.59792080811,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.500655434901741
+ },
+ {
+  "caso": "agresivo_T12",
+  "moneda": "ARS",
+  "e95_mediana_global": 0.24882281930401123,
+  "e95_mediana_peor_escenario": 0.483903716176098,
+  "iqr_global": 66.24007834036193,
+  "peor_e95_sobre_iqr_pct": 6.850355712502629,
+  "peor_estadistico": "ars_patrimonio|moderado|p25",
+  "N_para_5pct_iqr": 5631.284806538087,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.2056760349979148
+ },
+ {
+  "caso": "agresivo_T12",
+  "moneda": "USD",
+  "e95_mediana_global": 2.088250959069128,
+  "e95_mediana_peor_escenario": 3.6346594851597844,
+  "iqr_global": 60.279196194463786,
+  "peor_e95_sobre_iqr_pct": 8.424886621787575,
+  "peor_estadistico": "usd_patrimonio|favorable|p75",
+  "N_para_5pct_iqr": 8517.445750797031,
+  "peor_e95_sobre_iqr_pct_N_elegido": 3.7892581948131805
+ },
+ {
+  "caso": "agresivo_T36",
+  "moneda": "ARS",
+  "e95_mediana_global": 0.2492988142445494,
+  "e95_mediana_peor_escenario": 0.510755238793117,
+  "iqr_global": 66.2051282846204,
+  "peor_e95_sobre_iqr_pct": 6.736606224852595,
+  "peor_estadistico": "ars_ganancia_real|moderado|p25",
+  "N_para_5pct_iqr": 5445.823611446727,
+  "peor_e95_sobre_iqr_pct_N_elegido": 2.998554472067852
+ },
+ {
+  "caso": "agresivo_T36",
+  "moneda": "USD",
+  "e95_mediana_global": 5.420090715528673,
+  "e95_mediana_peor_escenario": 9.826232755899683,
+  "iqr_global": 160.40103633614245,
+  "peor_e95_sobre_iqr_pct": 9.561229586415628,
+  "peor_estadistico": "usd_ganancia_real|favorable|p75",
+  "N_para_5pct_iqr": 10970.053344497946,
+  "peor_e95_sobre_iqr_pct_N_elegido": 4.735141358754468
+ }
+]

@@ -23,6 +23,22 @@ internal static class GbmMath
         return (dx == 0 || dy == 0) ? 0 : num / (dx * dy);
     }
 
+    /// <summary>
+    /// Estima los parámetros anuales del GBM a partir de retornos logarítmicos diarios.
+    /// Por el lema de Itô, ln S tiene drift ν = μ − σ²/2: la media de los retornos log estima ν
+    /// (la tasa de crecimiento de la mediana), no μ. Como el motor espera μ y él mismo resta σ²/2,
+    /// acá se devuelve μ = ν + σ²/2; si no, la corrección de Itô se aplicaría dos veces.
+    /// </summary>
+    internal static (double MuAnual, double SigmaAnual) EstimarParametrosAnuales(
+        IReadOnlyList<double> retornosLogDiarios, int diasPorAnio)
+    {
+        double mediaDiaria = retornosLogDiarios.Average();
+        double varianza    = retornosLogDiarios.Select(r => Math.Pow(r - mediaDiaria, 2)).Average();
+        double sigmaAnual  = Math.Sqrt(varianza * diasPorAnio);
+        double nuAnual     = mediaDiaria * diasPorAnio;
+        return (nuAnual + sigmaAnual * sigmaAnual / 2, sigmaAnual);
+    }
+
     internal static (List<double> Ticker, List<double> Indice) AlinearPorFecha(
         List<(DateOnly Fecha, decimal Precio)> serieTicker,
         List<(DateOnly Fecha, decimal Precio)> serieIndice,

@@ -23,7 +23,7 @@ const PASOS = [
     icon: Dices,
     titulo: 'Corré una simulación',
     descripcion:
-      'El motor proyecta 1.000 trayectorias posibles con Monte Carlo, por escenario económico: favorable, moderado y desfavorable.',
+      'El motor proyecta 5.000 trayectorias posibles con Monte Carlo, por escenario económico: favorable, moderado y desfavorable.',
   },
   {
     icon: LineChart,

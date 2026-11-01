@@ -91,12 +91,8 @@ public sealed class AccionCatalogoService : IAccionCatalogoService
             return null;
         }
 
-        double muDiario    = aligned.Average();
-        double varianza    = aligned.Select(r => Math.Pow(r - muDiario, 2)).Average();
-        double sigmaDiario = Math.Sqrt(varianza);
-
-        double muAnual    = muDiario    * TradingDaysPerYear;
-        double sigmaAnual = sigmaDiario * Math.Sqrt(TradingDaysPerYear);
+        // μ = media(retornos log) × 252 + σ²/2: la media de los retornos log estima μ − σ²/2 (ver GbmMath).
+        var (muAnual, sigmaAnual) = GbmMath.EstimarParametrosAnuales(aligned, TradingDaysPerYear);
         double rho        = Correlacion(aligned, alignedSpy);
 
         var precioActual = serie[^1].PrecioAjustado;

@@ -26,7 +26,7 @@ El simulador permite al usuario:
 
 - Crear portfolios de inversión compuestos por **acciones** (mercado estadounidense), **bonos**, **letras del Tesoro** y **plazos fijos** (mercado argentino).
 - Asociar cada portfolio a un **perfil de riesgo** (conservador, moderado o agresivo).
-- Ejecutar simulaciones **Monte Carlo estratificadas** por escenario económico (favorable, moderado, desfavorable), generando 3.000 trayectorias posibles del valor del portfolio a lo largo del tiempo.
+- Ejecutar simulaciones **Monte Carlo estratificadas** por escenario económico (favorable, moderado, desfavorable), generando 15.000 trayectorias posibles del valor del portfolio a lo largo del tiempo.
 - Visualizar la evolución del patrimonio y la inflación acumulada por escenario, con métricas de dispersión (p25/mediana/p75) y probabilidad de pérdida nominal y real.
 - Consultar simulaciones pasadas sin re-ejecutar el motor, gracias a la persistencia de estadísticas en base de datos.
 

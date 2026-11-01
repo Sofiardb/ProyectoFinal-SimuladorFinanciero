@@ -205,6 +205,33 @@ public class GbmMathTests
         GbmMath.CalcularMesesDeDatos(inicio, fin).Should().Be(48);
     }
 
+    // ── EstimarParametrosAnuales ─────────────────────────────────────────────
+
+    [Fact]
+    public void EstimarParametrosAnuales_SumaCorreccionDeItoALaMediaLogaritmica()
+    {
+        // Retornos alternados ±0.01 alrededor de 0.0005: media 0.0005, desvío poblacional 0.01
+        var retornos = new List<double> { 0.0105, -0.0095, 0.0105, -0.0095 };
+
+        var (mu, sigma) = GbmMath.EstimarParametrosAnuales(retornos, 252);
+
+        double sigmaEsperada = 0.01 * Math.Sqrt(252);
+        double nu            = 0.0005 * 252;
+        sigma.Should().BeApproximately(sigmaEsperada, 1e-12);
+        mu.Should().BeApproximately(nu + sigmaEsperada * sigmaEsperada / 2, 1e-12);
+    }
+
+    [Fact]
+    public void EstimarParametrosAnuales_SinVolatilidad_MuIgualALaMediaAnualizada()
+    {
+        var retornos = new List<double> { 0.001, 0.001, 0.001 };
+
+        var (mu, sigma) = GbmMath.EstimarParametrosAnuales(retornos, 252);
+
+        sigma.Should().BeApproximately(0, 1e-12);
+        mu.Should().BeApproximately(0.001 * 252, 1e-12);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static List<(DateOnly Fecha, decimal PrecioAjustado)> Serie(
