@@ -66,7 +66,7 @@ export default function EscenarioChart({
           axisLine={false}
           tick={{ fontSize: 11, fill: 'var(--color-ink-soft)' }}
           tickFormatter={formatY}
-          width={72}
+          width={96}
           domain={['auto', 'auto']}
         />
         <Tooltip content={(props) => <EscenarioTooltip {...props} series={series} formatY={formatY} />} />

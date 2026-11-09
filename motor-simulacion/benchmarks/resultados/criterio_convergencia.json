@@ -1,0 +1,125 @@
+{
+ "Ns": [
+  300,
+  600,
+  1500,
+  3000,
+  6000,
+  15000,
+  30000,
+  51000,
+  60000,
+  100000
+ ],
+ "peor_global": {
+  "300": {
+   "valor": 16.686171692778903,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "600": {
+   "valor": 12.687063396423197,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "1500": {
+   "valor": 7.6917603540460275,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "3000": {
+   "valor": 5.653165385956467,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "6000": {
+   "valor": 4.35935898981157,
+   "clave": "agresivo_T36|usd_patrimonio|global|p75"
+  },
+  "15000": {
+   "valor": 2.522264916641059,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "30000": {
+   "valor": 1.6056315912988084,
+   "clave": "agresivo_T36|usd_patrimonio|global|p75"
+  },
+  "51000": {
+   "valor": 1.2757685616869572,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "60000": {
+   "valor": 1.3340345242400404,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  },
+  "100000": {
+   "valor": 1.0541348940992055,
+   "clave": "agresivo_T36|usd_ganancia_real|global|p75"
+  }
+ },
+ "peor_escenario": {
+  "300": {
+   "valor": 34.302567662873365,
+   "clave": "agresivo_T36|usd_patrimonio|desfavorable|p75"
+  },
+  "600": {
+   "valor": 22.633170215732136,
+   "clave": "agresivo_T36|usd_ganancia_real|moderado|p75"
+  },
+  "1500": {
+   "valor": 14.409441218316498,
+   "clave": "agresivo_T36|usd_patrimonio|desfavorable|p75"
+  },
+  "3000": {
+   "valor": 9.561229586415628,
+   "clave": "agresivo_T36|usd_ganancia_real|favorable|p75"
+  },
+  "6000": {
+   "valor": 7.403421249201751,
+   "clave": "agresivo_T36|usd_patrimonio|favorable|p75"
+  },
+  "15000": {
+   "valor": 4.735141358754468,
+   "clave": "agresivo_T36|usd_ganancia_real|moderado|p75"
+  },
+  "30000": {
+   "valor": 3.2328960114295806,
+   "clave": "agresivo_T36|usd_ganancia_real|moderado|p75"
+  },
+  "51000": {
+   "valor": 2.4624785862776606,
+   "clave": "agresivo_T36|usd_ganancia_real|favorable|p75"
+  },
+  "60000": {
+   "valor": 2.3715589725496997,
+   "clave": "agresivo_T36|usd_ganancia_real|favorable|p75"
+  },
+  "100000": {
+   "valor": 1.8830785100719982,
+   "clave": "agresivo_T36|usd_ganancia_real|moderado|p75"
+  }
+ },
+ "peor_global_ajuste": {
+  "c": 309.3998402057626,
+  "pendiente_libre": -0.4961861754488354,
+  "N_para": {
+   "10": 957.2826111935142,
+   "5": 3829.1304447740567,
+   "2.5": 15316.521779096227,
+   "1": 95728.26111935142
+  }
+ },
+ "peor_escenario_ajuste": {
+  "c": 565.5782668809517,
+  "pendiente_libre": -0.48463425019778894,
+  "N_para": {
+   "10": 3198.78775968061,
+   "5": 12795.15103872244,
+   "2.5": 51180.60415488976,
+   "1": 319878.775968061
+  }
+ },
+ "verificacion_teoria": {
+  "q": 0.75,
+  "error_probabilidad": 0.012002499739637571,
+  "error_relativo_banda_teorico": 4.204027929820516,
+  "clave": "agresivo_T36|usd_ganancia_real|moderado|p75",
+  "medido_N15000": 4.735141358754468
+ }
+}

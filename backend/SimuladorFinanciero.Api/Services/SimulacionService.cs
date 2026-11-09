@@ -13,7 +13,7 @@ public interface ISimulacionService
 
 public sealed class SimulacionService : ISimulacionService
 {
-    private const int NumTrayectoriasMotor = 15000; // debe coincidir con N_SIMULACIONES del motor
+    private const int NumTrayectoriasMotor = 51000; // debe coincidir con N_SIMULACIONES del motor
 
     private readonly IPortfolioRepository  _portfolioRepo;
     private readonly ISimulacionRepository _simRepo;

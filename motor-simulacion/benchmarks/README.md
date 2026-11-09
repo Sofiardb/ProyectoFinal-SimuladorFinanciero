@@ -5,8 +5,13 @@ las decisiones numéricas. Se corren desde `motor-simulacion/` (requieren `numpy
 
 | Script | Qué responde | Salida en `resultados/` |
 |---|---|---|
-| `estudio_convergencia.py` | ¿Qué N usar? (3000 original → 15000 elegido) Error de Monte Carlo vs N (300 a 30 000), 150 semillas por N, 3 portfolios tipo × 2 horizontes (12 y 36 meses) | `conv_T*.json` |
+| `estudio_convergencia.py` | ¿Qué N usar? (3000 original → 15000 → 51000 adoptado) Error de Monte Carlo vs N (300 a 30 000), 150 semillas por N, 3 portfolios tipo × 2 horizontes (12 y 36 meses) | `conv_T*.json` |
 | `analizar_convergencia.py` | Tablas y gráficos del estudio anterior | `convergencia_tabla.json`, `convergencia_resumen.json`, `fig_convergencia_mediana.png`, `fig_criterio_N.png` |
+| `extender_convergencia.py` | Extiende el estudio de convergencia a N = 60 000 y 100 000 (mismas semillas y referencia) y une los resultados a `conv_T*.json` | `conv_T*.json` |
+| `criterio_convergencia.py` | Peor error / ancho p25–p75 por N, ajuste c/√N, verificación de la fórmula del percentil, N para cada criterio; Figura 2 del informe | `criterio_convergencia.json`, `fig_criterio_N.png` |
+| `costo_por_N.py` | Tiempo y memoria máxima del motor por N (3 000 a 300 000, T = 36) | `costo_por_N.json` |
+| `descargar_series.py` | Descarga precios ajustados de Alpha Vantage (misma key y endpoint que el backend). Requiere internet | `datos/<ticker>_diario_ajustado.json` |
+| `backtesting_reciente.py` | Backtesting de los últimos 5 años con acciones de referencia (IBM, KO, NVDA), calibración con 10 años | `backtesting_reciente.json`, `fig_backtesting_reciente.png` |
 | `estudio_discretizacion.py` | ¿Euler? Exacta (log-Euler) vs Euler-Maruyama vs Milstein para el GBM, paso mensual | `discretizacion.json` |
 | `estudio_semilla.py` | Reproducibilidad por semilla, tests KS / autocorrelación del PCG64, colisiones de semillas | `semilla.json` |
 | `backtesting.py` | Simulado vs real en ventanas de 2 y 3 meses (inflación INDEC e IBM) | `backtesting.json` |

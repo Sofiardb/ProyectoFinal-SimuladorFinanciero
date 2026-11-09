@@ -191,7 +191,7 @@ Más abajo, la pantalla muestra el detalle del portfolio a simular y el botón p
 
 ![Detalle del portfolio y botón para lanzar la simulación](./assets/10-nueva-simulacion-lanzar.jpg)
 
-Al presionar **"Lanzar simulación"**, el motor genera miles de trayectorias posibles (5.000 por escenario, 15.000 en total) para ese portfolio y ese horizonte:
+Al presionar **"Lanzar simulación"**, el motor genera miles de trayectorias posibles (17.000 por escenario, 51.000 en total) para ese portfolio y ese horizonte:
 
 ![Simulación en curso](./assets/11-simulacion-lanzando.jpg)
 
@@ -212,7 +212,7 @@ La pantalla de resultados es la más importante del simulador: es donde se tradu
 En la parte superior aparecen cuatro indicadores clave:
 
 - **Monto invertido**: lo que efectivamente se puso en el portfolio.
-- **Valor final (mediana)**: el valor del portfolio al final del horizonte simulado, en la trayectoria "del medio" — la mitad de las 15.000 trayectorias terminaron por encima de ese valor, y la otra mitad por debajo.
+- **Valor final (mediana)**: el valor del portfolio al final del horizonte simulado, en la trayectoria "del medio" — la mitad de las 51.000 trayectorias terminaron por encima de ese valor, y la otra mitad por debajo.
 - **Inflación acumulada (ARS)** e **Inflación acumulada (USD)**: cuánto se estima que subieron los precios en cada moneda durante el horizonte simulado, en el escenario elegido.
 
 Debajo, el gráfico principal muestra la evolución del **patrimonio** mes a mes, con tres capas de información: la línea central (la trayectoria mediana), una banda sombreada (el rango entre percentil 25 y percentil 75, es decir, dónde cayó el 50% central de las simulaciones) y las líneas finas de mínimo y máximo simulado. Arriba del gráfico se puede alternar entre ver el **patrimonio**, las **ganancias nominales** o las **ganancias reales** (ya descontada la inflación), y también comparar los tres escenarios económicos en simultáneo con el checkbox "Comparar los 3 escenarios".

@@ -6,7 +6,10 @@
   3000,
   6000,
   15000,
-  30000
+  30000,
+  51000,
+  60000,
+  100000
  ],
  "R": 150,
  "N_ref": 300000,
@@ -3525,6 +3528,1461 @@
        "sesgo": -184134.35313064815
       }
      }
+    },
+    "60000": {
+     "seg_por_corrida": 2.714831085513334,
+     "stats": {
+      "ars_patrimonio|global|media": {
+       "media": 1091311.9302839872,
+       "desvio": 130.8874728542987,
+       "sesgo": 3.0439702193252742
+      },
+      "ars_patrimonio|global|mediana": {
+       "media": 977212.3249883918,
+       "desvio": 141.0361438540026,
+       "sesgo": -66.25983455404639
+      },
+      "ars_patrimonio|global|p25": {
+       "media": 820083.1679873256,
+       "desvio": 44.84432859057861,
+       "sesgo": -11.57819672767073
+      },
+      "ars_patrimonio|global|p75": {
+       "media": 1443839.2480837977,
+       "desvio": 506.7761072445374,
+       "sesgo": 279.2901240051724
+      },
+      "ars_patrimonio|global|minimo": {
+       "media": 799065.2487198376,
+       "desvio": 1162.5771603286712,
+       "sesgo": 1604.9429171580123
+      },
+      "ars_patrimonio|global|maximo": {
+       "media": 1700307.174575895,
+       "desvio": 16535.844125907963,
+       "sesgo": -15516.29944460094
+      },
+      "ars_patrimonio|favorable|media": {
+       "media": 816922.1703607728,
+       "desvio": 32.43118930744594,
+       "sesgo": -4.378928920486942
+      },
+      "ars_patrimonio|favorable|mediana": {
+       "media": 816890.8935556497,
+       "desvio": 44.10778022649622,
+       "sesgo": 4.156973439035937
+      },
+      "ars_patrimonio|favorable|p25": {
+       "media": 813730.2597046098,
+       "desvio": 44.441264355962815,
+       "sesgo": -10.22119477787055
+      },
+      "ars_patrimonio|favorable|p75": {
+       "media": 820082.8003973372,
+       "desvio": 44.86097331302421,
+       "sesgo": -11.92144702153746
+      },
+      "ars_patrimonio|favorable|minimo": {
+       "media": 799065.2487198376,
+       "desvio": 1162.5771603286712,
+       "sesgo": 1604.9429171580123
+      },
+      "ars_patrimonio|favorable|maximo": {
+       "media": 835675.9449055195,
+       "desvio": 1182.0351260629936,
+       "sesgo": -616.6772399679758
+      },
+      "ars_patrimonio|moderado|media": {
+       "media": 977484.7365486996,
+       "desvio": 118.55483376251165,
+       "sesgo": -37.741369443247095
+      },
+      "ars_patrimonio|moderado|mediana": {
+       "media": 977212.3249883918,
+       "desvio": 141.0361438540026,
+       "sesgo": -66.25983455404639
+      },
+      "ars_patrimonio|moderado|p25": {
+       "media": 965937.7344528266,
+       "desvio": 145.1128579287175,
+       "sesgo": -31.06475256604608
+      },
+      "ars_patrimonio|moderado|p75": {
+       "media": 988739.7187117384,
+       "desvio": 174.85438196507897,
+       "sesgo": -27.262450199574232
+      },
+      "ars_patrimonio|moderado|minimo": {
+       "media": 915683.6339881237,
+       "desvio": 3767.5553358762127,
+       "sesgo": 1972.088890046114
+      },
+      "ars_patrimonio|moderado|maximo": {
+       "media": 1046674.1204655302,
+       "desvio": 5563.706772721623,
+       "sesgo": -9175.892634701566
+      },
+      "ars_patrimonio|desfavorable|media": {
+       "media": 1479528.8839424886,
+       "desvio": 378.43720820888893,
+       "sesgo": 51.252209009602666
+      },
+      "ars_patrimonio|desfavorable|mediana": {
+       "media": 1478219.3172891946,
+       "desvio": 509.58056352218836,
+       "sesgo": 93.81123769795522
+      },
+      "ars_patrimonio|desfavorable|p25": {
+       "media": 1443843.3405946977,
+       "desvio": 506.3630945835854,
+       "sesgo": 283.0418778422754
+      },
+      "ars_patrimonio|desfavorable|p75": {
+       "media": 1513859.4191216254,
+       "desvio": 511.808645184262,
+       "sesgo": 25.78119086334482
+      },
+      "ars_patrimonio|desfavorable|minimo": {
+       "media": 1294720.6414394772,
+       "desvio": 11803.077718101515,
+       "sesgo": 14844.92496397486
+      },
+      "ars_patrimonio|desfavorable|maximo": {
+       "media": 1700307.174575895,
+       "desvio": 16535.844125907963,
+       "sesgo": -15516.29944460094
+      },
+      "ars_ganancia_real|global|media": {
+       "media": -226101.97583528404,
+       "desvio": 39.6212073205556,
+       "sesgo": 7.53274216412683
+      },
+      "ars_ganancia_real|global|mediana": {
+       "media": -231630.45388518675,
+       "desvio": 109.54007938292821,
+       "sesgo": 40.77131962304702
+      },
+      "ars_ganancia_real|global|p25": {
+       "media": -412638.45858098066,
+       "desvio": 85.27652012669293,
+       "sesgo": -28.204703279712703
+      },
+      "ars_ganancia_real|global|p75": {
+       "media": -34026.86142843319,
+       "desvio": 70.0949504547343,
+       "sesgo": -13.88217162208457
+      },
+      "ars_ganancia_real|global|minimo": {
+       "media": -446270.37718168425,
+       "desvio": 1510.9015770449323,
+       "sesgo": 1659.9748934343224
+      },
+      "ars_ganancia_real|global|maximo": {
+       "media": 1672.2703452688402,
+       "desvio": 1977.1026912251195,
+       "sesgo": -968.784327799191
+      },
+      "ars_ganancia_real|favorable|media": {
+       "media": -28906.839761761483,
+       "desvio": 51.257813098368565,
+       "sesgo": 27.375165403995197
+      },
+      "ars_ganancia_real|favorable|mediana": {
+       "media": -28959.635809514406,
+       "desvio": 68.48658059932589,
+       "sesgo": 29.043847599023138
+      },
+      "ars_ganancia_real|favorable|p25": {
+       "media": -34026.30710370082,
+       "desvio": 70.10880000767912,
+       "sesgo": -13.388359978700464
+      },
+      "ars_ganancia_real|favorable|p75": {
+       "media": -23853.16218834599,
+       "desvio": 74.12198063094114,
+       "sesgo": 43.829440839836025
+      },
+      "ars_ganancia_real|favorable|minimo": {
+       "media": -57416.289022990095,
+       "desvio": 1928.084541861698,
+       "sesgo": 2764.371221024172
+      },
+      "ars_ganancia_real|favorable|maximo": {
+       "media": 1672.2703452688402,
+       "desvio": 1977.1026912251195,
+       "sesgo": -968.784327799191
+      },
+      "ars_ganancia_real|moderado|media": {
+       "media": -231447.34968242192,
+       "desvio": 81.84484341116489,
+       "sesgo": 34.25666684546741
+      },
+      "ars_ganancia_real|moderado|mediana": {
+       "media": -231630.45388518675,
+       "desvio": 109.54007938292821,
+       "sesgo": 40.77131962304702
+      },
+      "ars_ganancia_real|moderado|p25": {
+       "media": -239204.48267348815,
+       "desvio": 110.23285593119617,
+       "sesgo": 52.222129468020285
+      },
+      "ars_ganancia_real|moderado|p75": {
+       "media": -223907.9793060093,
+       "desvio": 111.83241896132155,
+       "sesgo": 0.5421954038611148
+      },
+      "ars_ganancia_real|moderado|minimo": {
+       "media": -272796.09180525795,
+       "desvio": 2420.9620829548626,
+       "sesgo": 3629.761345921841
+      },
+      "ars_ganancia_real|moderado|maximo": {
+       "media": -184706.36576680516,
+       "desvio": 3130.719150290511,
+       "sesgo": -4954.400639532483
+      },
+      "ars_ganancia_real|desfavorable|media": {
+       "media": -417951.7380616684,
+       "desvio": 57.93160010846423,
+       "sesgo": -39.03360575425904
+      },
+      "ars_ganancia_real|desfavorable|mediana": {
+       "media": -418137.745306809,
+       "desvio": 72.72377710941585,
+       "sesgo": -35.41466657852288
+      },
+      "ars_ganancia_real|desfavorable|p25": {
+       "media": -423466.4632731426,
+       "desvio": 76.94126743064196,
+       "sesgo": -41.946220008831006
+      },
+      "ars_ganancia_real|desfavorable|p75": {
+       "media": -412639.13025253115,
+       "desvio": 85.23927948720937,
+       "sesgo": -28.506718102726154
+      },
+      "ars_ganancia_real|desfavorable|minimo": {
+       "media": -446270.37718168425,
+       "desvio": 1510.9015770449323,
+       "sesgo": 1659.9748934343224
+      },
+      "ars_ganancia_real|desfavorable|maximo": {
+       "media": -384245.4038476506,
+       "desvio": 2529.6485441843342,
+       "sesgo": -6520.772901826596
+      },
+      "usd_patrimonio|global|media": {
+       "media": 516703.0085006487,
+       "desvio": 679.7524658682217,
+       "sesgo": -91.9777058143518
+      },
+      "usd_patrimonio|global|mediana": {
+       "media": 495816.2162160875,
+       "desvio": 746.6394269160921,
+       "sesgo": 108.90025815588888
+      },
+      "usd_patrimonio|global|p25": {
+       "media": 408535.0416981005,
+       "desvio": 662.3947325394997,
+       "sesgo": -106.15710742404917
+      },
+      "usd_patrimonio|global|p75": {
+       "media": 601761.2142022918,
+       "desvio": 1003.3046380861613,
+       "sesgo": 34.55360132979695
+      },
+      "usd_patrimonio|global|minimo": {
+       "media": 146242.6799061543,
+       "desvio": 12201.232477204221,
+       "sesgo": 11873.709566424426
+      },
+      "usd_patrimonio|global|maximo": {
+       "media": 1689163.718407482,
+       "desvio": 142574.23349625932,
+       "sesgo": -96625.54269196372
+      },
+      "usd_patrimonio|favorable|media": {
+       "media": 516693.047905794,
+       "desvio": 1191.3937265328739,
+       "sesgo": -452.82995543966535
+      },
+      "usd_patrimonio|favorable|mediana": {
+       "media": 495853.90159989975,
+       "desvio": 1343.4536187292879,
+       "sesgo": -260.74388892709976
+      },
+      "usd_patrimonio|favorable|p25": {
+       "media": 408514.5959489247,
+       "desvio": 1122.7133572954897,
+       "sesgo": -431.1407810646342
+      },
+      "usd_patrimonio|favorable|p75": {
+       "media": 601762.760986233,
+       "desvio": 1733.5604063265018,
+       "sesgo": -354.1720852148719
+      },
+      "usd_patrimonio|favorable|minimo": {
+       "media": 156765.92477442135,
+       "desvio": 12636.465754150244,
+       "sesgo": 5796.213637688925
+      },
+      "usd_patrimonio|favorable|maximo": {
+       "media": 1577207.5239445656,
+       "desvio": 133205.1893152348,
+       "sesgo": -97055.87256058282
+      },
+      "usd_patrimonio|moderado|media": {
+       "media": 516640.40338718594,
+       "desvio": 1161.641378811421,
+       "sesgo": 57.38808777485974
+      },
+      "usd_patrimonio|moderado|mediana": {
+       "media": 495726.24248770176,
+       "desvio": 1367.7857578095814,
+       "sesgo": 94.77439962467179
+      },
+      "usd_patrimonio|moderado|p25": {
+       "media": 408454.28277463024,
+       "desvio": 1261.2993602510971,
+       "sesgo": 195.92348143691197
+      },
+      "usd_patrimonio|moderado|p75": {
+       "media": 601784.2695878446,
+       "desvio": 1684.394225326553,
+       "sesgo": 62.77573591074906
+      },
+      "usd_patrimonio|moderado|minimo": {
+       "media": 156545.23657024512,
+       "desvio": 14008.607956803104,
+       "sesgo": 9126.554770994291
+      },
+      "usd_patrimonio|moderado|maximo": {
+       "media": 1557715.8503236289,
+       "desvio": 143772.51238617953,
+       "sesgo": -207122.4532206566
+      },
+      "usd_patrimonio|desfavorable|media": {
+       "media": 516775.5742089671,
+       "desvio": 1117.635868878886,
+       "sesgo": 119.50875021819957
+      },
+      "usd_patrimonio|desfavorable|mediana": {
+       "media": 495869.0391603351,
+       "desvio": 1292.9801720330443,
+       "sesgo": 450.23359780811006
+      },
+      "usd_patrimonio|desfavorable|p25": {
+       "media": 408649.67046646506,
+       "desvio": 1256.910901987488,
+       "sesgo": -98.93667388736503
+      },
+      "usd_patrimonio|desfavorable|p75": {
+       "media": 601712.5970858423,
+       "desvio": 1790.768566180892,
+       "sesgo": 357.1115899514407
+      },
+      "usd_patrimonio|desfavorable|minimo": {
+       "media": 157751.68274023104,
+       "desvio": 11585.210036410906,
+       "sesgo": 22288.38954998835
+      },
+      "usd_patrimonio|desfavorable|maximo": {
+       "media": 1582331.6393793311,
+       "desvio": 131145.91435471713,
+       "sesgo": -138690.44799786666
+      },
+      "usd_ganancia_real|global|media": {
+       "media": 59648.91970840355,
+       "desvio": 607.5720677399323,
+       "sesgo": -97.52388275261183
+      },
+      "usd_ganancia_real|global|mediana": {
+       "media": 39922.756027857075,
+       "desvio": 662.380027457016,
+       "sesgo": -22.88576876069419
+      },
+      "usd_ganancia_real|global|p25": {
+       "media": -39805.830315151106,
+       "desvio": 574.3183364180027,
+       "sesgo": -102.32357171017065
+      },
+      "usd_ganancia_real|global|p75": {
+       "media": 137368.24761890605,
+       "desvio": 939.9171633577315,
+       "sesgo": -56.426434250577586
+      },
+      "usd_ganancia_real|global|minimo": {
+       "media": -275084.082948449,
+       "desvio": 9850.29637789642,
+       "sesgo": 15165.210490133031
+      },
+      "usd_ganancia_real|global|maximo": {
+       "media": 1151003.9827977999,
+       "desvio": 130898.04995396207,
+       "sesgo": -72328.20720337215
+      },
+      "usd_ganancia_real|favorable|media": {
+       "media": 98439.46004027734,
+       "desvio": 1147.808763240108,
+       "sesgo": -436.19651518746105
+      },
+      "usd_ganancia_real|favorable|mediana": {
+       "media": 78318.37791519918,
+       "desvio": 1264.7808018796834,
+       "sesgo": -250.49665067325986
+      },
+      "usd_ganancia_real|favorable|p25": {
+       "media": -5928.545066308689,
+       "desvio": 1077.866179296521,
+       "sesgo": -383.08209682855795
+      },
+      "usd_ganancia_real|favorable|p75": {
+       "media": 180506.26636515287,
+       "desvio": 1674.806743446431,
+       "sesgo": -321.9924516733736
+      },
+      "usd_ganancia_real|favorable|minimo": {
+       "media": -248780.59546927398,
+       "desvio": 12235.000502214923,
+       "sesgo": 5458.357403396745
+      },
+      "usd_ganancia_real|favorable|maximo": {
+       "media": 1121406.5852097182,
+       "desvio": 128407.14642315272,
+       "sesgo": -91700.19652046892
+      },
+      "usd_ganancia_real|moderado|media": {
+       "media": 63832.732984132024,
+       "desvio": 1041.6577753166152,
+       "sesgo": 54.922809419746045
+      },
+      "usd_ganancia_real|moderado|mediana": {
+       "media": 45066.73720061802,
+       "desvio": 1234.4980510774983,
+       "sesgo": 117.08819470693561
+      },
+      "usd_ganancia_real|moderado|p25": {
+       "media": -33314.839754180495,
+       "desvio": 1130.1941473185145,
+       "sesgo": 209.77522213488555
+      },
+      "usd_ganancia_real|moderado|p75": {
+       "media": 140243.19261016767,
+       "desvio": 1539.4979803255067,
+       "sesgo": -43.002221986913355
+      },
+      "usd_ganancia_real|moderado|minimo": {
+       "media": -259491.46703252575,
+       "desvio": 12578.756680971992,
+       "sesgo": 8044.6988529034425
+      },
+      "usd_ganancia_real|moderado|maximo": {
+       "media": 998586.0251916833,
+       "desvio": 128830.31833924982,
+       "sesgo": -182689.1442356368
+      },
+      "usd_ganancia_real|desfavorable|media": {
+       "media": 16674.566100801207,
+       "desvio": 898.2607450214022,
+       "sesgo": 88.70205751208414
+      },
+      "usd_ganancia_real|desfavorable|mediana": {
+       "media": -192.50584362149647,
+       "desvio": 1061.3273605877775,
+       "sesgo": 329.8212874776779
+      },
+      "usd_ganancia_real|desfavorable|p25": {
+       "media": -70520.04767640246,
+       "desvio": 1030.4118261239175,
+       "sesgo": -84.78441155226028
+      },
+      "usd_ganancia_real|desfavorable|p75": {
+       "media": 85162.91649437802,
+       "desvio": 1437.1883698474646,
+       "sesgo": 293.86473554279655
+      },
+      "usd_ganancia_real|desfavorable|minimo": {
+       "media": -272840.26716557395,
+       "desvio": 9334.931527108118,
+       "sesgo": 17409.026273008087
+      },
+      "usd_ganancia_real|desfavorable|maximo": {
+       "media": 877112.2657408998,
+       "desvio": 106675.7237068048,
+       "sesgo": -111630.46820566442
+      }
+     }
+    },
+    "100000": {
+     "seg_por_corrida": 5.150698514346667,
+     "stats": {
+      "ars_patrimonio|global|media": {
+       "media": 1091321.8311543784,
+       "desvio": 102.41487624387932,
+       "sesgo": 12.944840610492975
+      },
+      "ars_patrimonio|global|mediana": {
+       "media": 977217.5206581858,
+       "desvio": 109.383972332815,
+       "sesgo": -61.06416476005688
+      },
+      "ars_patrimonio|global|p25": {
+       "media": 820085.8633778365,
+       "desvio": 34.71216046482106,
+       "sesgo": -8.882806216715835
+      },
+      "ars_patrimonio|global|p75": {
+       "media": 1443768.231560326,
+       "desvio": 364.22085171647615,
+       "sesgo": 208.2736005333718
+      },
+      "ars_patrimonio|global|minimo": {
+       "media": 798508.3485917879,
+       "desvio": 991.3569855437531,
+       "sesgo": 1048.0427891082363
+      },
+      "ars_patrimonio|global|maximo": {
+       "media": 1705333.6164754776,
+       "desvio": 15592.37087979336,
+       "sesgo": -10489.857545018429
+      },
+      "ars_patrimonio|favorable|media": {
+       "media": 816922.746287319,
+       "desvio": 27.206146114140257,
+       "sesgo": -3.8030023742467165
+      },
+      "ars_patrimonio|favorable|mediana": {
+       "media": 816893.5239761482,
+       "desvio": 32.79679578030798,
+       "sesgo": 6.787393937585875
+      },
+      "ars_patrimonio|favorable|p25": {
+       "media": 813727.4881795702,
+       "desvio": 36.238438360051454,
+       "sesgo": -12.992719817440957
+      },
+      "ars_patrimonio|favorable|p75": {
+       "media": 820085.4904942648,
+       "desvio": 34.70220129969854,
+       "sesgo": -9.231350093963556
+      },
+      "ars_patrimonio|favorable|minimo": {
+       "media": 798508.3485917879,
+       "desvio": 991.3569855437531,
+       "sesgo": 1048.0427891082363
+      },
+      "ars_patrimonio|favorable|maximo": {
+       "media": 835955.1367100764,
+       "desvio": 1238.111538766172,
+       "sesgo": -337.4854354111012
+      },
+      "ars_patrimonio|moderado|media": {
+       "media": 977490.7811057452,
+       "desvio": 88.54611381194582,
+       "sesgo": -31.696812397567555
+      },
+      "ars_patrimonio|moderado|mediana": {
+       "media": 977216.9236326438,
+       "desvio": 109.4322853746302,
+       "sesgo": -61.66119030211121
+      },
+      "ars_patrimonio|moderado|p25": {
+       "media": 965949.9392995953,
+       "desvio": 124.98004573283505,
+       "sesgo": -18.859905797289684
+      },
+      "ars_patrimonio|moderado|p75": {
+       "media": 988745.2085255069,
+       "desvio": 140.3722806504317,
+       "sesgo": -21.772636431036517
+      },
+      "ars_patrimonio|moderado|minimo": {
+       "media": 913768.013220038,
+       "desvio": 3483.3914378496074,
+       "sesgo": 56.46812196040992
+      },
+      "ars_patrimonio|moderado|maximo": {
+       "media": 1048540.1012802672,
+       "desvio": 4632.960058148973,
+       "sesgo": -7309.911819964531
+      },
+      "ars_patrimonio|desfavorable|media": {
+       "media": 1479540.319398956,
+       "desvio": 286.06680957944593,
+       "sesgo": 62.687665476929396
+      },
+      "ars_patrimonio|desfavorable|mediana": {
+       "media": 1478250.7882857344,
+       "desvio": 383.905200618474,
+       "sesgo": 125.28223423776217
+      },
+      "ars_patrimonio|desfavorable|p25": {
+       "media": 1443768.231560326,
+       "desvio": 364.22085171647615,
+       "sesgo": 207.9328434704803
+      },
+      "ars_patrimonio|desfavorable|p75": {
+       "media": 1513927.7288890432,
+       "desvio": 395.3182937531386,
+       "sesgo": 94.09095828118734
+      },
+      "ars_patrimonio|desfavorable|minimo": {
+       "media": 1291493.697093683,
+       "desvio": 10871.434975868617,
+       "sesgo": 11617.980618180707
+      },
+      "ars_patrimonio|desfavorable|maximo": {
+       "media": 1705333.6164754776,
+       "desvio": 15592.37087979336,
+       "sesgo": -10489.857545018429
+      },
+      "ars_ganancia_real|global|media": {
+       "media": -226105.09042988022,
+       "desvio": 29.98575091593975,
+       "sesgo": 4.418147567950655
+      },
+      "ars_ganancia_real|global|mediana": {
+       "media": -231635.27120519674,
+       "desvio": 79.5461528141047,
+       "sesgo": 35.95399961306248
+      },
+      "ars_ganancia_real|global|p25": {
+       "media": -412628.4030763376,
+       "desvio": 56.00493686873147,
+       "sesgo": -18.14919863664545
+      },
+      "ars_ganancia_real|global|p75": {
+       "media": -34026.86569375972,
+       "desvio": 58.75568127609589,
+       "sesgo": -13.886436948610935
+      },
+      "ars_ganancia_real|global|minimo": {
+       "media": -446930.5282888022,
+       "desvio": 1642.0634994289635,
+       "sesgo": 999.8237863163813
+      },
+      "ars_ganancia_real|global|maximo": {
+       "media": 2061.6758051373345,
+       "desvio": 2021.5573728709342,
+       "sesgo": -579.3788679306967
+      },
+      "ars_ganancia_real|favorable|media": {
+       "media": -28903.689917003303,
+       "desvio": 44.80156803256259,
+       "sesgo": 30.525010162175022
+      },
+      "ars_ganancia_real|favorable|mediana": {
+       "media": -28955.68279527604,
+       "desvio": 52.38610187102707,
+       "sesgo": 32.99686183738959
+      },
+      "ars_ganancia_real|favorable|p25": {
+       "media": -34026.27402586204,
+       "desvio": 58.67230455414893,
+       "sesgo": -13.355282139920746
+      },
+      "ars_ganancia_real|favorable|p75": {
+       "media": -23835.53327939423,
+       "desvio": 56.046060352261804,
+       "sesgo": 61.45834979159554
+      },
+      "ars_ganancia_real|favorable|minimo": {
+       "media": -58524.80395926702,
+       "desvio": 1862.1441298428658,
+       "sesgo": 1655.8562847472494
+      },
+      "ars_ganancia_real|favorable|maximo": {
+       "media": 2061.6758051373345,
+       "desvio": 2021.5573728709342,
+       "sesgo": -579.3788679306967
+      },
+      "ars_ganancia_real|moderado|media": {
+       "media": -231451.77461325526,
+       "desvio": 60.61231565223586,
+       "sesgo": 29.831736012129113
+      },
+      "ars_ganancia_real|moderado|mediana": {
+       "media": -231634.78510887703,
+       "desvio": 79.59485309915608,
+       "sesgo": 36.440095932775876
+      },
+      "ars_ganancia_real|moderado|p25": {
+       "media": -239207.30936360935,
+       "desvio": 87.27385270128278,
+       "sesgo": 49.39543934681569
+      },
+      "ars_ganancia_real|moderado|p75": {
+       "media": -223900.65745332724,
+       "desvio": 82.75961132227418,
+       "sesgo": 7.864048085932154
+      },
+      "ars_ganancia_real|moderado|minimo": {
+       "media": -273808.2097250989,
+       "desvio": 2561.244818960591,
+       "sesgo": 2617.6434260808746
+      },
+      "ars_ganancia_real|moderado|maximo": {
+       "media": -183022.02090134227,
+       "desvio": 3577.8985163434986,
+       "sesgo": -3270.055774069595
+      },
+      "ars_ganancia_real|desfavorable|media": {
+       "media": -417954.05123300286,
+       "desvio": 44.54939017836332,
+       "sesgo": -41.34677708870731
+      },
+      "ars_ganancia_real|desfavorable|mediana": {
+       "media": -418136.40061101667,
+       "desvio": 53.0628878180837,
+       "sesgo": -34.06997078616405
+      },
+      "ars_ganancia_real|desfavorable|p25": {
+       "media": -423474.4583356773,
+       "desvio": 57.577744551349305,
+       "sesgo": -49.94128254352836
+      },
+      "ars_ganancia_real|desfavorable|p75": {
+       "media": -412628.4030763376,
+       "desvio": 56.00493686873147,
+       "sesgo": -17.779541909170803
+      },
+      "ars_ganancia_real|desfavorable|minimo": {
+       "media": -446930.5282888022,
+       "desvio": 1642.0634994289635,
+       "sesgo": 999.8237863163813
+      },
+      "ars_ganancia_real|desfavorable|maximo": {
+       "media": -383241.3961942412,
+       "desvio": 2283.248178159956,
+       "sesgo": -5516.765248417156
+      },
+      "usd_patrimonio|global|media": {
+       "media": 516747.742188946,
+       "desvio": 470.7402573144112,
+       "sesgo": -47.24401751707774
+      },
+      "usd_patrimonio|global|mediana": {
+       "media": 495815.4570793116,
+       "desvio": 520.8348392941775,
+       "sesgo": 108.1411213799729
+      },
+      "usd_patrimonio|global|p25": {
+       "media": 408619.3422443338,
+       "desvio": 480.317402256317,
+       "sesgo": -21.85656119073974
+      },
+      "usd_patrimonio|global|p75": {
+       "media": 601701.7096377171,
+       "desvio": 732.9786295143414,
+       "sesgo": -24.950963244889863
+      },
+      "usd_patrimonio|global|minimo": {
+       "media": 140942.6533887896,
+       "desvio": 10224.486454307957,
+       "sesgo": 6573.683049059706
+      },
+      "usd_patrimonio|global|maximo": {
+       "media": 1773537.2809892562,
+       "desvio": 142652.71314343464,
+       "sesgo": -12251.980110189412
+      },
+      "usd_patrimonio|favorable|media": {
+       "media": 516673.28143946093,
+       "desvio": 838.1221611344957,
+       "sesgo": -472.59642177273054
+      },
+      "usd_patrimonio|favorable|mediana": {
+       "media": 495769.79497321445,
+       "desvio": 1016.6954107866683,
+       "sesgo": -344.85051561240107
+      },
+      "usd_patrimonio|favorable|p25": {
+       "media": 408575.8443524462,
+       "desvio": 896.6579618260247,
+       "sesgo": -369.8923775431467
+      },
+      "usd_patrimonio|favorable|p75": {
+       "media": 601693.9968005681,
+       "desvio": 1222.0722657387164,
+       "sesgo": -422.9362708798144
+      },
+      "usd_patrimonio|favorable|minimo": {
+       "media": 150542.4378741697,
+       "desvio": 12169.512481717724,
+       "sesgo": -427.273262562725
+      },
+      "usd_patrimonio|favorable|maximo": {
+       "media": 1629488.8449571626,
+       "desvio": 135990.65316127308,
+       "sesgo": -44774.55154798576
+      },
+      "usd_patrimonio|moderado|media": {
+       "media": 516736.7036234254,
+       "desvio": 820.8150696283958,
+       "sesgo": 153.688324014307
+      },
+      "usd_patrimonio|moderado|mediana": {
+       "media": 495762.33464592515,
+       "desvio": 952.8935671681477,
+       "sesgo": 130.8665578480577
+      },
+      "usd_patrimonio|moderado|p25": {
+       "media": 408634.9238304122,
+       "desvio": 879.9156624066965,
+       "sesgo": 376.5645372188883
+      },
+      "usd_patrimonio|moderado|p75": {
+       "media": 601590.0529928926,
+       "desvio": 1339.1578300296098,
+       "sesgo": -131.44085904129315
+      },
+      "usd_patrimonio|moderado|minimo": {
+       "media": 152481.07479609083,
+       "desvio": 11686.280578679842,
+       "sesgo": 5062.392996840004
+      },
+      "usd_patrimonio|moderado|maximo": {
+       "media": 1652927.2217346085,
+       "desvio": 144277.4254285453,
+       "sesgo": -111911.08180967695
+      },
+      "usd_patrimonio|desfavorable|media": {
+       "media": 516833.2389390242,
+       "desvio": 894.7687038587259,
+       "sesgo": 177.1734802753199
+      },
+      "usd_patrimonio|desfavorable|mediana": {
+       "media": 495913.96735996805,
+       "desvio": 1030.0793421344752,
+       "sesgo": 495.1617974410765
+      },
+      "usd_patrimonio|desfavorable|p25": {
+       "media": 408661.6855387207,
+       "desvio": 969.9039588100023,
+       "sesgo": -86.92160163173685
+      },
+      "usd_patrimonio|desfavorable|p75": {
+       "media": 601805.788729558,
+       "desvio": 1243.6364609582702,
+       "sesgo": 450.3032336671604
+      },
+      "usd_patrimonio|desfavorable|minimo": {
+       "media": 152886.22647017438,
+       "desvio": 12534.046628108388,
+       "sesgo": 17422.93327993169
+      },
+      "usd_patrimonio|desfavorable|maximo": {
+       "media": 1659396.8220444357,
+       "desvio": 155819.42139736278,
+       "sesgo": -61625.26533276215
+      },
+      "usd_ganancia_real|global|media": {
+       "media": 59684.99216301657,
+       "desvio": 417.69034958725155,
+       "sesgo": -61.45142813958955
+      },
+      "usd_ganancia_real|global|mediana": {
+       "media": 39948.642391610454,
+       "desvio": 450.72686099406684,
+       "sesgo": 3.0005949926853646
+      },
+      "usd_ganancia_real|global|p25": {
+       "media": -39775.081652184024,
+       "desvio": 405.2365940152585,
+       "sesgo": -71.5749087430886
+      },
+      "usd_ganancia_real|global|p75": {
+       "media": 137324.43767988382,
+       "desvio": 675.093706061553,
+       "sesgo": -100.23637327281176
+      },
+      "usd_ganancia_real|global|minimo": {
+       "media": -278892.37494405214,
+       "desvio": 9174.865041397792,
+       "sesgo": 11356.918494529906
+      },
+      "usd_ganancia_real|global|maximo": {
+       "media": 1209723.3336493652,
+       "desvio": 128383.63971336736,
+       "sesgo": -13608.856351806782
+      },
+      "usd_ganancia_real|favorable|media": {
+       "media": 98418.96989081612,
+       "desvio": 807.8154741308293,
+       "sesgo": -456.6866646486742
+      },
+      "usd_ganancia_real|favorable|mediana": {
+       "media": 78238.21464447236,
+       "desvio": 976.0478102811041,
+       "sesgo": -330.6599214000744
+      },
+      "usd_ganancia_real|favorable|p25": {
+       "media": -5885.145906808401,
+       "desvio": 868.9056577160711,
+       "sesgo": -339.6829373282708
+      },
+      "usd_ganancia_real|favorable|p75": {
+       "media": 180458.76961871842,
+       "desvio": 1192.4606964956622,
+       "sesgo": -369.48919810782536
+      },
+      "usd_ganancia_real|favorable|minimo": {
+       "media": -254857.52007429412,
+       "desvio": 11724.238360586633,
+       "sesgo": -618.5672016234021
+      },
+      "usd_ganancia_real|favorable|maximo": {
+       "media": 1171410.953349009,
+       "desvio": 131117.7239000685,
+       "sesgo": -41695.8283811782
+      },
+      "usd_ganancia_real|moderado|media": {
+       "media": 63918.40633859303,
+       "desvio": 735.6093142201761,
+       "sesgo": 140.59616388074937
+      },
+      "usd_ganancia_real|moderado|mediana": {
+       "media": 45079.23319688814,
+       "desvio": 840.2511238656824,
+       "sesgo": 129.58419097705337
+      },
+      "usd_ganancia_real|moderado|p25": {
+       "media": -33144.70859238841,
+       "desvio": 798.9405101726769,
+       "sesgo": 379.9063839269729
+      },
+      "usd_ganancia_real|moderado|p75": {
+       "media": 140102.14512997682,
+       "desvio": 1211.7468431454047,
+       "sesgo": -184.04970217775553
+      },
+      "usd_ganancia_real|moderado|minimo": {
+       "media": -263111.47315778263,
+       "desvio": 10462.509503898558,
+       "sesgo": 4424.692727646558
+      },
+      "usd_ganancia_real|moderado|maximo": {
+       "media": 1083587.4260839333,
+       "desvio": 129786.45644096333,
+       "sesgo": -97687.7433433868
+      },
+      "usd_ganancia_real|desfavorable|media": {
+       "media": 16718.88925561805,
+       "desvio": 721.8259590676981,
+       "sesgo": 133.02521232892832
+      },
+      "usd_ganancia_real|desfavorable|mediana": {
+       "media": -143.94288043312108,
+       "desvio": 821.8908927914987,
+       "sesgo": 378.3842506660533
+      },
+      "usd_ganancia_real|desfavorable|p25": {
+       "media": -70518.71060852495,
+       "desvio": 786.005549271346,
+       "sesgo": -83.4473436747503
+      },
+      "usd_ganancia_real|desfavorable|p75": {
+       "media": 85248.79596070324,
+       "desvio": 992.3623505069817,
+       "sesgo": 379.7442018680158
+      },
+      "usd_ganancia_real|desfavorable|minimo": {
+       "media": -276737.62985699327,
+       "desvio": 10081.289851663254,
+       "sesgo": 13511.663581588771
+      },
+      "usd_ganancia_real|desfavorable|maximo": {
+       "media": 938658.9156369257,
+       "desvio": 126283.53745641238,
+       "sesgo": -50083.81830963853
+      }
+     }
+    },
+    "51000": {
+     "seg_por_corrida": 1.9538322379266666,
+     "stats": {
+      "ars_patrimonio|global|media": {
+       "media": 1091320.122506634,
+       "desvio": 133.7367221665833,
+       "sesgo": 11.23619286622852
+      },
+      "ars_patrimonio|global|mediana": {
+       "media": 977223.5222386976,
+       "desvio": 147.9936790880865,
+       "sesgo": -55.06258424825501
+      },
+      "ars_patrimonio|global|p25": {
+       "media": 820090.4962283506,
+       "desvio": 47.03324468609363,
+       "sesgo": -4.249955702689476
+      },
+      "ars_patrimonio|global|p75": {
+       "media": 1443765.3129653549,
+       "desvio": 518.1732516678644,
+       "sesgo": 205.35500556230545
+      },
+      "ars_patrimonio|global|minimo": {
+       "media": 799341.8059222572,
+       "desvio": 1075.550307996284,
+       "sesgo": 1881.5001195776276
+      },
+      "ars_patrimonio|global|maximo": {
+       "media": 1698601.4484358316,
+       "desvio": 15529.652478321306,
+       "sesgo": -17222.02558466443
+      },
+      "ars_patrimonio|favorable|media": {
+       "media": 816928.2461293888,
+       "desvio": 36.52369069617187,
+       "sesgo": 1.6968396955635399
+      },
+      "ars_patrimonio|favorable|mediana": {
+       "media": 816894.5208092302,
+       "desvio": 46.397241463121865,
+       "sesgo": 7.784227019525133
+      },
+      "ars_patrimonio|favorable|p25": {
+       "media": 813734.2196358842,
+       "desvio": 52.02666517885049,
+       "sesgo": -6.2612635034602135
+      },
+      "ars_patrimonio|favorable|p75": {
+       "media": 820090.132271282,
+       "desvio": 47.05551652376346,
+       "sesgo": -4.589573076693341
+      },
+      "ars_patrimonio|favorable|minimo": {
+       "media": 799341.8059222572,
+       "desvio": 1075.550307996284,
+       "sesgo": 1881.5001195776276
+      },
+      "ars_patrimonio|favorable|maximo": {
+       "media": 835436.2526963981,
+       "desvio": 1258.2052888938786,
+       "sesgo": -856.3694490893977
+      },
+      "ars_patrimonio|moderado|media": {
+       "media": 977496.8842501778,
+       "desvio": 117.02090277655745,
+       "sesgo": -25.59366796503309
+      },
+      "ars_patrimonio|moderado|mediana": {
+       "media": 977223.5222386976,
+       "desvio": 147.9936790880865,
+       "sesgo": -55.06258424825501
+      },
+      "ars_patrimonio|moderado|p25": {
+       "media": 965949.6495069619,
+       "desvio": 173.4914452840336,
+       "sesgo": -19.149698430672288
+      },
+      "ars_patrimonio|moderado|p75": {
+       "media": 988737.0671668145,
+       "desvio": 168.4017103318735,
+       "sesgo": -29.91399512346834
+      },
+      "ars_patrimonio|moderado|minimo": {
+       "media": 916422.9363966472,
+       "desvio": 3579.183061520944,
+       "sesgo": 2711.3912985696224
+      },
+      "ars_patrimonio|moderado|maximo": {
+       "media": 1045919.4454291884,
+       "desvio": 4923.713907915858,
+       "sesgo": -9930.567671043333
+      },
+      "ars_patrimonio|desfavorable|media": {
+       "media": 1479535.2371403377,
+       "desvio": 384.780805092173,
+       "sesgo": 57.60540685872547
+      },
+      "ars_patrimonio|desfavorable|mediana": {
+       "media": 1478251.0129723626,
+       "desvio": 470.0642522590393,
+       "sesgo": 125.50692086596973
+      },
+      "ars_patrimonio|desfavorable|p25": {
+       "media": 1443769.9058993415,
+       "desvio": 518.7799943775709,
+       "sesgo": 209.60718248598278
+      },
+      "ars_patrimonio|desfavorable|p75": {
+       "media": 1513898.1316730622,
+       "desvio": 506.7005150420051,
+       "sesgo": 64.49374230019748
+      },
+      "ars_patrimonio|desfavorable|minimo": {
+       "media": 1297582.9544023878,
+       "desvio": 11047.391638294812,
+       "sesgo": 17707.237926885486
+      },
+      "ars_patrimonio|desfavorable|maximo": {
+       "media": 1698601.4484358316,
+       "desvio": 15529.652478321306,
+       "sesgo": -17222.02558466443
+      },
+      "ars_ganancia_real|global|media": {
+       "media": -226107.81942033945,
+       "desvio": 40.49500293757966,
+       "sesgo": 1.6891571087180637
+      },
+      "ars_ganancia_real|global|mediana": {
+       "media": -231637.91895473032,
+       "desvio": 108.34905166020474,
+       "sesgo": 33.30625007947674
+      },
+      "ars_ganancia_real|global|p25": {
+       "media": -412640.139430854,
+       "desvio": 80.19908956667526,
+       "sesgo": -29.885553153057117
+      },
+      "ars_ganancia_real|global|p75": {
+       "media": -34029.97702263456,
+       "desvio": 72.81231275339256,
+       "sesgo": -16.9977658234493
+      },
+      "ars_ganancia_real|global|minimo": {
+       "media": -446150.8522261971,
+       "desvio": 1717.5223708841752,
+       "sesgo": 1779.4998489214922
+      },
+      "ars_ganancia_real|global|maximo": {
+       "media": 905.653154479647,
+       "desvio": 2207.482629497414,
+       "sesgo": -1735.401518588384
+      },
+      "ars_ganancia_real|favorable|media": {
+       "media": -28909.258749369717,
+       "desvio": 59.260814917633134,
+       "sesgo": 24.956177795760595
+      },
+      "ars_ganancia_real|favorable|mediana": {
+       "media": -28958.5467071041,
+       "desvio": 74.5298577509445,
+       "sesgo": 30.13295000933067
+      },
+      "ars_ganancia_real|favorable|p25": {
+       "media": -34029.3373012612,
+       "desvio": 72.7612529297943,
+       "sesgo": -16.41855753908021
+      },
+      "ars_ganancia_real|favorable|p75": {
+       "media": -23849.765519433982,
+       "desvio": 73.27525601934614,
+       "sesgo": 47.22610975184216
+      },
+      "ars_ganancia_real|favorable|minimo": {
+       "media": -57250.203469205175,
+       "desvio": 1894.2041582565373,
+       "sesgo": 2930.456774809092
+      },
+      "ars_ganancia_real|favorable|maximo": {
+       "media": 905.653154479647,
+       "desvio": 2207.482629497414,
+       "sesgo": -1735.401518588384
+      },
+      "ars_ganancia_real|moderado|media": {
+       "media": -231456.7359705185,
+       "desvio": 88.33991675611352,
+       "sesgo": 24.870378748892108
+      },
+      "ars_ganancia_real|moderado|mediana": {
+       "media": -231637.91895473032,
+       "desvio": 108.34905166020474,
+       "sesgo": 33.30625007947674
+      },
+      "ars_ganancia_real|moderado|p25": {
+       "media": -239206.06385231545,
+       "desvio": 111.65763193131579,
+       "sesgo": 50.64095064072171
+      },
+      "ars_ganancia_real|moderado|p75": {
+       "media": -223904.57101876955,
+       "desvio": 119.34602737492246,
+       "sesgo": 3.9504826436168514
+      },
+      "ars_ganancia_real|moderado|minimo": {
+       "media": -272585.554417948,
+       "desvio": 2824.5012228570595,
+       "sesgo": 3840.298733231786
+      },
+      "ars_ganancia_real|moderado|maximo": {
+       "media": -184886.98508488998,
+       "desvio": 3840.4817421319362,
+       "sesgo": -5135.019957617304
+      },
+      "ars_ganancia_real|desfavorable|media": {
+       "media": -417957.46354112995,
+       "desvio": 57.43261259139284,
+       "sesgo": -44.75908521580277
+      },
+      "ars_ganancia_real|desfavorable|mediana": {
+       "media": -418151.63160412945,
+       "desvio": 72.32026533918551,
+       "sesgo": -49.300963898946065
+      },
+      "ars_ganancia_real|desfavorable|p25": {
+       "media": -423475.19627802836,
+       "desvio": 77.52843692778458,
+       "sesgo": -50.67922489461489
+      },
+      "ars_ganancia_real|desfavorable|p75": {
+       "media": -412640.7927678323,
+       "desvio": 80.20952590292715,
+       "sesgo": -30.16923340386711
+      },
+      "ars_ganancia_real|desfavorable|minimo": {
+       "media": -446150.8522261971,
+       "desvio": 1717.5223708841752,
+       "sesgo": 1779.4998489214922
+      },
+      "ars_ganancia_real|desfavorable|maximo": {
+       "media": -384629.52408230654,
+       "desvio": 2564.9844000505964,
+       "sesgo": -6904.893136482511
+      },
+      "usd_patrimonio|global|media": {
+       "media": 516712.0093818739,
+       "desvio": 585.7152677680157,
+       "sesgo": -82.97682458919007
+      },
+      "usd_patrimonio|global|mediana": {
+       "media": 495817.4522806875,
+       "desvio": 755.4854545978986,
+       "sesgo": 110.13632275589043
+      },
+      "usd_patrimonio|global|p25": {
+       "media": 408610.3681127576,
+       "desvio": 654.3961748323217,
+       "sesgo": -30.83069276693277
+      },
+      "usd_patrimonio|global|p75": {
+       "media": 601642.8712816368,
+       "desvio": 926.8093089522041,
+       "sesgo": -83.78931932523847
+      },
+      "usd_patrimonio|global|minimo": {
+       "media": 148349.72027788492,
+       "desvio": 11527.300782444785,
+       "sesgo": 13980.74993815503
+      },
+      "usd_patrimonio|global|maximo": {
+       "media": 1696257.2011596363,
+       "desvio": 172199.5910479417,
+       "sesgo": -89532.05993980938
+      },
+      "usd_patrimonio|favorable|media": {
+       "media": 516707.86232555687,
+       "desvio": 1181.0368869144138,
+       "sesgo": -438.01553567679366
+      },
+      "usd_patrimonio|favorable|mediana": {
+       "media": 495787.5908986829,
+       "desvio": 1322.9681471421914,
+       "sesgo": -327.05459014396183
+      },
+      "usd_patrimonio|favorable|p25": {
+       "media": 408618.79996600637,
+       "desvio": 1183.9225945933524,
+       "sesgo": -326.93676398298703
+      },
+      "usd_patrimonio|favorable|p75": {
+       "media": 601690.2635335453,
+       "desvio": 2015.35734627703,
+       "sesgo": -426.66953790257685
+      },
+      "usd_patrimonio|favorable|minimo": {
+       "media": 159340.18646579148,
+       "desvio": 11524.52779061588,
+       "sesgo": 8370.47532905906
+      },
+      "usd_patrimonio|favorable|maximo": {
+       "media": 1581947.3430414936,
+       "desvio": 178142.5200827384,
+       "sesgo": -92316.05346365483
+      },
+      "usd_patrimonio|moderado|media": {
+       "media": 516685.3338011122,
+       "desvio": 1130.1194665791077,
+       "sesgo": 102.31850170111284
+      },
+      "usd_patrimonio|moderado|mediana": {
+       "media": 495828.7769173519,
+       "desvio": 1432.9001608885283,
+       "sesgo": 197.30882927478524
+      },
+      "usd_patrimonio|moderado|p25": {
+       "media": 408564.2403267441,
+       "desvio": 1265.7814948334374,
+       "sesgo": 305.8810335507733
+      },
+      "usd_patrimonio|moderado|p75": {
+       "media": 601527.2173372231,
+       "desvio": 1688.296252125093,
+       "sesgo": -194.27651471074205
+      },
+      "usd_patrimonio|moderado|minimo": {
+       "media": 159250.99684730158,
+       "desvio": 12437.861639454846,
+       "sesgo": 11832.315048050747
+      },
+      "usd_patrimonio|moderado|maximo": {
+       "media": 1562578.2822503292,
+       "desvio": 145407.32570353986,
+       "sesgo": -202260.02129395632
+      },
+      "usd_patrimonio|desfavorable|media": {
+       "media": 516742.83201895264,
+       "desvio": 1041.8746034367819,
+       "sesgo": 86.76656020374503
+      },
+      "usd_patrimonio|desfavorable|mediana": {
+       "media": 495802.5652370443,
+       "desvio": 1328.5450892107492,
+       "sesgo": 383.7596745173214
+      },
+      "usd_patrimonio|desfavorable|p25": {
+       "media": 408676.95523789595,
+       "desvio": 1099.9998196813428,
+       "sesgo": -71.65190245647682
+      },
+      "usd_patrimonio|desfavorable|p75": {
+       "media": 601769.613619384,
+       "desvio": 1619.9128709583174,
+       "sesgo": 414.12812349316664
+      },
+      "usd_patrimonio|desfavorable|minimo": {
+       "media": 158836.43845155105,
+       "desvio": 14007.491775720186,
+       "sesgo": 23373.145261308353
+      },
+      "usd_patrimonio|desfavorable|maximo": {
+       "media": 1566047.0213406933,
+       "desvio": 127229.55116846773,
+       "sesgo": -154975.06603650446
+      },
+      "usd_ganancia_real|global|media": {
+       "media": 59656.25716525711,
+       "desvio": 525.4808706269952,
+       "sesgo": -90.1864258990463
+      },
+      "usd_ganancia_real|global|mediana": {
+       "media": 39987.89605382282,
+       "desvio": 681.990225778959,
+       "sesgo": 42.254257205051545
+      },
+      "usd_ganancia_real|global|p25": {
+       "media": -39817.28407764327,
+       "desvio": 604.3321802376738,
+       "sesgo": -113.77733420233562
+      },
+      "usd_ganancia_real|global|p75": {
+       "media": 137273.1978948704,
+       "desvio": 792.873156609171,
+       "sesgo": -151.47615828624112
+      },
+      "usd_ganancia_real|global|minimo": {
+       "media": -273573.47012979403,
+       "desvio": 10851.398678772019,
+       "sesgo": 16675.823308788007
+      },
+      "usd_ganancia_real|global|maximo": {
+       "media": 1158288.3496229593,
+       "desvio": 173688.5579260563,
+       "sesgo": -65043.84037821274
+      },
+      "usd_ganancia_real|favorable|media": {
+       "media": 98450.89268413867,
+       "desvio": 1139.8130537578722,
+       "sesgo": -424.7638713261258
+      },
+      "usd_ganancia_real|favorable|mediana": {
+       "media": 78275.23420699094,
+       "desvio": 1276.1776876796143,
+       "sesgo": -293.640358881501
+      },
+      "usd_ganancia_real|favorable|p25": {
+       "media": -5811.842022069226,
+       "desvio": 1130.5337718553187,
+       "sesgo": -266.3790525890954
+      },
+      "usd_ganancia_real|favorable|p75": {
+       "media": 180415.4265387169,
+       "desvio": 1929.5506224389835,
+       "sesgo": -412.8322781093302
+      },
+      "usd_ganancia_real|favorable|minimo": {
+       "media": -246290.83470780795,
+       "desvio": 11109.739117559342,
+       "sesgo": 7948.118164862768
+      },
+      "usd_ganancia_real|favorable|maximo": {
+       "media": 1126617.9347935084,
+       "desvio": 172168.91060080178,
+       "sesgo": -86488.84693667875
+      },
+      "usd_ganancia_real|moderado|media": {
+       "media": 63869.47005734067,
+       "desvio": 1014.7948555598074,
+       "sesgo": 91.65988262839528
+      },
+      "usd_ganancia_real|moderado|mediana": {
+       "media": 45139.80397901407,
+       "desvio": 1288.6012431079578,
+       "sesgo": 190.15497310298088
+      },
+      "usd_ganancia_real|moderado|p25": {
+       "media": -33206.823724800815,
+       "desvio": 1175.2381047979927,
+       "sesgo": 317.7912515145654
+      },
+      "usd_ganancia_real|moderado|p75": {
+       "media": 140049.00444461193,
+       "desvio": 1488.973558253031,
+       "sesgo": -237.19038754265057
+      },
+      "usd_ganancia_real|moderado|minimo": {
+       "media": -257050.44267984742,
+       "desvio": 11210.609348697359,
+       "sesgo": 10485.723205581773
+      },
+      "usd_ganancia_real|moderado|maximo": {
+       "media": 1003215.4220325885,
+       "desvio": 130891.8834228404,
+       "sesgo": -178059.74739473162
+      },
+      "usd_ganancia_real|desfavorable|media": {
+       "media": 16648.40875429203,
+       "desvio": 838.4220883754888,
+       "sesgo": 62.544711002909025
+      },
+      "usd_ganancia_real|desfavorable|mediana": {
+       "media": -243.48846609909688,
+       "desvio": 1066.829161779293,
+       "sesgo": 278.8386650000775
+      },
+      "usd_ganancia_real|desfavorable|p25": {
+       "media": -70517.49684545695,
+       "desvio": 887.4934675374502,
+       "sesgo": -82.23358060674218
+      },
+      "usd_ganancia_real|desfavorable|p75": {
+       "media": 85252.21380943737,
+       "desvio": 1320.7655302575427,
+       "sesgo": 383.1620506021427
+      },
+      "usd_ganancia_real|desfavorable|minimo": {
+       "media": -271932.16272457736,
+       "desvio": 11228.6675711132,
+       "sesgo": 18317.130714004685
+      },
+      "usd_ganancia_real|desfavorable|maximo": {
+       "media": 864265.7388705051,
+       "desvio": 102211.44656803763,
+       "sesgo": -124476.99507605913
+      }
+     }
     }
    }
   },
@@ -7020,6 +8478,1461 @@
        "media": 20648943.26971772,
        "desvio": 6091510.759069293,
        "sesgo": -14144774.109251235
+      }
+     }
+    },
+    "60000": {
+     "seg_por_corrida": 2.6626318575933343,
+     "stats": {
+      "ars_patrimonio|global|media": {
+       "media": 145846.0425630957,
+       "desvio": 16.413355707432217,
+       "sesgo": 5.057800371869234
+      },
+      "ars_patrimonio|global|mediana": {
+       "media": 136376.78097306387,
+       "desvio": 26.359849899846335,
+       "sesgo": -5.9909414096619
+      },
+      "ars_patrimonio|global|p25": {
+       "media": 115586.3980047221,
+       "desvio": 10.417523794380283,
+       "sesgo": -1.4998067254782654
+      },
+      "ars_patrimonio|global|p75": {
+       "media": 181806.84386209503,
+       "desvio": 67.3411520833495,
+       "sesgo": 13.817766027059406
+      },
+      "ars_patrimonio|global|minimo": {
+       "media": 111051.93947444666,
+       "desvio": 218.42075011880408,
+       "sesgo": 190.67735613987315
+      },
+      "ars_patrimonio|global|maximo": {
+       "media": 211506.71409755063,
+       "desvio": 1453.3193488492725,
+       "sesgo": -1431.9231232469901
+      },
+      "ars_patrimonio|favorable|media": {
+       "media": 114880.335246723,
+       "desvio": 7.436332736491282,
+       "sesgo": -0.3384416051703738
+      },
+      "ars_patrimonio|favorable|mediana": {
+       "media": 114875.927342371,
+       "desvio": 8.208109857260082,
+       "sesgo": -0.34788469338673167
+      },
+      "ars_patrimonio|favorable|p25": {
+       "media": 114168.80720614476,
+       "desvio": 10.606391669759244,
+       "sesgo": -1.0335090885928366
+      },
+      "ars_patrimonio|favorable|p75": {
+       "media": 115586.32700552637,
+       "desvio": 10.4135347457437,
+       "sesgo": -1.5654599856643472
+      },
+      "ars_patrimonio|favorable|minimo": {
+       "media": 111051.93947444666,
+       "desvio": 218.42075011880408,
+       "sesgo": 190.67735613987315
+      },
+      "ars_patrimonio|favorable|maximo": {
+       "media": 118810.57097798683,
+       "desvio": 261.0581195284636,
+       "sesgo": -434.54644234944135
+      },
+      "ars_patrimonio|moderado|media": {
+       "media": 136410.29874167233,
+       "desvio": 19.995232629812364,
+       "sesgo": -5.469657911977265
+      },
+      "ars_patrimonio|moderado|mediana": {
+       "media": 136376.78097306387,
+       "desvio": 26.359849899846335,
+       "sesgo": -5.9909414096619
+      },
+      "ars_patrimonio|moderado|p25": {
+       "media": 134322.5742677901,
+       "desvio": 25.653911815636565,
+       "sesgo": -7.58197464546538
+      },
+      "ars_patrimonio|moderado|p75": {
+       "media": 138462.30500204628,
+       "desvio": 30.56685279057625,
+       "sesgo": -13.524188932264224
+      },
+      "ars_patrimonio|moderado|minimo": {
+       "media": 125577.07120828867,
+       "desvio": 571.7719323939335,
+       "sesgo": 656.5671393129887
+      },
+      "ars_patrimonio|moderado|maximo": {
+       "media": 148063.4709795002,
+       "desvio": 690.5145636639437,
+       "sesgo": -568.2892096623254
+      },
+      "ars_patrimonio|desfavorable|media": {
+       "media": 186247.4937008916,
+       "desvio": 45.577150387211766,
+       "sesgo": 20.981500632682582
+      },
+      "ars_patrimonio|desfavorable|mediana": {
+       "media": 186139.0697034258,
+       "desvio": 53.877104050218364,
+       "sesgo": 26.253587838524254
+      },
+      "ars_patrimonio|desfavorable|p25": {
+       "media": 181807.3298038601,
+       "desvio": 67.29010836628986,
+       "sesgo": 14.236894708184991
+      },
+      "ars_patrimonio|desfavorable|p75": {
+       "media": 190576.74738012915,
+       "desvio": 67.68559085388759,
+       "sesgo": 31.386318198638037
+      },
+      "ars_patrimonio|desfavorable|minimo": {
+       "media": 163617.97060002672,
+       "desvio": 1289.4436131329937,
+       "sesgo": 1595.898900215223
+      },
+      "ars_patrimonio|desfavorable|maximo": {
+       "media": 211506.71409755063,
+       "desvio": 1453.3193488492725,
+       "sesgo": -1431.9231232469901
+      },
+      "ars_ganancia_real|global|media": {
+       "media": -48441.0951799646,
+       "desvio": 6.369508467414254,
+       "sesgo": 1.8668376651403378
+      },
+      "ars_ganancia_real|global|mediana": {
+       "media": -48599.331350042194,
+       "desvio": 15.194668073149494,
+       "sesgo": -1.061693096671661
+      },
+      "ars_ganancia_real|global|p25": {
+       "media": -76226.0898722426,
+       "desvio": 13.294103228445278,
+       "sesgo": -3.3267410702246707
+      },
+      "ars_ganancia_real|global|p75": {
+       "media": -20488.01340119166,
+       "desvio": 10.85122605277469,
+       "sesgo": 1.5531509480279055
+      },
+      "ars_ganancia_real|global|minimo": {
+       "media": -81541.60292248738,
+       "desvio": 259.55468613758205,
+       "sesgo": 333.5612824527343
+      },
+      "ars_ganancia_real|global|maximo": {
+       "media": -14966.547851524316,
+       "desvio": 315.51439493064294,
+       "sesgo": -14.933065899307621
+      },
+      "ars_ganancia_real|favorable|media": {
+       "media": -19689.940727252957,
+       "desvio": 7.9384469336640695,
+       "sesgo": 4.0396945767970465
+      },
+      "ars_ganancia_real|favorable|mediana": {
+       "media": -19698.13742236907,
+       "desvio": 10.221840417161639,
+       "sesgo": 5.981690860884555
+      },
+      "ars_ganancia_real|favorable|p25": {
+       "media": -20487.922716609668,
+       "desvio": 10.857915787918609,
+       "sesgo": 1.6233381349447882
+      },
+      "ars_ganancia_real|favorable|p75": {
+       "media": -18901.566694937144,
+       "desvio": 11.216922513085965,
+       "sesgo": 7.847878844044317
+      },
+      "ars_ganancia_real|favorable|minimo": {
+       "media": -24132.722019535464,
+       "desvio": 301.1785553625313,
+       "sesgo": 561.4617449429606
+      },
+      "ars_ganancia_real|favorable|maximo": {
+       "media": -14966.547851524316,
+       "desvio": 315.51439493064294,
+       "sesgo": -14.933065899307621
+      },
+      "ars_ganancia_real|moderado|media": {
+       "media": -48563.847214789355,
+       "desvio": 13.254951188898028,
+       "sesgo": 4.804863661011041
+      },
+      "ars_ganancia_real|moderado|mediana": {
+       "media": -48599.331350042194,
+       "desvio": 15.194668073149494,
+       "sesgo": -1.061693096671661
+      },
+      "ars_ganancia_real|moderado|p25": {
+       "media": -49830.00122080371,
+       "desvio": 16.99598891388143,
+       "sesgo": 2.5821115884391475
+      },
+      "ars_ganancia_real|moderado|p75": {
+       "media": -47334.15386287267,
+       "desvio": 19.702864780677487,
+       "sesgo": 4.12996116541035
+      },
+      "ars_ganancia_real|moderado|minimo": {
+       "media": -55333.71704073429,
+       "desvio": 441.51405680775275,
+       "sesgo": 433.0667213992492
+      },
+      "ars_ganancia_real|moderado|maximo": {
+       "media": -40896.41184063872,
+       "desvio": 511.24315648056074,
+       "sesgo": -1113.3518911084248
+      },
+      "ars_ganancia_real|desfavorable|media": {
+       "media": -77069.49759785134,
+       "desvio": 10.191938785881863,
+       "sesgo": -3.2440452438022476
+      },
+      "ars_ganancia_real|desfavorable|mediana": {
+       "media": -77105.28178424638,
+       "desvio": 12.193319558320482,
+       "sesgo": -1.4873832947196206
+      },
+      "ars_ganancia_real|desfavorable|p25": {
+       "media": -77951.36597622541,
+       "desvio": 11.819972124394768,
+       "sesgo": -1.3299506469775224
+      },
+      "ars_ganancia_real|desfavorable|p75": {
+       "media": -76226.20178557058,
+       "desvio": 13.29596420070437,
+       "sesgo": -3.401606500163325
+      },
+      "ars_ganancia_real|desfavorable|minimo": {
+       "media": -81541.60292248738,
+       "desvio": 259.55468613758205,
+       "sesgo": 333.5612824527343
+      },
+      "ars_ganancia_real|desfavorable|maximo": {
+       "media": -71501.92499158358,
+       "desvio": 461.5159241550296,
+       "sesgo": -512.3276316597767
+      },
+      "usd_patrimonio|global|media": {
+       "media": 2038616.9378866912,
+       "desvio": 6823.835586442546,
+       "sesgo": -505.6037551246118
+      },
+      "usd_patrimonio|global|mediana": {
+       "media": 1620032.0779167786,
+       "desvio": 5497.395725336081,
+       "sesgo": 634.5239195413888
+      },
+      "usd_patrimonio|global|p25": {
+       "media": 1062790.9069326317,
+       "desvio": 3409.6577618518913,
+       "sesgo": -289.57177930837497
+      },
+      "usd_patrimonio|global|p75": {
+       "media": 2506895.8608899782,
+       "desvio": 9782.503312229852,
+       "sesgo": 206.055152756162
+      },
+      "usd_patrimonio|global|minimo": {
+       "media": 135169.20380583633,
+       "desvio": 19057.40930551593,
+       "sesgo": 24483.92870196524
+      },
+      "usd_patrimonio|global|maximo": {
+       "media": 39360213.12698372,
+       "desvio": 12300108.343517462,
+       "sesgo": -5759639.498302229
+      },
+      "usd_patrimonio|favorable|media": {
+       "media": 2038239.9747322325,
+       "desvio": 12325.394291974935,
+       "sesgo": -2442.032079796307
+      },
+      "usd_patrimonio|favorable|mediana": {
+       "media": 1620428.3520270458,
+       "desvio": 10121.423598407491,
+       "sesgo": 602.9023375650868
+      },
+      "usd_patrimonio|favorable|p25": {
+       "media": 1062675.151711725,
+       "desvio": 6346.902297803214,
+       "sesgo": -616.9896055618301
+      },
+      "usd_patrimonio|favorable|p75": {
+       "media": 2507484.407245582,
+       "desvio": 17432.504956878747,
+       "sesgo": -667.4949501678348
+      },
+      "usd_patrimonio|favorable|minimo": {
+       "media": 156422.31899483706,
+       "desvio": 23568.803189072492,
+       "sesgo": 28867.967100902097
+      },
+      "usd_patrimonio|favorable|maximo": {
+       "media": 32593278.659969527,
+       "desvio": 11525587.715610242,
+       "sesgo": -3133395.739058394
+      },
+      "usd_patrimonio|moderado|media": {
+       "media": 2038777.8653151377,
+       "desvio": 11537.114858355537,
+       "sesgo": -144.72240060660988
+      },
+      "usd_patrimonio|moderado|mediana": {
+       "media": 1619871.4126351543,
+       "desvio": 9616.329447986742,
+       "sesgo": 1234.8915560129099
+      },
+      "usd_patrimonio|moderado|p25": {
+       "media": 1062454.5306841978,
+       "desvio": 6894.0127319370895,
+       "sesgo": 493.7798592359759
+      },
+      "usd_patrimonio|moderado|p75": {
+       "media": 2507610.542205111,
+       "desvio": 15426.285273556432,
+       "sesgo": 1279.8431600756012
+      },
+      "usd_patrimonio|moderado|minimo": {
+       "media": 156583.83911764072,
+       "desvio": 21665.744291505744,
+       "sesgo": 31136.798957266394
+      },
+      "usd_patrimonio|moderado|maximo": {
+       "media": 31258193.884516448,
+       "desvio": 9894984.314434895,
+       "sesgo": -9446506.622067787
+      },
+      "usd_patrimonio|desfavorable|media": {
+       "media": 2038832.973612701,
+       "desvio": 10818.664178422168,
+       "sesgo": 1069.9432150307111
+      },
+      "usd_patrimonio|desfavorable|mediana": {
+       "media": 1619815.1577616448,
+       "desvio": 8748.102650149132,
+       "sesgo": 132.86311824643053
+      },
+      "usd_patrimonio|desfavorable|p25": {
+       "media": 1063267.3038087217,
+       "desvio": 6257.634507193412,
+       "sesgo": -351.4775980580598
+      },
+      "usd_patrimonio|desfavorable|p75": {
+       "media": 2505831.072379183,
+       "desvio": 15746.681199264798,
+       "sesgo": -545.6998767075129
+      },
+      "usd_patrimonio|desfavorable|minimo": {
+       "media": 153528.88893733756,
+       "desvio": 23719.067448691563,
+       "sesgo": 21651.313243038225
+      },
+      "usd_patrimonio|desfavorable|maximo": {
+       "media": 29815601.57581796,
+       "desvio": 8412791.968279261,
+       "sesgo": -14637940.081550676
+      },
+      "usd_ganancia_real|global|media": {
+       "media": 913509.2880460054,
+       "desvio": 6131.071816750147,
+       "sesgo": -550.0595678457757
+      },
+      "usd_ganancia_real|global|mediana": {
+       "media": 537708.3711282776,
+       "desvio": 5229.073780413324,
+       "sesgo": 1183.8711078687338
+      },
+      "usd_ganancia_real|global|p25": {
+       "media": 40345.83499904258,
+       "desvio": 3195.0926209871986,
+       "sesgo": -231.97379608605843
+      },
+      "usd_ganancia_real|global|p75": {
+       "media": 1331262.0776287846,
+       "desvio": 8779.953559687065,
+       "sesgo": 709.4845011490397
+      },
+      "usd_ganancia_real|global|minimo": {
+       "media": -782936.7056665578,
+       "desvio": 17266.8393849453,
+       "sesgo": 18448.971416724497
+      },
+      "usd_ganancia_real|global|maximo": {
+       "media": 34932902.58161391,
+       "desvio": 11481597.884939617,
+       "sesgo": -2901299.829683788
+      },
+      "usd_ganancia_real|favorable|media": {
+       "media": 1066232.7388185095,
+       "desvio": 11881.19183485914,
+       "sesgo": -2361.1631820311304
+      },
+      "usd_ganancia_real|favorable|mediana": {
+       "media": 663219.7483526272,
+       "desvio": 9799.237872422273,
+       "sesgo": 526.2275348160183
+      },
+      "usd_ganancia_real|favorable|p25": {
+       "media": 125101.0317872491,
+       "desvio": 6092.440704610159,
+       "sesgo": -768.4036984299019
+      },
+      "usd_ganancia_real|favorable|p75": {
+       "media": 1519063.8235976931,
+       "desvio": 16856.323213392938,
+       "sesgo": 85.72496415791102
+      },
+      "usd_ganancia_real|favorable|minimo": {
+       "media": -749233.0299274044,
+       "desvio": 22727.941509310458,
+       "sesgo": 27520.284530055942
+      },
+      "usd_ganancia_real|favorable|maximo": {
+       "media": 30533427.87978775,
+       "desvio": 11099163.708271617,
+       "sesgo": -3060870.3416838497
+      },
+      "usd_ganancia_real|moderado|media": {
+       "media": 930388.0927830394,
+       "desvio": 10354.912191458128,
+       "sesgo": -106.43953887501266
+      },
+      "usd_ganancia_real|moderado|mediana": {
+       "media": 554316.2870429796,
+       "desvio": 8661.67171316559,
+       "sesgo": 893.5619982276112
+      },
+      "usd_ganancia_real|moderado|p25": {
+       "media": 53874.47724729559,
+       "desvio": 6167.90234787172,
+       "sesgo": 523.5911885066598
+      },
+      "usd_ganancia_real|moderado|p75": {
+       "media": 1351389.6515862448,
+       "desvio": 13815.918975292721,
+       "sesgo": 1056.2172588587273
+      },
+      "usd_ganancia_real|moderado|minimo": {
+       "media": -759447.7656444113,
+       "desvio": 19433.37289063948,
+       "sesgo": 27538.573365788674
+      },
+      "usd_ganancia_real|moderado|maximo": {
+       "media": 27170577.2866212,
+       "desvio": 8884597.094210522,
+       "sesgo": -8445859.602375392
+      },
+      "usd_ganancia_real|desfavorable|media": {
+       "media": 743907.0325364668,
+       "desvio": 8704.93657510149,
+       "sesgo": 817.4240174063016
+      },
+      "usd_ganancia_real|desfavorable|mediana": {
+       "media": 406091.6961894397,
+       "desvio": 7141.1053845403485,
+       "sesgo": 248.25789630040526
+      },
+      "usd_ganancia_real|desfavorable|p25": {
+       "media": -42749.87550977297,
+       "desvio": 5110.514776522963,
+       "sesgo": -317.1415648123948
+      },
+      "usd_ganancia_real|desfavorable|p75": {
+       "media": 1120498.8905646203,
+       "desvio": 12809.733007185243,
+       "sesgo": -701.7065075994469
+      },
+      "usd_ganancia_real|desfavorable|minimo": {
+       "media": -776190.9705748108,
+       "desvio": 19035.271646853238,
+       "sesgo": 18546.145819647238
+      },
+      "usd_ganancia_real|desfavorable|maximo": {
+       "media": 23145245.62000236,
+       "desvio": 6809134.417068355,
+       "sesgo": -11648471.758966595
+      }
+     }
+    },
+    "100000": {
+     "seg_por_corrida": 4.963548234920001,
+     "stats": {
+      "ars_patrimonio|global|media": {
+       "media": 145847.48459046672,
+       "desvio": 13.153212051678626,
+       "sesgo": 6.499827742896741
+      },
+      "ars_patrimonio|global|mediana": {
+       "media": 136378.2547772011,
+       "desvio": 20.27685779329708,
+       "sesgo": -4.517137272428954
+      },
+      "ars_patrimonio|global|p25": {
+       "media": 115587.80023951223,
+       "desvio": 8.164071613645836,
+       "sesgo": -0.09757193534460384
+      },
+      "ars_patrimonio|global|p75": {
+       "media": 181810.1501741185,
+       "desvio": 50.88586609563571,
+       "sesgo": 17.12407805051771
+      },
+      "ars_patrimonio|global|minimo": {
+       "media": 110995.86114995694,
+       "desvio": 195.22534124637187,
+       "sesgo": 134.59903165015567
+      },
+      "ars_patrimonio|global|maximo": {
+       "media": 212231.2872467963,
+       "desvio": 1435.6770042324417,
+       "sesgo": -707.3499740013212
+      },
+      "ars_patrimonio|favorable|media": {
+       "media": 114880.4097525224,
+       "desvio": 5.675980540932244,
+       "sesgo": -0.2639358057640493
+      },
+      "ars_patrimonio|favorable|mediana": {
+       "media": 114876.43247890384,
+       "desvio": 7.921149123966395,
+       "sesgo": 0.15725183945323806
+      },
+      "ars_patrimonio|favorable|p25": {
+       "media": 114168.32145898536,
+       "desvio": 7.230650182578187,
+       "sesgo": -1.5192562479933258
+      },
+      "ars_patrimonio|favorable|p75": {
+       "media": 115587.72012425207,
+       "desvio": 8.168160458306136,
+       "sesgo": -0.17234125996765215
+      },
+      "ars_patrimonio|favorable|minimo": {
+       "media": 110995.86114995694,
+       "desvio": 195.22534124637187,
+       "sesgo": 134.59903165015567
+      },
+      "ars_patrimonio|favorable|maximo": {
+       "media": 118907.77553781566,
+       "desvio": 199.7036185156247,
+       "sesgo": -337.3418825206172
+      },
+      "ars_patrimonio|moderado|media": {
+       "media": 136411.1131954267,
+       "desvio": 15.939648930083626,
+       "sesgo": -4.655204157606931
+      },
+      "ars_patrimonio|moderado|mediana": {
+       "media": 136378.12806357694,
+       "desvio": 20.288364043409565,
+       "sesgo": -4.643850896594813
+      },
+      "ars_patrimonio|moderado|p25": {
+       "media": 134323.53182228527,
+       "desvio": 21.25972528917239,
+       "sesgo": -6.6244201502995566
+      },
+      "ars_patrimonio|moderado|p75": {
+       "media": 138466.15592653805,
+       "desvio": 23.679019325830858,
+       "sesgo": -9.673264440498315
+      },
+      "ars_patrimonio|moderado|minimo": {
+       "media": 125206.48538861315,
+       "desvio": 543.3803826705796,
+       "sesgo": 285.9813196374598
+      },
+      "ars_patrimonio|moderado|maximo": {
+       "media": 148278.17519405123,
+       "desvio": 532.2354715260043,
+       "sesgo": -353.58499511130503
+      },
+      "ars_patrimonio|desfavorable|media": {
+       "media": 186249.71874430592,
+       "desvio": 35.70831904209665,
+       "sesgo": 23.206544047017815
+      },
+      "ars_patrimonio|desfavorable|mediana": {
+       "media": 186147.55110164126,
+       "desvio": 45.63206512140996,
+       "sesgo": 34.73498605398345
+      },
+      "ars_patrimonio|desfavorable|p25": {
+       "media": 181810.1501741185,
+       "desvio": 50.88586609563571,
+       "sesgo": 17.057264966570074
+      },
+      "ars_patrimonio|desfavorable|p75": {
+       "media": 190577.63821303443,
+       "desvio": 50.43907685972636,
+       "sesgo": 32.27715110391728
+      },
+      "ars_patrimonio|desfavorable|minimo": {
+       "media": 163033.42955327517,
+       "desvio": 1303.1745394947789,
+       "sesgo": 1011.3578534636763
+      },
+      "ars_patrimonio|desfavorable|maximo": {
+       "media": 212231.2872467963,
+       "desvio": 1435.6770042324417,
+       "sesgo": -707.3499740013212
+      },
+      "ars_ganancia_real|global|media": {
+       "media": -48441.51245281378,
+       "desvio": 4.676129142283236,
+       "sesgo": 1.4495648159572738
+      },
+      "ars_ganancia_real|global|mediana": {
+       "media": -48597.539550831956,
+       "desvio": 12.576462746496013,
+       "sesgo": 0.7301061135658529
+      },
+      "ars_ganancia_real|global|p25": {
+       "media": -76226.78718011847,
+       "desvio": 10.25053084864031,
+       "sesgo": -4.024048946084804
+      },
+      "ars_ganancia_real|global|p75": {
+       "media": -20487.83117556694,
+       "desvio": 8.518713447299811,
+       "sesgo": 1.7353765727493737
+      },
+      "ars_ganancia_real|global|minimo": {
+       "media": -81721.97153963844,
+       "desvio": 286.0531726040382,
+       "sesgo": 153.1926653016708
+      },
+      "ars_ganancia_real|global|maximo": {
+       "media": -14807.113248637579,
+       "desvio": 326.7626684844043,
+       "sesgo": 144.50153698742906
+      },
+      "ars_ganancia_real|favorable|media": {
+       "media": -19689.510526819653,
+       "desvio": 6.855645043432525,
+       "sesgo": 4.469895010101027
+      },
+      "ars_ganancia_real|favorable|mediana": {
+       "media": -19698.360744003174,
+       "desvio": 7.714398025862664,
+       "sesgo": 5.758369226779905
+      },
+      "ars_ganancia_real|favorable|p25": {
+       "media": -20487.750673078008,
+       "desvio": 8.50554788079638,
+       "sesgo": 1.7953816666049534
+      },
+      "ars_ganancia_real|favorable|p75": {
+       "media": -18900.628591725337,
+       "desvio": 8.835120918905687,
+       "sesgo": 8.785982055851491
+      },
+      "ars_ganancia_real|favorable|minimo": {
+       "media": -24323.923172650546,
+       "desvio": 318.2348922790818,
+       "sesgo": 370.26059182787867
+      },
+      "ars_ganancia_real|favorable|maximo": {
+       "media": -14807.113248637579,
+       "desvio": 326.7626684844043,
+       "sesgo": 144.50153698742906
+      },
+      "ars_ganancia_real|moderado|media": {
+       "media": -48564.47135060783,
+       "desvio": 9.487476311052777,
+       "sesgo": 4.180727842533088
+      },
+      "ars_ganancia_real|moderado|mediana": {
+       "media": -48597.462032531046,
+       "desvio": 12.578387501701773,
+       "sesgo": 0.8076244144758675
+      },
+      "ars_ganancia_real|moderado|p25": {
+       "media": -49830.64077549228,
+       "desvio": 12.678477638705765,
+       "sesgo": 1.9425568998703966
+      },
+      "ars_ganancia_real|moderado|p75": {
+       "media": -47334.343510097926,
+       "desvio": 12.898999079405916,
+       "sesgo": 3.940313940154738
+      },
+      "ars_ganancia_real|moderado|minimo": {
+       "media": -55435.78532610354,
+       "desvio": 410.2945593526145,
+       "sesgo": 330.99843603000045
+      },
+      "ars_ganancia_real|moderado|maximo": {
+       "media": -40622.903086417755,
+       "desvio": 632.2823981493742,
+       "sesgo": -839.843136887459
+      },
+      "ars_ganancia_real|desfavorable|media": {
+       "media": -77069.69662690022,
+       "desvio": 6.951282666312802,
+       "sesgo": -3.4430742926779203
+      },
+      "ars_ganancia_real|desfavorable|mediana": {
+       "media": -77105.15566714038,
+       "desvio": 8.645783931084456,
+       "sesgo": -1.3612661887163995
+      },
+      "ars_ganancia_real|desfavorable|p25": {
+       "media": -77951.49699423058,
+       "desvio": 8.646292966441132,
+       "sesgo": -1.4609686521434924
+      },
+      "ars_ganancia_real|desfavorable|p75": {
+       "media": -76226.78718011847,
+       "desvio": 10.25053084864031,
+       "sesgo": -3.987001048051752
+      },
+      "ars_ganancia_real|desfavorable|minimo": {
+       "media": -81721.97153963844,
+       "desvio": 286.0531726040382,
+       "sesgo": 153.1926653016708
+      },
+      "ars_ganancia_real|desfavorable|maximo": {
+       "media": -71366.27113508433,
+       "desvio": 437.94923063821034,
+       "sesgo": -376.6737751605251
+      },
+      "usd_patrimonio|global|media": {
+       "media": 2039934.4215446436,
+       "desvio": 5131.534795912553,
+       "sesgo": 811.8799028277863
+      },
+      "usd_patrimonio|global|mediana": {
+       "media": 1620157.2768841148,
+       "desvio": 3893.7673113308374,
+       "sesgo": 759.7228868776001
+      },
+      "usd_patrimonio|global|p25": {
+       "media": 1063265.0763050385,
+       "desvio": 2741.100847403755,
+       "sesgo": 184.5975930984132
+      },
+      "usd_patrimonio|global|p75": {
+       "media": 2507819.718187907,
+       "desvio": 7694.757695035421,
+       "sesgo": 1129.9124506847002
+      },
+      "usd_patrimonio|global|minimo": {
+       "media": 126512.44640454123,
+       "desvio": 18301.259032893224,
+       "sesgo": 15827.171300670147
+      },
+      "usd_patrimonio|global|maximo": {
+       "media": 44609138.224461526,
+       "desvio": 13462907.94505352,
+       "sesgo": -510714.40082442015
+      },
+      "usd_patrimonio|favorable|media": {
+       "media": 2038708.2673472047,
+       "desvio": 8711.154302961444,
+       "sesgo": -1973.739464824088
+      },
+      "usd_patrimonio|favorable|mediana": {
+       "media": 1619714.3738689423,
+       "desvio": 7182.255618621325,
+       "sesgo": -111.07582053844817
+      },
+      "usd_patrimonio|favorable|p25": {
+       "media": 1062820.1871354,
+       "desvio": 4989.312926109289,
+       "sesgo": -471.95418188674375
+      },
+      "usd_patrimonio|favorable|p75": {
+       "media": 2508525.3469246784,
+       "desvio": 12492.845394105432,
+       "sesgo": 373.44472892861813
+      },
+      "usd_patrimonio|favorable|minimo": {
+       "media": 146458.0469235148,
+       "desvio": 21333.7301956596,
+       "sesgo": 18903.695029579845
+      },
+      "usd_patrimonio|favorable|maximo": {
+       "media": 35595405.094132185,
+       "desvio": 11248502.540195081,
+       "sesgo": -131269.30489573628
+      },
+      "usd_patrimonio|moderado|media": {
+       "media": 2039956.8708728822,
+       "desvio": 8575.18639303659,
+       "sesgo": 1034.283157137921
+      },
+      "usd_patrimonio|moderado|mediana": {
+       "media": 1619794.3164048174,
+       "desvio": 7542.026313932287,
+       "sesgo": 1157.7953256759793
+      },
+      "usd_patrimonio|moderado|p25": {
+       "media": 1063432.7341789408,
+       "desvio": 5089.00610911684,
+       "sesgo": 1471.9833539789543
+      },
+      "usd_patrimonio|moderado|p75": {
+       "media": 2505676.8586299857,
+       "desvio": 13740.680130642166,
+       "sesgo": -653.84041504981
+      },
+      "usd_patrimonio|moderado|minimo": {
+       "media": 146869.2405508328,
+       "desvio": 19750.15071898104,
+       "sesgo": 21422.20039045847
+      },
+      "usd_patrimonio|moderado|maximo": {
+       "media": 34854040.9895787,
+       "desvio": 10050218.58242496,
+       "sesgo": -5850659.517005533
+      },
+      "usd_patrimonio|desfavorable|media": {
+       "media": 2041138.0903034143,
+       "desvio": 8967.624969686962,
+       "sesgo": 3375.059905743925
+      },
+      "usd_patrimonio|desfavorable|mediana": {
+       "media": 1620938.0092693882,
+       "desvio": 7109.698309165229,
+       "sesgo": 1255.7146259897854
+      },
+      "usd_patrimonio|desfavorable|p25": {
+       "media": 1063571.0801869922,
+       "desvio": 4944.515271544538,
+       "sesgo": -47.70121978758834
+      },
+      "usd_patrimonio|desfavorable|p75": {
+       "media": 2509254.1109843673,
+       "desvio": 12887.063745816275,
+       "sesgo": 2877.3387284767814
+      },
+      "usd_patrimonio|desfavorable|minimo": {
+       "media": 144655.87246457854,
+       "desvio": 23288.739532114574,
+       "sesgo": 12778.296770279208
+      },
+      "usd_patrimonio|desfavorable|maximo": {
+       "media": 36055862.32998403,
+       "desvio": 12215690.219995005,
+       "sesgo": -8397679.327384606
+      },
+      "usd_ganancia_real|global|media": {
+       "media": 914622.3741092895,
+       "desvio": 4567.0862890268245,
+       "sesgo": 563.0264954383019
+      },
+      "usd_ganancia_real|global|mediana": {
+       "media": 537800.2397426688,
+       "desvio": 3563.863046515394,
+       "sesgo": 1275.7397222599247
+      },
+      "usd_ganancia_real|global|p25": {
+       "media": 40665.06064801585,
+       "desvio": 2443.7562827519932,
+       "sesgo": 87.25185288721696
+      },
+      "usd_ganancia_real|global|p75": {
+       "media": 1331483.4637058296,
+       "desvio": 6937.793023841799,
+       "sesgo": 930.8705781940371
+      },
+      "usd_ganancia_real|global|minimo": {
+       "media": -790394.2974080871,
+       "desvio": 16006.86121185578,
+       "sesgo": 10991.379675195203
+      },
+      "usd_ganancia_real|global|maximo": {
+       "media": 39059157.48313096,
+       "desvio": 12005026.009356106,
+       "sesgo": 1224955.0718332604
+      },
+      "usd_ganancia_real|favorable|media": {
+       "media": 1066676.6124646359,
+       "desvio": 8395.988667594487,
+       "sesgo": -1917.2895359047689
+      },
+      "usd_ganancia_real|favorable|mediana": {
+       "media": 662423.230727676,
+       "desvio": 6833.197718633141,
+       "sesgo": -270.29009013518225
+      },
+      "usd_ganancia_real|favorable|p25": {
+       "media": 125253.9511652029,
+       "desvio": 4826.281433355651,
+       "sesgo": -615.4843204760982
+      },
+      "usd_ganancia_real|favorable|p75": {
+       "media": 1519869.4675812905,
+       "desvio": 11935.313571790024,
+       "sesgo": 891.3689477553125
+      },
+      "usd_ganancia_real|favorable|minimo": {
+       "media": -758691.6113898105,
+       "desvio": 20580.4662370903,
+       "sesgo": 18061.703067649854
+      },
+      "usd_ganancia_real|favorable|maximo": {
+       "media": 33436080.491606027,
+       "desvio": 10839331.253714034,
+       "sesgo": -158217.72986557335
+      },
+      "usd_ganancia_real|moderado|media": {
+       "media": 931440.5073688034,
+       "desvio": 7695.590880114736,
+       "sesgo": 945.9750468889251
+      },
+      "usd_ganancia_real|moderado|mediana": {
+       "media": 554233.6197624151,
+       "desvio": 6777.151913472996,
+       "sesgo": 810.8947176630609
+      },
+      "usd_ganancia_real|moderado|p25": {
+       "media": 54775.649882535574,
+       "desvio": 4551.5080757711285,
+       "sesgo": 1424.7638237466454
+      },
+      "usd_ganancia_real|moderado|p75": {
+       "media": 1349663.9767553206,
+       "desvio": 12460.8161458317,
+       "sesgo": -669.4575720655266
+      },
+      "usd_ganancia_real|moderado|minimo": {
+       "media": -768189.0178853973,
+       "desvio": 17681.690173098403,
+       "sesgo": 18797.321124802693
+      },
+      "usd_ganancia_real|moderado|maximo": {
+       "media": 30364687.433847778,
+       "desvio": 9002846.560893478,
+       "sesgo": -5251749.455148816
+      },
+      "usd_ganancia_real|desfavorable|media": {
+       "media": 745755.0685642563,
+       "desvio": 7235.997876679624,
+       "sesgo": 2665.4600451957667
+      },
+      "usd_ganancia_real|desfavorable|mediana": {
+       "media": 406860.3630689756,
+       "desvio": 5757.735415720126,
+       "sesgo": 1016.924775836349
+      },
+      "usd_ganancia_real|desfavorable|p25": {
+       "media": -42492.39299341517,
+       "desvio": 3967.8679987456594,
+       "sesgo": -59.65904845458863
+      },
+      "usd_ganancia_real|desfavorable|p75": {
+       "media": 1123152.7516417666,
+       "desvio": 10365.851933563765,
+       "sesgo": 1952.154569546925
+      },
+      "usd_ganancia_real|desfavorable|minimo": {
+       "media": -783479.8791514821,
+       "desvio": 18591.3154816892,
+       "sesgo": 11257.237242975854
+      },
+      "usd_ganancia_real|desfavorable|maximo": {
+       "media": 28180313.381473247,
+       "desvio": 9909327.494906783,
+       "sesgo": -6613403.997495707
+      }
+     }
+    },
+    "51000": {
+     "seg_por_corrida": 1.9313866369933332,
+     "stats": {
+      "ars_patrimonio|global|media": {
+       "media": 145845.89796948564,
+       "desvio": 17.634826084937256,
+       "sesgo": 4.9132067618193105
+      },
+      "ars_patrimonio|global|mediana": {
+       "media": 136381.11743106032,
+       "desvio": 28.25779442984734,
+       "sesgo": -1.6544834132073447
+      },
+      "ars_patrimonio|global|p25": {
+       "media": 115587.36160567329,
+       "desvio": 10.96528398419385,
+       "sesgo": -0.5362057742895558
+      },
+      "ars_patrimonio|global|p75": {
+       "media": 181810.9599482152,
+       "desvio": 65.74711171563217,
+       "sesgo": 17.93385214722366
+      },
+      "ars_patrimonio|global|minimo": {
+       "media": 111103.26623752559,
+       "desvio": 212.1596245897784,
+       "sesgo": 242.00411921880732
+      },
+      "ars_patrimonio|global|maximo": {
+       "media": 211263.557665824,
+       "desvio": 1545.8375099696473,
+       "sesgo": -1675.0795549736358
+      },
+      "ars_patrimonio|favorable|media": {
+       "media": 114880.72730052179,
+       "desvio": 8.499747423614012,
+       "sesgo": 0.05361219361657277
+      },
+      "ars_patrimonio|favorable|mediana": {
+       "media": 114876.35782479832,
+       "desvio": 11.177687915347407,
+       "sesgo": 0.08259773394092917
+      },
+      "ars_patrimonio|favorable|p25": {
+       "media": 114168.98307548756,
+       "desvio": 11.360346511730762,
+       "sesgo": -0.8576397457945859
+      },
+      "ars_patrimonio|favorable|p75": {
+       "media": 115587.27373388146,
+       "desvio": 10.965869613142724,
+       "sesgo": -0.6187316305731656
+      },
+      "ars_patrimonio|favorable|minimo": {
+       "media": 111103.26623752559,
+       "desvio": 212.1596245897784,
+       "sesgo": 242.00411921880732
+      },
+      "ars_patrimonio|favorable|maximo": {
+       "media": 118787.9067348515,
+       "desvio": 253.11349780437052,
+       "sesgo": -457.2106854847807
+      },
+      "ars_patrimonio|moderado|media": {
+       "media": 136410.4774813971,
+       "desvio": 21.458972798524787,
+       "sesgo": -5.290918187209172
+      },
+      "ars_patrimonio|moderado|mediana": {
+       "media": 136381.11743106032,
+       "desvio": 28.25779442984734,
+       "sesgo": -1.6544834132073447
+      },
+      "ars_patrimonio|moderado|p25": {
+       "media": 134324.68986381078,
+       "desvio": 31.058782193529556,
+       "sesgo": -5.466378624783829
+      },
+      "ars_patrimonio|moderado|p75": {
+       "media": 138458.86013530224,
+       "desvio": 30.91033929947876,
+       "sesgo": -16.969055676308926
+      },
+      "ars_patrimonio|moderado|minimo": {
+       "media": 125634.89019159207,
+       "desvio": 591.0496102166768,
+       "sesgo": 714.3861226163863
+      },
+      "ars_patrimonio|moderado|maximo": {
+       "media": 148107.02406871563,
+       "desvio": 740.0191918813656,
+       "sesgo": -524.7361204469053
+      },
+      "ars_patrimonio|desfavorable|media": {
+       "media": 186246.48912653804,
+       "desvio": 47.43041137075147,
+       "sesgo": 19.976926279137842
+      },
+      "ars_patrimonio|desfavorable|mediana": {
+       "media": 186138.90448949308,
+       "desvio": 61.75402476393489,
+       "sesgo": 26.088373905804474
+      },
+      "ars_patrimonio|desfavorable|p25": {
+       "media": 181811.52030636423,
+       "desvio": 65.79232408328645,
+       "sesgo": 18.42739721230464
+      },
+      "ars_patrimonio|desfavorable|p75": {
+       "media": 190568.01046797403,
+       "desvio": 68.97677658392922,
+       "sesgo": 22.649406043521594
+      },
+      "ars_patrimonio|desfavorable|minimo": {
+       "media": 163831.50368465082,
+       "desvio": 1155.5254645968907,
+       "sesgo": 1809.4319848393206
+      },
+      "ars_patrimonio|desfavorable|maximo": {
+       "media": 211263.557665824,
+       "desvio": 1545.8375099696473,
+       "sesgo": -1675.0795549736358
+      },
+      "ars_ganancia_real|global|media": {
+       "media": -48442.228797403506,
+       "desvio": 6.212823441129215,
+       "sesgo": 0.733220226233243
+      },
+      "ars_ganancia_real|global|mediana": {
+       "media": -48598.27220275062,
+       "desvio": 16.873353997373005,
+       "sesgo": -0.0025458050949964672
+      },
+      "ars_ganancia_real|global|p25": {
+       "media": -76227.79050187573,
+       "desvio": 13.024677380472472,
+       "sesgo": -5.027370703348424
+      },
+      "ars_ganancia_real|global|p75": {
+       "media": -20488.387575425768,
+       "desvio": 12.54731635968404,
+       "sesgo": 1.1789767139198375
+      },
+      "ars_ganancia_real|global|minimo": {
+       "media": -81479.1208024232,
+       "desvio": 249.73277524641156,
+       "sesgo": 396.0434025169088
+      },
+      "ars_ganancia_real|global|maximo": {
+       "media": -15058.474065443057,
+       "desvio": 311.7332884751196,
+       "sesgo": -106.85927981804889
+      },
+      "ars_ganancia_real|favorable|media": {
+       "media": -19690.6076199085,
+       "desvio": 9.516014885394556,
+       "sesgo": 3.372801921253995
+      },
+      "ars_ganancia_real|favorable|mediana": {
+       "media": -19698.734480108957,
+       "desvio": 11.843441918509098,
+       "sesgo": 5.384633120997023
+      },
+      "ars_ganancia_real|favorable|p25": {
+       "media": -20488.29028126954,
+       "desvio": 12.553056249506287,
+       "sesgo": 1.2557734750735108
+      },
+      "ars_ganancia_real|favorable|p75": {
+       "media": -18901.53773824508,
+       "desvio": 13.084650125057419,
+       "sesgo": 7.876835536109866
+      },
+      "ars_ganancia_real|favorable|minimo": {
+       "media": -24097.846990396425,
+       "desvio": 281.437030343921,
+       "sesgo": 596.3367740819995
+      },
+      "ars_ganancia_real|favorable|maximo": {
+       "media": -15058.474065443057,
+       "desvio": 311.7332884751196,
+       "sesgo": -106.85927981804889
+      },
+      "ars_ganancia_real|moderado|media": {
+       "media": -48565.693152663494,
+       "desvio": 13.859422424774992,
+       "sesgo": 2.958925786871987
+      },
+      "ars_ganancia_real|moderado|mediana": {
+       "media": -48598.27220275062,
+       "desvio": 16.873353997373005,
+       "sesgo": -0.0025458050949964672
+      },
+      "ars_ganancia_real|moderado|p25": {
+       "media": -49830.26605360333,
+       "desvio": 17.873914449558104,
+       "sesgo": 2.31727878881793
+      },
+      "ars_ganancia_real|moderado|p75": {
+       "media": -47335.3879515846,
+       "desvio": 20.43597810815255,
+       "sesgo": 2.8958724534822977
+      },
+      "ars_ganancia_real|moderado|minimo": {
+       "media": -55251.46488893617,
+       "desvio": 455.1300631655257,
+       "sesgo": 515.3188731973714
+      },
+      "ars_ganancia_real|moderado|maximo": {
+       "media": -40867.3349645016,
+       "desvio": 605.0854682576175,
+       "sesgo": -1084.2750149713029
+      },
+      "ars_ganancia_real|desfavorable|media": {
+       "media": -77070.38561963841,
+       "desvio": 9.625347862867422,
+       "sesgo": -4.132067030877806
+      },
+      "ars_ganancia_real|desfavorable|mediana": {
+       "media": -77107.20541985755,
+       "desvio": 12.325563371287004,
+       "sesgo": -3.4110189058847027
+      },
+      "ars_ganancia_real|desfavorable|p25": {
+       "media": -77952.69250106224,
+       "desvio": 13.030875809997156,
+       "sesgo": -2.6564754838036606
+      },
+      "ars_ganancia_real|desfavorable|p75": {
+       "media": -76227.90413985567,
+       "desvio": 13.034150554516362,
+       "sesgo": -5.103960785258096
+      },
+      "ars_ganancia_real|desfavorable|minimo": {
+       "media": -81479.1208024232,
+       "desvio": 249.73277524641156,
+       "sesgo": 396.0434025169088
+      },
+      "ars_ganancia_real|desfavorable|maximo": {
+       "media": -71622.68346329212,
+       "desvio": 444.48819385681213,
+       "sesgo": -633.0861033683177
+      },
+      "usd_patrimonio|global|media": {
+       "media": 2039064.4527615698,
+       "desvio": 6642.142021581985,
+       "sesgo": -58.08888024603948
+      },
+      "usd_patrimonio|global|mediana": {
+       "media": 1620372.081357515,
+       "desvio": 5232.060746291928,
+       "sesgo": 974.5273602777161
+      },
+      "usd_patrimonio|global|p25": {
+       "media": 1063123.9449467736,
+       "desvio": 3821.7393929833484,
+       "sesgo": 43.46623483346775
+      },
+      "usd_patrimonio|global|p75": {
+       "media": 2507919.873286753,
+       "desvio": 9143.720897587087,
+       "sesgo": 1230.0675495308824
+      },
+      "usd_patrimonio|global|minimo": {
+       "media": 137250.35851631855,
+       "desvio": 21455.452660613282,
+       "sesgo": 26565.083412447464
+      },
+      "usd_patrimonio|global|maximo": {
+       "media": 39302301.35578953,
+       "desvio": 12154920.487472959,
+       "sesgo": -5817551.269496419
+      },
+      "usd_patrimonio|favorable|media": {
+       "media": 2039254.715981791,
+       "desvio": 12851.43196498765,
+       "sesgo": -1427.290830237791
+      },
+      "usd_patrimonio|favorable|mediana": {
+       "media": 1619344.2991669993,
+       "desvio": 10094.94310897491,
+       "sesgo": -481.1505224814173
+      },
+      "usd_patrimonio|favorable|p25": {
+       "media": 1063311.4586057372,
+       "desvio": 6535.029196190519,
+       "sesgo": 19.31728845043108
+      },
+      "usd_patrimonio|favorable|p75": {
+       "media": 2508279.8628281993,
+       "desvio": 18099.974866545457,
+       "sesgo": 127.96063244948164
+      },
+      "usd_patrimonio|favorable|minimo": {
+       "media": 157973.99624515028,
+       "desvio": 24579.735155349415,
+       "sesgo": 30419.64435121532
+      },
+      "usd_patrimonio|favorable|maximo": {
+       "media": 31671706.01880095,
+       "desvio": 11152117.139718918,
+       "sesgo": -4054968.3802269697
+      },
+      "usd_patrimonio|moderado|media": {
+       "media": 2038696.8104726751,
+       "desvio": 12303.131998402967,
+       "sesgo": -225.77724306914024
+      },
+      "usd_patrimonio|moderado|mediana": {
+       "media": 1620851.0145126083,
+       "desvio": 10012.61328984491,
+       "sesgo": 2214.4934334668797
+      },
+      "usd_patrimonio|moderado|p25": {
+       "media": 1063086.6781581782,
+       "desvio": 7357.138814583659,
+       "sesgo": 1125.9273332164157
+      },
+      "usd_patrimonio|moderado|p75": {
+       "media": 2507270.4098333917,
+       "desvio": 15950.290601571109,
+       "sesgo": 939.7107883561403
+      },
+      "usd_patrimonio|moderado|minimo": {
+       "media": 157113.24489125467,
+       "desvio": 25414.780131722247,
+       "sesgo": 31666.204730880345
+      },
+      "usd_patrimonio|moderado|maximo": {
+       "media": 30680612.269653168,
+       "desvio": 10084668.631406698,
+       "sesgo": -10024088.236931067
+      },
+      "usd_patrimonio|desfavorable|media": {
+       "media": 2039241.831830249,
+       "desvio": 10853.394276277431,
+       "sesgo": 1478.8014325785916
+      },
+      "usd_patrimonio|desfavorable|mediana": {
+       "media": 1621031.6364625862,
+       "desvio": 9838.174796462761,
+       "sesgo": 1349.341819187859
+      },
+      "usd_patrimonio|desfavorable|p25": {
+       "media": 1063093.6371770569,
+       "desvio": 6298.769565442295,
+       "sesgo": -525.1442297229078
+      },
+      "usd_patrimonio|desfavorable|p75": {
+       "media": 2508065.5997033245,
+       "desvio": 15822.581338991953,
+       "sesgo": 1688.827447433956
+      },
+      "usd_patrimonio|desfavorable|minimo": {
+       "media": 159717.27957287236,
+       "desvio": 26360.888310222497,
+       "sesgo": 27839.703878573026
+      },
+      "usd_patrimonio|desfavorable|maximo": {
+       "media": 31490900.29155464,
+       "desvio": 8388400.0790488925,
+       "sesgo": -12962641.365813997
+      },
+      "usd_ganancia_real|global|media": {
+       "media": 913911.1264129366,
+       "desvio": 5978.638069531632,
+       "sesgo": -148.22120091458783
+      },
+      "usd_ganancia_real|global|mediana": {
+       "media": 537646.4618019757,
+       "desvio": 4628.077118143239,
+       "sesgo": 1121.9617815668462
+      },
+      "usd_ganancia_real|global|p25": {
+       "media": 40766.08689841545,
+       "desvio": 3292.053647298872,
+       "sesgo": 188.27810328681517
+      },
+      "usd_ganancia_real|global|p75": {
+       "media": 1331795.3815799884,
+       "desvio": 8396.475893981251,
+       "sesgo": 1242.7884523528628
+      },
+      "usd_ganancia_real|global|minimo": {
+       "media": -780600.2497990926,
+       "desvio": 18877.585032755676,
+       "sesgo": 20785.427284189616
+      },
+      "usd_ganancia_real|global|maximo": {
+       "media": 34283705.812812485,
+       "desvio": 11540922.888370518,
+       "sesgo": -3550496.5984852165
+      },
+      "usd_ganancia_real|favorable|media": {
+       "media": 1067199.5697398225,
+       "desvio": 12397.487427081023,
+       "sesgo": -1394.3322607181035
+      },
+      "usd_ganancia_real|favorable|mediana": {
+       "media": 662093.9080122056,
+       "desvio": 9744.965209248177,
+       "sesgo": -599.6128056055168
+      },
+      "usd_ganancia_real|favorable|p25": {
+       "media": 125763.74401170507,
+       "desvio": 6368.12085604552,
+       "sesgo": -105.69147397392953
+      },
+      "usd_ganancia_real|favorable|p75": {
+       "media": 1519795.7858614067,
+       "desvio": 17502.552302854565,
+       "sesgo": 817.6872278715018
+      },
+      "usd_ganancia_real|favorable|minimo": {
+       "media": -747583.8771505821,
+       "desvio": 23693.58809758036,
+       "sesgo": 29169.437306878157
+      },
+      "usd_ganancia_real|favorable|maximo": {
+       "media": 29648803.380788587,
+       "desvio": 10750451.257718451,
+       "sesgo": -3945494.840683013
+      },
+      "usd_ganancia_real|moderado|media": {
+       "media": 930299.7004343128,
+       "desvio": 11047.098593322136,
+       "sesgo": -194.83188760164194
+      },
+      "usd_ganancia_real|moderado|mediana": {
+       "media": 555097.439271792,
+       "desvio": 8882.992806707236,
+       "sesgo": 1674.714227039949
+      },
+      "usd_ganancia_real|moderado|p25": {
+       "media": 54389.34248668921,
+       "desvio": 6614.798599483157,
+       "sesgo": 1038.4564279002807
+      },
+      "usd_ganancia_real|moderado|p75": {
+       "media": 1350981.4488932013,
+       "desvio": 14330.164967931963,
+       "sesgo": 648.0145658152178
+      },
+      "usd_ganancia_real|moderado|minimo": {
+       "media": -758982.0150902136,
+       "desvio": 22827.604809929842,
+       "sesgo": 28004.323919986375
+      },
+      "usd_ganancia_real|moderado|maximo": {
+       "media": 26647827.351074353,
+       "desvio": 9080321.92722431,
+       "sesgo": -8968609.53792224
+      },
+      "usd_ganancia_real|desfavorable|media": {
+       "media": 744234.1090646769,
+       "desvio": 8743.076657778693,
+       "sesgo": 1144.500545616378
+      },
+      "usd_ganancia_real|desfavorable|mediana": {
+       "media": 407029.3385737917,
+       "desvio": 7898.667259088123,
+       "sesgo": 1185.9002806524513
+      },
+      "usd_ganancia_real|desfavorable|p25": {
+       "media": -42762.99435245695,
+       "desvio": 5141.708152361073,
+       "sesgo": -330.2604074963747
+      },
+      "usd_ganancia_real|desfavorable|p75": {
+       "media": 1122114.130475891,
+       "desvio": 12512.648873765413,
+       "sesgo": 913.5334036713466
+      },
+      "usd_ganancia_real|desfavorable|minimo": {
+       "media": -771350.6110926914,
+       "desvio": 21284.23727049467,
+       "sesgo": 23386.505301766563
+      },
+      "usd_ganancia_real|desfavorable|maximo": {
+       "media": 24500110.45275661,
+       "desvio": 6807391.279431841,
+       "sesgo": -10293606.926212344
       }
      }
     }

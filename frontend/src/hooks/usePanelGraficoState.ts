@@ -112,7 +112,12 @@ export function usePanelGraficoState({
     if (!instrumentos || ambitosSeleccionados.length === 0) return []
     const relevantes = instrumentos.filter((inst) => {
       if (inst.tVencMeses == null) return false
-      if (esVistaPortfolio) return true
+      // En la vista de un sub-portfolio solo se marcan los vencimientos de esa moneda: una letra en
+      // pesos no tiene que aparecer en el gráfico del Portfolio (USD).
+      if (esVistaPortfolio) {
+        const monedaInst = resolveAmbitoInfo(inst.ambito, instrumentos, detalle).moneda
+        return ambitosSeleccionados.some((a) => monedaDe(a) === monedaInst)
+      }
       return ambitosSeleccionados.includes(inst.ambito)
     })
     const porMes = new Map<number, { labels: string[]; monto: number }>()

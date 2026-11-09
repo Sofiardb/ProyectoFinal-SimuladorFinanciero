@@ -1,19 +1,20 @@
 {
+ "N": 51000,
  "generador": "PCG64",
- "numpy": "2.2.6",
+ "numpy": "2.5.3",
  "misma_semilla_identico": true,
  "semilla_distinta_difiere": true,
  "normales": {
-  "n": 540000,
-  "media": -0.003209325143234814,
-  "var": 1.0026422061894953,
-  "ks_pvalor": 0.20031942821401916,
-  "autocorr_lag1": -0.0004335308889354184
+  "n": 1836000,
+  "media": -0.000921287019754562,
+  "var": 1.0010955676810807,
+  "ks_pvalor": 0.4182246199813746,
+  "autocorr_lag1": -0.00012850782525653908
  },
  "uniformes": {
-  "n": 540000,
-  "ks_pvalor": 0.9442960169995,
-  "autocorr_lag1": 0.0007725388578490832
+  "n": 1836000,
+  "ks_pvalor": 0.8348910517289444,
+  "autocorr_lag1": 0.0004676895424357716
  },
  "prob_colision_semillas": {
   "1000": 0.00023257076423610634,
