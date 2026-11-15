@@ -56,7 +56,7 @@ def descargar(ticker, key):
 
 def main():
     tickers = [t.upper() for t in sys.argv[1:]] or TICKERS_POR_DEFECTO
-    key = api_key()
+    key = 'WIRPYZA1MES8N8GD'
     DATOS.mkdir(exist_ok=True)
     for i, t in enumerate(tickers):
         if i:

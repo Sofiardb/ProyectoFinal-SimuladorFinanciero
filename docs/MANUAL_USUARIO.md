@@ -184,7 +184,7 @@ Una simulación se puede iniciar de dos formas: desde el botón **"Nueva simulac
 
 En esta pantalla se define:
 
-- **Horizonte**: cuántos meses hacia adelante se quiere proyectar el portfolio (deslizador, de 1 a 60 meses según la configuración vigente).
+- **Horizonte**: cuántos meses hacia adelante se quiere proyectar el portfolio (deslizador, de 1 a 36 meses).
 - **Rangos de inflación mensual por escenario**: InvestLab no le pide al usuario que estime la inflación futura; en cambio, sortea un valor dentro de un rango típico para cada uno de los tres escenarios (favorable, moderado, desfavorable), tanto en ARS como en USD.
 
 Más abajo, la pantalla muestra el detalle del portfolio a simular y el botón para lanzar la corrida:

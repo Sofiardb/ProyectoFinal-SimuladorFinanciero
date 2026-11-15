@@ -23,7 +23,7 @@ import { onErrorToast } from '@/lib/toast'
 import type { SimulacionResumen } from '@/types'
 
 const HORIZONTE_MIN = 1
-const HORIZONTE_MAX = 60
+const HORIZONTE_MAX = 36
 const HORIZONTE_DEFAULT = 12
 
 export default function NuevaSimulacionPage() {
